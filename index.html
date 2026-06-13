@@ -737,9 +737,24 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
       </div>
       <div class="form-row three">
         <div class="form-group"><label>Fecha ingreso hospital</label><input type="date" id="fFIHosp"></div>
-        <div class="form-group"><label>Fecha ingreso UTI</label><input type="date" id="fFIUTI"></div>
-        <div class="form-group"><label>Tipo de ingreso</label>
-          <select id="fTipoIngreso"><option value="">-</option><option>Programado</option><option>Urgencia</option><option>Traslado interno</option><option>Traslado externo</option></select>
+        <div class="form-group">
+          <label id="labelFIUTI">Fecha ingreso al sector</label>
+          <input type="date" id="fFIUTI">
+        </div>
+        <div class="form-group"><label>Origen del ingreso</label>
+          <select id="fTipoIngreso">
+            <option value="">-</option>
+            <option>Demanda espontánea</option>
+            <option>Urgencia</option>
+            <option>Programado / Electivo</option>
+            <option>Traslado desde UTI A</option>
+            <option>Traslado desde UTI B</option>
+            <option>Traslado desde UTI C</option>
+            <option>Traslado desde Emergencias</option>
+            <option>Traslado desde Cuidados Mínimos B</option>
+            <option>Traslado desde Cuidados Mínimos C</option>
+            <option>Derivación externa</option>
+          </select>
         </div>
       </div>
       <div class="form-group"><label>Diagnóstico principal</label><input type="text" id="fDiag"></div>
@@ -784,7 +799,7 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
     </div>
 
     <!-- Scores de gravedad -->
-    <div class="form-section">
+    <div class="form-section" id="fSeccionScores">
       <div class="form-section-title"><i class="ti ti-trending-up"></i> Scores de gravedad al ingreso</div>
       <div class="form-row four">
         <div class="form-group"><label>APACHE II</label><input type="number" id="fApache" inputmode="numeric" placeholder="0–71"></div>
@@ -811,7 +826,7 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
     </div>
 
     <!-- ARM / Ventilación -->
-    <div class="form-section">
+    <div class="form-section" id="fSeccionARM">
       <div class="form-section-title"><i class="ti ti-lungs"></i> ARM / Ventilación</div>
       <div class="form-row three">
         <div class="form-group"><label>Causa de VM</label><input type="text" id="fCausaVM" placeholder="IRA, post-op, etc."></div>
@@ -2422,14 +2437,25 @@ let currentEvoMinPacId = null;
 let currentNeuroData = {}; // fichas neurológicas por paciente
 let neuroEditPacId = null;
 
-// Mostrar/ocultar campo tipo kine según sala seleccionada
+// Mostrar/ocultar campos según sala seleccionada
 document.getElementById('fSala')?.addEventListener('change', function(){
   const sala = this.value;
-  const esMin = ES_MINIMOS(sala);
-  document.getElementById('fTipoKineRow').style.display = esMin ? 'block' : 'none';
-  document.getElementById('fEstFxRow').style.display = esMin ? 'grid' : 'none';
+  actualizarFormularioPorSala(sala);
   updateCamaHint();
 });
+
+function actualizarFormularioPorSala(sala){
+  const esMin = ES_MINIMOS(sala);
+  // Mínimos: mostrar tipo kine, estado fx, frecuencia
+  document.getElementById('fTipoKineRow').style.display = esMin ? 'block' : 'none';
+  document.getElementById('fEstFxRow').style.display = esMin ? 'grid' : 'none';
+  // Mínimos: ocultar scores de severidad y sección ARM
+  document.getElementById('fSeccionScores').style.display = esMin ? 'none' : 'block';
+  document.getElementById('fSeccionARM').style.display = esMin ? 'none' : 'block';
+  // Cambiar label de fecha según sector
+  const labelFI = document.getElementById('labelFIUTI');
+  if(labelFI) labelFI.textContent = esMin ? 'Fecha ingreso al sector' : 'Fecha ingreso UTI/Emergencia';
+}
 
 // Abrir evolución: detectar si es Mínimos o UTI/Emergencia
 function openEvolucionAdaptado(patientId){
@@ -3334,10 +3360,11 @@ function openNuevoPaciente(){
   document.getElementById('fTipoKine').value = '';
   document.getElementById('fEstFx').value = '';
   document.getElementById('fFrecuencia').value = '';
-  document.getElementById('fTipoKineRow').style.display = 'none';
-  document.getElementById('fEstFxRow').style.display = 'none';
+  // Si hay sector preseleccionado, aplicar lógica de formulario
+  const salaActual = document.getElementById('fSala').value;
+  actualizarFormularioPorSala(salaActual);
   document.getElementById('fFIUTI').value = today();
-  if(currentSector) document.getElementById('fSala').value = currentSector;
+  if(currentSector){ document.getElementById('fSala').value = currentSector; actualizarFormularioPorSala(currentSector); }
   openModal('modalPaciente');
 }
 
@@ -3353,9 +3380,7 @@ function openEditPaciente(id){
   M('fFIHosp',p.fIHosp); M('fFIUTI',p.fIUTI); M('fTipoIngreso',p.tipoIngreso);
   M('fDiag',p.diagnostico); M('fMotivo',p.motivo);
   M('fTipoKine',p.tipoKine); M('fEstFx',p.estFx); M('fFrecuencia',p.frecuencia);
-  const esMin = ES_MINIMOS(p.sala);
-  document.getElementById('fTipoKineRow').style.display = esMin ? 'block' : 'none';
-  document.getElementById('fEstFxRow').style.display = esMin ? 'grid' : 'none';
+  actualizarFormularioPorSala(p.sala);
   M('fApache',p.apache); M('fSaps',p.saps); M('fCharlson',p.charlson); M('fSofa',p.sofa);
   M('fHTA',p.hta); M('fDBT',p.dbt); M('fObesidad',p.obesidad); M('fTBQ',p.tbq);
   M('fRespi',p.respi); M('fCardio',p.cardio); M('fOtrosAnt',p.otrosAnt);
@@ -3887,6 +3912,14 @@ function exportarDatos(){
 // Guardar datos demo si no existe nada
 if(!LS.get('hbee_patients')) savePacientes();
 if(!LS.get('hbee_evos')) saveEvos();
+
+// Inicializar visibilidad del formulario de paciente
+function initFormPaciente(){
+  document.getElementById('fSeccionScores').style.display = 'block';
+  document.getElementById('fSeccionARM').style.display = 'block';
+  document.getElementById('fTipoKineRow').style.display = 'none';
+  document.getElementById('fEstFxRow').style.display = 'none';
+}
 
 // Mostrar estado Drive en login si ya está configurado
 if(GDRIVE_CONFIG?.clientId){
