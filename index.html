@@ -659,7 +659,7 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
     <div class="section" id="section-indicadores">
       <div class="page-header">
         <div><h2>Indicadores del servicio</h2><p>Métricas de actividad y prestaciones kinesiológicas</p></div>
-        <button class="btn btn-ghost btn-sm" onclick="exportarDatos()"><i class="ti ti-download"></i>Exportar datos</button>
+        <button class="btn btn-ghost btn-sm" onclick="exportarDatos()"><i class="ti ti-table-export"></i>Exportar Excel</button>
       </div>
       <div id="indicadoresContent"></div>
     </div>
@@ -1851,8 +1851,15 @@ const supaH = { 'Content-Type':'application/json', 'apikey':SUPA_KEY, 'Authoriza
 
 async function supaFetch(path, options={}){
   const r = await fetch(SUPA_URL+path, { ...options, headers:{ ...supaH, ...(options.headers||{}) } });
-  if(!r.ok){ const e=await r.text(); throw new Error(e); }
-  return r.status===204 ? null : r.json();
+  if(!r.ok){
+    const e = await r.text().catch(()=>'sin detalle');
+    throw new Error(e||`HTTP ${r.status}`);
+  }
+  if(r.status===204 || r.headers.get('content-length')==='0') return null;
+  const text = await r.text();
+  if(!text || !text.trim()) return null;
+  try { return JSON.parse(text); }
+  catch(e){ throw new Error('JSON inválido: ' + text.slice(0,100)); }
 }
 
 async function loadFromSupabase(){
@@ -1898,12 +1905,16 @@ async function saveToSupabase(){
       .filter(e => e.id && e.patientId)
       .map(e => ({ id: Number(e.id), patient_id: Number(e.patientId), data: cleanObj(e) }));
 
+    // Enviar en lotes de 50 para evitar payloads demasiado grandes
     if(evosPayload.length){
-      await supaFetch('/rest/v1/evoluciones', {
-        method:'POST',
-        headers:{ 'Prefer':'resolution=merge-duplicates' },
-        body: JSON.stringify(evosPayload)
-      });
+      const LOTE = 50;
+      for(let i=0; i<evosPayload.length; i+=LOTE){
+        await supaFetch('/rest/v1/evoluciones', {
+          method:'POST',
+          headers:{ 'Prefer':'resolution=merge-duplicates' },
+          body: JSON.stringify(evosPayload.slice(i, i+LOTE))
+        });
+      }
     }
     setSyncStatus('ok');
   } catch(e){
@@ -3903,19 +3914,111 @@ function renderIndicadores(){
 //  EXPORTAR DATOS
 // ════════════════════════════════════════════════════════
 function exportarDatos(){
-  const data = {
-    exportado: new Date().toISOString(),
-    servicio: 'HBEE Kinesiología UTI/Emergencia',
-    pacientes: patients,
-    evoluciones: evoluciones,
+  // ── Hoja 1: Pacientes ────────────────────────────────
+  const encPac = [
+    'Apellido','Nombre','DNI','Edad','Género','Peso (kg)','Talla (cm)','IMC',
+    'Sala','Cama','Kinesiólogo','Estado',
+    'Fecha ingreso hospital','Fecha ingreso sector','Origen ingreso',
+    'Diagnóstico','Motivo de ingreso',
+    'HTA','DBT','Obesidad','TBQ','Patología respiratoria','Patología cardiovascular','Otros antecedentes',
+    'APACHE II','SAPS II','Charlson','SOFA inicial',
+    'Causa VM','Fecha IOT','Inicio ARM','Fin ARM','Reintubado','TQT','Prono (sesiones)',
+    'Tipo kinesiológico','Estado funcional previo','Frecuencia atención',
+    'Fecha egreso UTI','Fecha alta kinésica',
+  ];
+
+  const filasPac = patients.map(p => [
+    p.apellido||'', p.nombre||'', p.dni||'', p.edad||'', p.genero||'',
+    p.peso||'', p.talla||'', p.imc||'',
+    SALA_LABEL[p.sala]||p.sala||'', p.cama||'', p.kine||'', p.estado||'',
+    fmtDate(p.fIHosp), fmtDate(p.fIUTI), p.tipoIngreso||'',
+    p.diagnostico||'', p.motivo||'',
+    p.hta||'', p.dbt||'', p.obesidad||'', p.tbq||'',
+    p.respi||'', p.cardio||'', p.otrosAnt||'',
+    p.apache||'', p.saps||'', p.charlson||'', p.sofa||'',
+    p.causaVM||'', fmtDate(p.fIOT), fmtDate(p.inicioARM), fmtDate(p.finARM),
+    p.reintubado||'', p.tqt||'', p.prono||'',
+    TIPO_KINE_LABEL[p.tipoKine]||p.tipoKine||'', p.estFx||'', p.frecuencia||'',
+    fmtDate(p.fEUTI), fmtDate(p.fEK),
+  ]);
+
+  // ── Hoja 2: Evoluciones ──────────────────────────────
+  const encEvo = [
+    'Apellido','Nombre','DNI','Sala','Cama','Fecha','Turno','Kinesiólogo',
+    'Tipo evolución','Día hosp.','Día sector','Día ARM',
+    'Interfaz','Modo ventilatorio','VT (ml)','VT ml/kg','FR','PEEP','FiO2 (%)','Ti (s)',
+    'Ppico','Pplat','PEEPt','DP','Crs','Rinsp','Flujo','Mec.Power','Elastic Ratio','Cte.Tiempo','Stress Index',
+    'pH','pCO2','pO2','HCO3','SpO2 (%)','PAFI',
+    'RASS','CPOT','CAM-ICU','Ventana sedación',
+    'Sedación','Analgesia','BNM','Vasoactivos',
+    'AKM Mañana','AKM Tarde/Noche','MRC Score',
+    'PVE','Tipo PVE','Duración PVE (min)','Resultado PVE','Extubación','Interfaz post-ext.','N° PVEs',
+    'P.Cuff Mañana','P.Cuff Tarde','P.Cuff Noche',
+    'Tipo cánula','Ø interno','Ø externo','Estado balón',
+    'Sec.traqueales cantidad','Sec.traqueales calidad','LOF','Deglución',
+    'FAC (Mínimos)','Tolerancia','Frecuencia próxima',
+    'Logros del día','Conciencia','Orientación','Auscultación','Tos',
+    'Secreciones cantidad','Secreciones calidad','Tolerancia al tto.',
+    'Técnicas kinesiológicas','Observaciones',
+  ];
+
+  const filasEvo = evoluciones.map(e => {
+    const p = patients.find(x=>x.id===e.patientId)||{};
+    return [
+      p.apellido||'', p.nombre||'', p.dni||'',
+      SALA_LABEL[p.sala]||p.sala||'', p.cama||'',
+      fmtDate(e.date), e.turno||'', e.kine||'',
+      e.tipo_evo==='minimos'?'Mínimos':(e.tipo||'UTI/Emergencia'),
+      e.diasHosp||'', e.utiDia||'', e.armDia||'',
+      e.interfaz||e.interfazO2||'', e.modo||'',
+      e.vt||'', e.vtkg||'', e.fr||'', e.peep||'', e.fio2||'', e.ti||'',
+      e.ppico||'', e.pplat||'', e.peept||'', e.dp||'',
+      e.crs||'', e.rinsp||'', e.flujo||'', e.mp||'', e.er||'', e.ct||'', e.si||'',
+      e.ph||'', e.pco2||'', e.po2||'', e.hco3||'', e.spo2||e.emSpO2||'', e.pafi||'',
+      e.rass||'', e.cpot||'', e.camicu||'', e.ventSed||'',
+      e.sedacion||'', e.analgesia||'', e.bnm||'', e.vasoact||'',
+      e.akm1||'', e.akm2||'', e.mrc||'',
+      e.pve||'', e.pveTipo||'', e.pveMin||'', e.pveResult||'',
+      e.extubacion||'', e.interfazPE||'', e.nPVE||'',
+      e.cuffM||'', e.cuffT||'', e.cuffN||'',
+      e.tipoCan||'', e.canDI||'', e.canDE||'', e.estadoBajon||'',
+      e.secTrqCant||'', e.secTrqCal||'', e.lof||'', e.deglusion||'',
+      e.fac||'', e.tolerancia||'', e.frecuencia||'',
+      (e.logros||[]).join(' | '), e.conciencia||'', e.orientacion||'',
+      e.auscultacion||'', e.tos||'',
+      e.secCant||'', e.secChar||'', e.tolerancia||'',
+      (e.tecnicas||[]).join(' | '), e.obs||'',
+    ];
+  });
+
+  // ── Construir CSV con BOM para Excel (caracteres especiales) ──
+  const toCsv = (headers, rows) => {
+    const esc = v => {
+      const s = String(v===null||v===undefined?'':v);
+      return s.includes(',') || s.includes('"') || s.includes('
+')
+        ? '"' + s.replace(/"/g,'""') + '"' : s;
+    };
+    return [headers, ...rows].map(r => r.map(esc).join(',')).join('
+');
   };
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type:'application/json' });
+
+  const csv1 = '﻿' + '=== PACIENTES ===
+' + toCsv(encPac, filasPac);
+  const csv2 = '
+
+=== EVOLUCIONES ===
+' + toCsv(encEvo, filasEvo);
+  const csvFinal = csv1 + csv2;
+
+  const blob = new Blob([csvFinal], { type:'text/csv;charset=utf-8;' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `hbee_kine_export_${today()}.json`;
+  a.download = `HBEE_Kine_${today()}.csv`;
   a.click();
-  addLog('export',`Exportación de datos completa (${patients.length} pacientes, ${evoluciones.length} evoluciones)`);
-  showToast('Datos exportados','success');
+
+  addLog('export',`Exportación Excel (${patients.length} pacientes, ${evoluciones.length} evoluciones)`);
+  showToast(`Exportado: ${patients.length} pacientes, ${evoluciones.length} evoluciones`, 'success');
 }
 
 // ════════════════════════════════════════════════════════
