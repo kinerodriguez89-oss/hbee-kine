@@ -1879,13 +1879,25 @@ async function loadFromSupabase(){
 async function saveToSupabase(){
   setSyncStatus('syncing');
   try {
-    const pacsPayload = patients.map(p => ({ id:p.id, data:p }));
-    await supaFetch('/rest/v1/pacientes', {
-      method:'POST',
-      headers:{ 'Prefer':'resolution=merge-duplicates' },
-      body: JSON.stringify(pacsPayload)
-    });
-    const evosPayload = evoluciones.map(e => ({ id:e.id, patient_id:e.patientId, data:e }));
+    // Limpiar datos antes de enviar: reemplazar undefined por null
+    const cleanObj = obj => JSON.parse(JSON.stringify(obj, (k,v) => v === undefined ? null : v));
+
+    const pacsPayload = patients
+      .filter(p => p.id)
+      .map(p => ({ id: Number(p.id), data: cleanObj(p) }));
+
+    if(pacsPayload.length){
+      const r1 = await supaFetch('/rest/v1/pacientes', {
+        method:'POST',
+        headers:{ 'Prefer':'resolution=merge-duplicates' },
+        body: JSON.stringify(pacsPayload)
+      });
+    }
+
+    const evosPayload = evoluciones
+      .filter(e => e.id && e.patientId)
+      .map(e => ({ id: Number(e.id), patient_id: Number(e.patientId), data: cleanObj(e) }));
+
     if(evosPayload.length){
       await supaFetch('/rest/v1/evoluciones', {
         method:'POST',
@@ -1895,9 +1907,9 @@ async function saveToSupabase(){
     }
     setSyncStatus('ok');
   } catch(e){
-    console.error(e);
+    console.error('Supabase error:', e);
     setSyncStatus('error');
-    showToast('Error al guardar en Supabase','error');
+    showToast('Error Supabase: ' + (e.message?.slice(0,60)||'ver consola'), 'error');
   }
 }
 
