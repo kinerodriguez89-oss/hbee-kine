@@ -290,6 +290,13 @@ tr:hover td{ background:var(--blue-50); }
 .sala-MIN-B{ background:#d1fae5; color:#065f46; }
 .sala-MIN-C{ background:#f0fdf4; color:#166534; }
 
+/* ── MÍNIMOS ── */
+.tipo-kine-badge{ display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;
+  font-size:10px;font-weight:700;background:var(--purple-50);color:var(--purple-800);border:1px solid var(--purple-50); }
+.mrc-input{ width:46px;padding:3px;text-align:center;border:1px solid var(--border);border-radius:4px;
+  font-family:var(--font);font-size:12px;-moz-appearance:textfield; }
+.mrc-input::-webkit-inner-spin-button,.mrc-input::-webkit-outer-spin-button{-webkit-appearance:none}
+
 /* ── INTERFAZ VENTILATORIA ── */
 .interfaz-btn{ display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
   padding:.8rem .5rem;border-radius:var(--radius);border:2px solid var(--border);
@@ -737,6 +744,43 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
       </div>
       <div class="form-group"><label>Diagnóstico principal</label><input type="text" id="fDiag"></div>
       <div class="form-group"><label>Motivo de ingreso</label><textarea id="fMotivo" rows="2"></textarea></div>
+      <div class="form-group" id="fTipoKineRow" style="display:none">
+        <label>Tipo kinesiológico <span style="font-size:9px;color:var(--teal-600);font-weight:700">(Cuidados Mínimos)</span></label>
+        <select id="fTipoKine">
+          <option value="">Seleccioná el tipo...</option>
+          <option value="respiratorio">🫁 Respiratorio</option>
+          <option value="neurologico">🧠 Neurológico</option>
+          <option value="pre_qx">🔪 Pre-quirúrgico</option>
+          <option value="post_qx">🔪 Post-quirúrgico</option>
+          <option value="amputado">🦾 Amputado</option>
+          <option value="quemado">🔥 Quemado</option>
+          <option value="post_uti">🏥 Post UTI</option>
+          <option value="otro">📋 Otro</option>
+        </select>
+      </div>
+      <div class="form-row" id="fEstFxRow" style="display:none">
+        <div class="form-group">
+          <label>Estado funcional previo</label>
+          <select id="fEstFx">
+            <option value="">-</option>
+            <option>Independiente sin ayuda</option>
+            <option>Independiente con ayuda técnica (bastón/andador)</option>
+            <option>Necesita ayuda de 1 persona</option>
+            <option>Necesita ayuda de 2 personas</option>
+            <option>Postrado / dependiente total</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Frecuencia de atención</label>
+          <select id="fFrecuencia">
+            <option value="">-</option>
+            <option value="diaria">Diaria</option>
+            <option value="cada3">Cada 3 días</option>
+            <option value="cada5">Cada 5 días</option>
+            <option value="sincriterio">Sin criterio kinésico</option>
+          </select>
+        </div>
+      </div>
     </div>
 
     <!-- Scores de gravedad -->
@@ -1088,21 +1132,69 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
 
     <!-- TQT / Cuff -->
     <div class="accordion-header" onclick="toggleAccordion('accTQT')">
-      <span><i class="ti ti-stethoscope" style="margin-right:6px;color:var(--amber-400)"></i>Traqueotomía / Presión de cuff</span>
+      <span><i class="ti ti-stethoscope" style="margin-right:6px;color:var(--amber-400)"></i>Vía aérea / Presión de cuff</span>
       <i class="ti ti-chevron-down accordion-arrow" id="arrTQT"></i>
     </div>
     <div class="accordion-body" id="accTQT">
-      <div class="form-row three" style="margin-top:8px">
+      <!-- Presión de cuff — aplica a TET y TQT -->
+      <div class="form-section-title" style="margin-top:8px"><i class="ti ti-gauge"></i> Presión de cuff (TET o TQT)</div>
+      <div class="form-row three">
         <div class="form-group"><label>P. cuff — Mañana (cmH₂O)</label><input type="number" id="eCuffM" inputmode="numeric"></div>
         <div class="form-group"><label>P. cuff — Tarde (cmH₂O)</label><input type="number" id="eCuffT" inputmode="numeric"></div>
         <div class="form-group"><label>P. cuff — Noche (cmH₂O)</label><input type="number" id="eCuffN" inputmode="numeric"></div>
       </div>
+
+      <!-- Datos de cánula TQT (solo si tiene TQT) -->
+      <div class="form-section-title"><i class="ti ti-cut"></i> Cánula de traqueostomía</div>
+      <div class="form-row four">
+        <div class="form-group"><label>Tipo de cánula</label>
+          <select id="eTipoCan">
+            <option value="">-</option>
+            <option>Con balón</option>
+            <option>Con balón + puerto subglótico</option>
+            <option>Sin balón</option>
+            <option>Fenestrada</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Ø interno (mm)</label><input type="number" id="eCanDI" inputmode="decimal" step="0.5" placeholder="ej: 7.5"></div>
+        <div class="form-group"><label>Ø externo (mm)</label><input type="number" id="eCanDE" inputmode="decimal" step="0.5" placeholder="ej: 10.5"></div>
+        <div class="form-group"><label>Estado del balón</label>
+          <select id="eEstadoBajon">
+            <option value="">-</option>
+            <option>Inflado</option>
+            <option>Desinflado</option>
+            <option>No aplica (sin balón)</option>
+          </select>
+        </div>
+      </div>
       <div class="form-row">
         <div class="form-group"><label>Oclusión de cánula</label>
-          <select id="eOclusionCanula"><option value="">-</option><option>Sí</option><option>No</option></select>
+          <select id="eOclusionCanula"><option value="">-</option><option>Sí — tolerada</option><option>Sí — no tolerada</option><option>No</option></select>
+        </div>
+        <div class="form-group"><label>Ostoma / estoma</label>
+          <select id="eOstoma"><option value="">-</option><option>Sin particularidades</option><option>Tejido de granulación</option><option>Signos de infección</option><option>Secreción periostoma</option></select>
+        </div>
+      </div>
+
+      <!-- Secreciones traqueales -->
+      <div class="form-section-title"><i class="ti ti-droplets"></i> Secreciones traqueales</div>
+      <div class="form-row">
+        <div class="form-group"><label>Cantidad</label>
+          <select id="eSecTrqCant"><option value="">-</option><option>Nulas</option><option>Escasas</option><option>Moderadas</option><option>Abundantes</option></select>
+        </div>
+        <div class="form-group"><label>Calidad</label>
+          <select id="eSecTrqCal"><option value="">-</option><option>Mucosas</option><option>Mucopurulentas</option><option>Purulentas</option><option>Mucohemáticas</option><option>Hemáticas</option></select>
+        </div>
+      </div>
+
+      <!-- Lago orofaríngeo -->
+      <div class="form-section-title"><i class="ti ti-mouth"></i> Lago orofaríngeo (LOF)</div>
+      <div class="form-row">
+        <div class="form-group"><label>Cantidad LOF</label>
+          <select id="eLOF"><option value="">-</option><option>Nulo</option><option>Escaso</option><option>Moderado</option><option>Abundante</option></select>
         </div>
         <div class="form-group"><label>Evaluación de deglución</label>
-          <select id="eDeglusion"><option value="">-</option><option>No realizada</option><option>Sin disfagia</option><option>Disfagia leve</option><option>Disfagia moderada</option><option>Disfagia severa</option></select>
+          <select id="eDeglusion"><option value="">-</option><option>No realizada</option><option>Apta todas las consistencias</option><option>Apta semisólidos y líquidos</option><option>Apta semisólidos</option><option>Disfagia leve</option><option>Disfagia moderada</option><option>Disfagia severa — enteral</option></select>
         </div>
       </div>
     </div>
@@ -1185,6 +1277,426 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('modalEvo')">Cerrar</button>
       <button class="btn btn-success" onclick="guardarEvolucion()"><i class="ti ti-device-floppy"></i>Guardar evolución</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════ MODAL FICHA NEUROLÓGICA ════ -->
+<div class="modal-overlay" id="modalNeuro">
+  <div class="modal" style="width:800px">
+    <div class="modal-header">
+      <div>
+        <h3 id="neuroModalTitulo">Evaluación Neurológica Kinésica</h3>
+        <div class="modal-subtitle" id="neuroModalSub"></div>
+      </div>
+      <button class="modal-close" onclick="closeModal('modalNeuro')">&times;</button>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group"><label>Tipo de evaluación</label>
+        <select id="neuroTipo">
+          <option value="inicial">Evaluación inicial</option>
+          <option value="alta">Evaluación de alta</option>
+          <option value="control">Control evolutivo</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Fecha</label><input type="date" id="neuroFecha"></div>
+      <div class="form-group"><label>Kinesiólogo</label><input type="text" id="neuroKine" readonly style="background:var(--gray-50)"></div>
+    </div>
+
+    <!-- Resumen clínico -->
+    <div class="form-section">
+      <div class="form-section-title"><i class="ti ti-notes"></i> Resumen clínico</div>
+      <div class="form-group"><label>Diagnóstico neurológico</label><input type="text" id="neuroDx" placeholder="ACV hemorrágico, lesión medular…"></div>
+      <div class="form-group"><label>Resumen de historia clínica</label><textarea id="neuroHC" rows="3" placeholder="Fecha de eventos, intercurrencias, evolución…"></textarea></div>
+      <div class="form-group"><label>Antecedentes relevantes</label><input type="text" id="neuroAtc"></div>
+    </div>
+
+    <!-- Exploración física -->
+    <div class="form-section">
+      <div class="form-section-title"><i class="ti ti-stethoscope"></i> Exploración física</div>
+      <div class="form-group"><label>Descripción general</label><textarea id="neuroExFisica" rows="2" placeholder="Estado de conciencia, foco motor, tono, reflejos…"></textarea></div>
+      <div class="form-row">
+        <div class="form-group"><label>Hemicuerpo afectado</label>
+          <select id="neuroHemi"><option value="">-</option><option>Derecho</option><option>Izquierdo</option><option>Bilateral</option><option>No aplica</option></select>
+        </div>
+        <div class="form-group"><label>Tipo de alteración motora</label>
+          <select id="neuroMotor"><option value="">-</option><option>Plejía</option><option>Paresia severa</option><option>Paresia moderada</option><option>Paresia leve</option><option>Sin alteración</option></select>
+        </div>
+        <div class="form-group"><label>Tono muscular</label>
+          <select id="neuroTono"><option value="">-</option><option>Flácido / hipotónico</option><option>Normal</option><option>Espástico</option><option>Rigidez</option></select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Escalas funcionales -->
+    <div class="form-section">
+      <div class="form-section-title"><i class="ti ti-chart-bar"></i> Escalas funcionales</div>
+      <div class="form-row four">
+        <div class="form-group"><label>Barthel previo /100</label><input type="number" id="neuroBarthelPrev" min="0" max="100" inputmode="numeric"></div>
+        <div class="form-group"><label>Barthel actual /100</label><input type="number" id="neuroBarthelAct" min="0" max="100" inputmode="numeric"></div>
+        <div class="form-group"><label>FAC previo /5</label><input type="number" id="neuroFACPrev" min="0" max="5" inputmode="numeric"></div>
+        <div class="form-group"><label>FAC actual /5</label><input type="number" id="neuroFACAct" min="0" max="5" inputmode="numeric"></div>
+      </div>
+      <div class="form-row four">
+        <div class="form-group"><label>PASS movilidad /21</label><input type="number" id="neuroPASSMov" min="0" max="21" inputmode="numeric"></div>
+        <div class="form-group"><label>PASS equilibrio /15</label><input type="number" id="neuroPASSEq" min="0" max="15" inputmode="numeric"></div>
+        <div class="form-group"><label>TCT /100</label><input type="number" id="neuroTCT" min="0" max="100" inputmode="numeric"></div>
+        <div class="form-group"><label>Salud autopercibida /10</label><input type="number" id="neuroSaludAP" min="0" max="10" inputmode="numeric"></div>
+      </div>
+    </div>
+
+    <!-- MRC por grupos musculares -->
+    <div class="form-section">
+      <div class="form-section-title"><i class="ti ti-run"></i> MRC por grupos musculares (0–5)</div>
+      <div style="overflow-x:auto">
+        <table style="width:100%;font-size:12px;border-collapse:collapse">
+          <thead><tr style="background:var(--blue-50)">
+            <th style="padding:6px 8px;text-align:left;font-size:10px;color:var(--blue-800)">Grupo</th>
+            <th style="padding:6px 8px;text-align:center;font-size:10px;color:var(--blue-800)">Der.</th>
+            <th style="padding:6px 8px;text-align:center;font-size:10px;color:var(--blue-800)">Izq.</th>
+          </tr></thead>
+          <tbody id="mrcTableBody">
+            ${['Abd. hombro','Flex. codo','Ext. muñeca','Ext. codo','Ext. dedos','Flex. cadera','Ext. rodilla','Dorsifl. tobillo','Ext. hallux','Flex. plantar'].map((g,i)=>`
+            <tr style="border-bottom:1px solid var(--border)">
+              <td style="padding:5px 8px">${g}</td>
+              <td style="padding:5px 8px;text-align:center"><input type="number" id="mrcD${i}" min="0" max="5" style="width:50px;padding:3px;text-align:center;border:1px solid var(--border);border-radius:4px;font-family:var(--font);font-size:12px"></td>
+              <td style="padding:5px 8px;text-align:center"><input type="number" id="mrcI${i}" min="0" max="5" style="width:50px;padding:3px;text-align:center;border:1px solid var(--border);border-radius:4px;font-family:var(--font);font-size:12px"></td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+      <div style="display:flex;gap:12px;margin-top:8px;font-size:12px">
+        <div style="background:var(--blue-50);padding:6px 12px;border-radius:8px">MRC Sum Score: <strong id="mrcSumScore">—/60</strong></div>
+        <div style="background:var(--blue-50);padding:6px 12px;border-radius:8px">Total bilateral: <strong id="mrcTotal">—/100</strong></div>
+      </div>
+    </div>
+
+    <!-- Funciones cerebrales superiores -->
+    <div class="form-section">
+      <div class="form-section-title"><i class="ti ti-brain"></i> Funciones cerebrales superiores</div>
+      <div class="form-row four">
+        <div class="form-group"><label>Conciencia</label>
+          <select id="neuroConciencia"><option value="">-</option><option>Vigil y lúcido</option><option>Vigil con alteración</option><option>Somnoliento</option><option>Estuporoso</option><option>Coma</option></select>
+        </div>
+        <div class="form-group"><label>Lenguaje</label>
+          <select id="neuroLenguaje"><option value="">-</option><option>Normal</option><option>Afasia de expresión</option><option>Afasia de comprensión</option><option>Afasia mixta</option><option>Disartria</option><option>No evaluable</option></select>
+        </div>
+        <div class="form-group"><label>Atención</label>
+          <select id="neuroAtencion"><option value="">-</option><option>Conservada</option><option>Leve alteración</option><option>Moderada alteración</option><option>Severa alteración</option></select>
+        </div>
+        <div class="form-group"><label>Memoria</label>
+          <select id="neuroMemoria"><option value="">-</option><option>Conservada</option><option>Levemente alterada</option><option>Moderadamente alterada</option><option>Severamente alterada</option></select>
+        </div>
+      </div>
+      <div class="form-row four">
+        <div class="form-group"><label>Praxias</label>
+          <select id="neuroPraxias"><option value="">-</option><option>Conservadas</option><option>Alteradas</option><option>No evaluable</option></select>
+        </div>
+        <div class="form-group"><label>Gnosias</label>
+          <select id="neuroGnosias"><option value="">-</option><option>Conservadas</option><option>Alteradas</option><option>No evaluable</option></select>
+        </div>
+        <div class="form-group"><label>Pfeiffer</label>
+          <select id="neuroPfeiffer"><option value="">-</option><option>Normal (0-2 errores)</option><option>Deterioro leve (3-4 errores)</option><option>Deterioro moderado (5-7 errores)</option><option>Deterioro severo (8-10 errores)</option></select>
+        </div>
+        <div class="form-group"><label>CAM-ICU / Delirium</label>
+          <select id="neuroDelirium"><option value="">-</option><option>Negativo</option><option>Delirium hiperactivo</option><option>Delirium hipoactivo</option><option>Delirium mixto</option><option>No evaluable</option></select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Deglución -->
+    <div class="form-section">
+      <div class="form-section-title"><i class="ti ti-droplet"></i> Deglución</div>
+      <div class="form-row">
+        <div class="form-group"><label>Grado de disfagia</label>
+          <select id="neuroDisfagia">
+            <option value="">-</option>
+            <option value="0">Sin disfagia — apta toda consistencia</option>
+            <option value="1">Grado 1 — SS y líquidos con asistencia</option>
+            <option value="2">Grado 2 — Solo semisólidos</option>
+            <option value="3">Grado 3 — Solo líquidos espesados</option>
+            <option value="4">Grado 4 — Sin deglución segura (enteral)</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Observaciones deglución</label>
+          <input type="text" id="neuroDeglObs" placeholder="Tránsito oral, tos, residuo…">
+        </div>
+      </div>
+    </div>
+
+    <!-- Objetivos y herramientas -->
+    <div class="form-section">
+      <div class="form-section-title"><i class="ti ti-target"></i> Objetivos y plan terapéutico</div>
+      <div class="form-group"><label>Objetivos de rehabilitación</label><textarea id="neuroObjetivos" rows="2" placeholder="Aumentar independencia funcional, prevenir complicaciones…"></textarea></div>
+      <div class="form-group"><label>Herramientas terapéuticas / Puntos terapéuticos</label><textarea id="neuroHerramientas" rows="2" placeholder="Movilidad pasiva, control de tronco, deglución…"></textarea></div>
+      <div class="form-group"><label>Conclusiones y recomendaciones</label><textarea id="neuroConclusiones" rows="2"></textarea></div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modalNeuro')">Cancelar</button>
+      <button class="btn btn-ghost" onclick="exportarFichaNeuro()"><i class="ti ti-printer"></i>Imprimir / PDF</button>
+      <button class="btn btn-success" onclick="guardarFichaNeuro()"><i class="ti ti-device-floppy"></i>Guardar ficha</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════ MODAL EVOLUCIÓN MÍNIMOS ════ -->
+<div class="modal-overlay" id="modalEvoMin">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <h3 id="evoMinTitle">Evolución — Cuidados Mínimos</h3>
+        <div class="modal-subtitle" id="evoMinSub"></div>
+      </div>
+      <button class="modal-close" onclick="closeModal('modalEvoMin')">&times;</button>
+    </div>
+
+    <!-- Guardia -->
+    <div class="form-section">
+      <div class="form-section-title"><i class="ti ti-calendar"></i> Guardia</div>
+      <div class="form-row three">
+        <div class="form-group"><label>Fecha</label><input type="date" id="emDate"></div>
+        <div class="form-group"><label>Turno</label><select id="emTurno"><option>Mañana</option><option>Tarde</option><option>Noche</option></select></div>
+        <div class="form-group"><label>Kinesiólogo</label><input type="text" id="emKine" readonly style="background:var(--gray-50)"></div>
+      </div>
+      <div id="emDayCounters" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:.5rem"></div>
+      <div class="form-row">
+        <div class="form-group"><label>Frecuencia próxima atención</label>
+          <select id="emFrecuencia">
+            <option value="">-</option>
+            <option value="manana">Mañana (diaria)</option>
+            <option value="cada3">Cada 3 días</option>
+            <option value="cada5">Cada 5 días</option>
+            <option value="sincriterio">Sin criterio por ahora</option>
+          </select>
+        </div>
+        <div class="form-group"><label>EVA / Dolor (0-10)</label>
+          <select id="emEVA">
+            <option value="">-</option>
+            <option>0 — Sin dolor</option><option>1</option><option>2</option><option>3</option>
+            <option>4</option><option>5 — Dolor moderado</option><option>6</option><option>7</option>
+            <option>8</option><option>9</option><option>10 — Dolor insoportable</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Estado general -->
+    <div class="form-section">
+      <div class="form-section-title"><i class="ti ti-brain"></i> Estado general</div>
+      <div class="form-row three">
+        <div class="form-group"><label>Conciencia / Colaboración</label>
+          <select id="emConciencia">
+            <option value="">-</option>
+            <option>Vigil y lúcido/a — colaborador/a</option>
+            <option>Vigil — parcialmente colaborador/a</option>
+            <option>Vigil — no colaborador/a</option>
+            <option>Vigil — excitación psicomotriz</option>
+            <option>Somnoliento/a — responde al llamado</option>
+            <option>Somnoliento/a — no responde</option>
+            <option>Estuporoso/a</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Orientación</label>
+          <select id="emOrientacion">
+            <option value="">-</option>
+            <option>Orientado/a en 3 esferas</option>
+            <option>Desorientado/a en tiempo</option>
+            <option>Desorientado/a en tiempo y espacio</option>
+            <option>Desorientado/a en todo</option>
+            <option>No evaluable</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Motivo de no atención (si aplica)</label>
+          <select id="emNoAtencion">
+            <option value="">Sí se realizó atención</option>
+            <option>Refiere dolor — no tolera</option>
+            <option>Somnoliento/a — no colabora</option>
+            <option>Se niega a la atención</option>
+            <option>En quirófano / procedimiento</option>
+            <option>Hemodinámicamente inestable</option>
+            <option>No se encontraba en habitación</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Interfaz O2 (aparece para respiratorio y post UTI) -->
+    <div class="form-section" id="emSeccionO2">
+      <div class="form-section-title"><i class="ti ti-lungs"></i> Oxigenoterapia / Respiratorio</div>
+      <div class="form-row four">
+        <div class="form-group"><label>Interfaz O₂</label>
+          <select id="emInterfazO2">
+            <option value="">-</option>
+            <option>Aire ambiente</option>
+            <option>Cánula nasal</option>
+            <option>Máscara Venturi</option>
+            <option>Máscara reservorio</option>
+            <option>VMNI</option>
+            <option>CNAF</option>
+            <option>TET</option>
+            <option>TQT</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Flujo / FiO₂</label><input type="text" id="emFlujoO2" placeholder="ej: 2 l/min o 0.35"></div>
+        <div class="form-group"><label>SpO₂ (%)</label><input type="number" id="emSpO2" inputmode="numeric" min="50" max="100"></div>
+        <div class="form-group"><label>FR (rpm)</label><input type="number" id="emFR" inputmode="numeric"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Auscultación</label>
+          <select id="emAuscult">
+            <option value="">-</option>
+            <option>BEAB sin ruidos agregados</option>
+            <option>MV disminuido generalizado</option>
+            <option>MV disminuido en base derecha</option>
+            <option>MV disminuido en base izquierda</option>
+            <option>MV disminuido en ambas bases</option>
+            <option>Crepitantes bibasales</option>
+            <option>Crepitantes base derecha</option>
+            <option>Crepitantes base izquierda</option>
+            <option>Roncus bilaterales</option>
+            <option>Sibilancias</option>
+            <option>No evaluada</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Tos</label>
+          <select id="emTos">
+            <option value="">-</option>
+            <option>Efectiva y productiva</option>
+            <option>Efectiva seca</option>
+            <option>Parcialmente efectiva</option>
+            <option>No efectiva</option>
+            <option>No evaluada</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Nivel funcional -->
+    <div class="form-section">
+      <div class="form-section-title"><i class="ti ti-run"></i> Nivel funcional alcanzado hoy</div>
+      <div class="tag-group" id="emLogrosContainer">
+        <span class="tag" onclick="toggleTag(this)">Cuidados posicionales</span>
+        <span class="tag" onclick="toggleTag(this)">Movilidad pasiva en cama</span>
+        <span class="tag" onclick="toggleTag(this)">Movilidad activo-asistida</span>
+        <span class="tag" onclick="toggleTag(this)">Movilidad activa en cama</span>
+        <span class="tag" onclick="toggleTag(this)">Ejercicios de fortalecimiento</span>
+        <span class="tag" onclick="toggleTag(this)">Ejercicios de equilibrio</span>
+        <span class="tag" onclick="toggleTag(this)">Rolados</span>
+        <span class="tag" onclick="toggleTag(this)">SBC — máx. asistencia</span>
+        <span class="tag" onclick="toggleTag(this)">SBC — moder. asistencia</span>
+        <span class="tag" onclick="toggleTag(this)">SBC — mín. asistencia</span>
+        <span class="tag" onclick="toggleTag(this)">SBC independiente</span>
+        <span class="tag" onclick="toggleTag(this)">Transferencia a silla</span>
+        <span class="tag" onclick="toggleTag(this)">Bipedestación — máx. asistencia</span>
+        <span class="tag" onclick="toggleTag(this)">Bipedestación — moder. asistencia</span>
+        <span class="tag" onclick="toggleTag(this)">Bipedestación — mín. asistencia</span>
+        <span class="tag" onclick="toggleTag(this)">Bipedestación independiente</span>
+        <span class="tag" onclick="toggleTag(this)">Marcha — máx. asistencia</span>
+        <span class="tag" onclick="toggleTag(this)">Marcha — moder. asistencia</span>
+        <span class="tag" onclick="toggleTag(this)">Marcha — mín. asistencia</span>
+        <span class="tag" onclick="toggleTag(this)">Marcha con andador</span>
+        <span class="tag" onclick="toggleTag(this)">Marcha con bastón</span>
+        <span class="tag" onclick="toggleTag(this)">Marcha independiente — habitación</span>
+        <span class="tag" onclick="toggleTag(this)">Marcha independiente — pasillo</span>
+        <span class="tag" onclick="toggleTag(this)">Deglución evaluada</span>
+        <span class="tag" onclick="toggleTag(this)">Aerosolterapia</span>
+        <span class="tag" onclick="toggleTag(this)">Control respiratorio</span>
+        <span class="tag" onclick="toggleTag(this)">Aspiración de secreciones</span>
+        <span class="tag" onclick="toggleTag(this)">Control de cuff</span>
+        <span class="tag" onclick="toggleTag(this)">Higiene de VAA</span>
+        <span class="tag" onclick="toggleTag(this)">Pautas a familiar</span>
+        <span class="tag" onclick="toggleTag(this)">Se niega a la atención</span>
+      </div>
+      <div class="form-row" style="margin-top:10px">
+        <div class="form-group"><label>FAC (marcha)</label>
+          <select id="emFAC">
+            <option value="">-</option>
+            <option>0 — No deambula</option>
+            <option>1 — Asistencia de 2 personas</option>
+            <option>2 — Asistencia continua de 1</option>
+            <option>3 — Supervisión</option>
+            <option>4 — Independiente superficie plana</option>
+            <option>5 — Independiente todo terreno</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Tolerancia</label>
+          <select id="emTolerancia">
+            <option value="">-</option>
+            <option>Buena tolerancia</option>
+            <option>Regular tolerancia</option>
+            <option>Mala tolerancia — suspendido</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sección neurológico -->
+    <div class="form-section" id="emSeccionNeuro" style="display:none">
+      <div class="form-section-title"><i class="ti ti-brain"></i> Neurológico</div>
+      <div class="form-row three">
+        <div class="form-group"><label>Hemicuerpo afectado</label>
+          <select id="emHemi"><option value="">-</option><option>Derecho</option><option>Izquierdo</option><option>Bilateral</option></select>
+        </div>
+        <div class="form-group"><label>Control de tronco</label>
+          <select id="emControlTronco"><option value="">-</option><option>Independiente</option><option>Con mín. asistencia</option><option>Con moder. asistencia</option><option>Con máx. asistencia</option><option>Sin control</option></select>
+        </div>
+        <div class="form-group"><label>Deglución</label>
+          <select id="emDeglusion"><option value="">-</option><option>Apta toda consistencia</option><option>Apta SS y líquidos</option><option>Apta semisólidos</option><option>Disfagia severa — enteral</option><option>No evaluada</option></select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sección pre/post quirúrgico -->
+    <div class="form-section" id="emSeccionQx" style="display:none">
+      <div class="form-section-title"><i class="ti ti-cut"></i> Quirúrgico</div>
+      <div class="form-row three">
+        <div class="form-group"><label>Día POP</label><input type="number" id="emDiaPOP" inputmode="numeric"></div>
+        <div class="form-group"><label>Autorización de carga</label>
+          <select id="emCarga"><option value="">-</option><option>Sin autorización</option><option>Carga parcial autorizada</option><option>Carga total autorizada</option></select>
+        </div>
+        <div class="form-group"><label>Herida / drenajes</label>
+          <select id="emHerida"><option value="">-</option><option>Sin particularidades</option><option>Con drenaje activo</option><option>Débito hemático</option><option>Débito serohemático</option><option>Signos de infección</option></select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sección amputado -->
+    <div class="form-section" id="emSeccionAmputado" style="display:none">
+      <div class="form-section-title"><i class="ti ti-tools"></i> Amputado</div>
+      <div class="form-row three">
+        <div class="form-group"><label>Nivel de amputación</label>
+          <select id="emNivelAmp"><option value="">-</option><option>Transtibial</option><option>Transfemoral</option><option>Transmetatarsiana</option><option>Desarticulación de cadera</option><option>MMSS — especificar en obs.</option></select>
+        </div>
+        <div class="form-group"><label>Estado del muñón</label>
+          <select id="emMunon"><option value="">-</option><option>Sin particularidades</option><option>Dolor en muñón</option><option>Dolor miembro fantasma</option><option>Edema</option><option>Infección / secreción</option></select>
+        </div>
+        <div class="form-group"><label>Vendaje de muñón</label>
+          <select id="emVendaje"><option value="">-</option><option>Sí realizado</option><option>No — motivo en obs.</option></select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Observación libre -->
+    <div class="form-section">
+      <div class="form-section-title"><i class="ti ti-notes"></i> Evolución / Observaciones</div>
+      <div class="form-group"><textarea id="emObs" rows="3" placeholder="Estado general, respuesta al tratamiento, novedades, pautas dadas a familiar…"></textarea></div>
+    </div>
+
+    <!-- Timeline -->
+    <hr class="sep">
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--blue-600);margin-bottom:8px">
+      <i class="ti ti-history"></i> Evoluciones anteriores
+    </div>
+    <div id="evoMinTimeline"></div>
+
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modalEvoMin')">Cerrar</button>
+      <button class="btn btn-ghost" id="btnAbrirFichaNeuro" onclick="openFichaNeuroFromEvo()" style="display:none">
+        <i class="ti ti-brain"></i>Ficha neurológica
+      </button>
+      <button class="btn btn-success" onclick="guardarEvoMin()"><i class="ti ti-device-floppy"></i>Guardar evolución</button>
     </div>
   </div>
 </div>
@@ -1893,6 +2405,449 @@ function showToast(msg, type='info'){
   toastTimer = setTimeout(()=>t.classList.remove('show'),3000);
 }
 
+
+// ════════════════════════════════════════════════════════
+//  MÓDULO CUIDADOS MÍNIMOS
+// ════════════════════════════════════════════════════════
+const ES_MINIMOS = sala => sala === 'MIN-B' || sala === 'MIN-C';
+
+const TIPO_KINE_LABEL = {
+  respiratorio:'🫁 Respiratorio', neurologico:'🧠 Neurológico',
+  pre_qx:'🔪 Pre-quirúrgico', post_qx:'🔪 Post-quirúrgico',
+  amputado:'🦾 Amputado', quemado:'🔥 Quemado',
+  post_uti:'🏥 Post UTI', otro:'📋 Otro'
+};
+
+let currentEvoMinPacId = null;
+let currentNeuroData = {}; // fichas neurológicas por paciente
+let neuroEditPacId = null;
+
+// Mostrar/ocultar campo tipo kine según sala seleccionada
+document.getElementById('fSala')?.addEventListener('change', function(){
+  const sala = this.value;
+  const esMin = ES_MINIMOS(sala);
+  document.getElementById('fTipoKineRow').style.display = esMin ? 'block' : 'none';
+  document.getElementById('fEstFxRow').style.display = esMin ? 'grid' : 'none';
+  updateCamaHint();
+});
+
+// Abrir evolución: detectar si es Mínimos o UTI/Emergencia
+function openEvolucionAdaptado(patientId){
+  const p = patients.find(x=>x.id===patientId);
+  if(!p) return;
+  if(ES_MINIMOS(p.sala)){
+    openEvolucionMin(patientId);
+  } else {
+    openEvolucion(patientId);
+  }
+}
+
+// ── Evolución Mínimos ──────────────────────────────────
+function openEvolucionMin(patientId){
+  const p = patients.find(x=>x.id===patientId);
+  if(!p) return;
+  currentEvoMinPacId = patientId;
+  const todayStr = today();
+
+  document.getElementById('evoMinTitle').textContent = `${p.apellido}, ${p.nombre}`;
+  const tipoLabel = TIPO_KINE_LABEL[p.tipoKine] || '';
+  document.getElementById('evoMinSub').textContent =
+    `${tipoLabel} · ${SALA_LABEL[p.sala]||p.sala} C${p.cama||'—'} · ${p.diagnostico||'—'}`;
+
+  // Reset campos
+  ['emDate','emFlujoO2','emSpO2','emFR','emDiaPOP','emObs'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  ['emTurno','emFrecuencia','emEVA','emConciencia','emOrientacion','emNoAtencion',
+   'emInterfazO2','emAuscult','emTos','emFAC','emTolerancia',
+   'emHemi','emControlTronco','emDeglusion','emCarga','emHerida',
+   'emNivelAmp','emMunon','emVendaje'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  document.querySelectorAll('#emLogrosContainer .tag.active').forEach(t=>t.classList.remove('active'));
+
+  document.getElementById('emDate').value = todayStr;
+  document.getElementById('emTurno').value = currentShift();
+  document.getElementById('emKine').value = currentUser.name;
+
+  // Contadores de días
+  const diasHosp = p.fIHosp ? daysBetween(p.fIHosp, todayStr) + 1 : null;
+  const fSector = p.fISector || p.fIUTI;
+  const diasSector = fSector ? daysBetween(fSector, todayStr) + 1 : null;
+  const counters = document.getElementById('emDayCounters');
+  counters.innerHTML = [
+    diasHosp ? `<div class="day-counter"><div class="dc-val">${diasHosp}</div><div class="dc-label">Día hosp.</div></div>` : '',
+    diasSector ? `<div class="day-counter" style="background:var(--teal-50);border-color:var(--teal-100)"><div class="dc-val" style="color:var(--teal-700)">${diasSector}</div><div class="dc-label" style="color:var(--teal-500)">Día ${SALA_LABEL[p.sala]||p.sala}</div></div>` : '',
+  ].filter(Boolean).join('');
+
+  // Mostrar/ocultar secciones según tipo
+  const tipo = p.tipoKine || 'otro';
+  const showO2 = ['respiratorio','post_uti','quemado','post_qx'].includes(tipo);
+  const showNeuro = tipo === 'neurologico' || tipo === 'post_uti';
+  const showQx = tipo === 'pre_qx' || tipo === 'post_qx';
+  const showAmputado = tipo === 'amputado';
+
+  document.getElementById('emSeccionO2').style.display = showO2 ? 'block' : 'none';
+  document.getElementById('emSeccionNeuro').style.display = showNeuro ? 'block' : 'none';
+  document.getElementById('emSeccionQx').style.display = showQx ? 'block' : 'none';
+  document.getElementById('emSeccionAmputado').style.display = showAmputado ? 'block' : 'none';
+
+  // Botón de ficha neurológica solo para neurológicos
+  document.getElementById('btnAbrirFichaNeuro').style.display = tipo === 'neurologico' ? 'inline-flex' : 'none';
+
+  // Prefill frecuencia desde el paciente
+  if(p.frecuencia) document.getElementById('emFrecuencia').value = p.frecuencia;
+
+  renderEvoMinTimeline(patientId);
+  openModal('modalEvoMin');
+}
+
+async function guardarEvoMin(){
+  const date = document.getElementById('emDate').value;
+  if(!date){ showToast('Ingresá la fecha','error'); return; }
+  const G = id => document.getElementById(id)?.value?.trim() || '';
+  const GN = id => { const v=parseFloat(G(id)); return isNaN(v)?'':v; };
+  const logros = [...document.querySelectorAll('#emLogrosContainer .tag.active')].map(t=>t.textContent.trim());
+
+  const evo = {
+    id:Date.now(), patientId:currentEvoMinPacId, date, turno:G('emTurno'), kine:G('emKine'),
+    tipo_evo:'minimos',
+    frecuencia:G('emFrecuencia'), eva:G('emEVA'),
+    conciencia:G('emConciencia'), orientacion:G('emOrientacion'), noAtencion:G('emNoAtencion'),
+    interfazO2:G('emInterfazO2'), flujoO2:G('emFlujoO2'), spo2:GN('emSpO2'), fr:GN('emFR'),
+    auscultacion:G('emAuscult'), tos:G('emTos'),
+    logros, fac:G('emFAC'), tolerancia:G('emTolerancia'),
+    hemi:G('emHemi'), controlTronco:G('emControlTronco'), deglusion:G('emDeglusion'),
+    diaPOP:GN('emDiaPOP'), carga:G('emCarga'), herida:G('emHerida'),
+    nivelAmp:G('emNivelAmp'), munon:G('emMunon'), vendaje:G('emVendaje'),
+    obs:G('emObs'),
+    tecnicas:[],
+  };
+
+  // Actualizar frecuencia del paciente
+  const idx = patients.findIndex(x=>x.id===currentEvoMinPacId);
+  if(idx>=0 && evo.frecuencia) patients[idx].frecuencia = evo.frecuencia;
+
+  evoluciones.unshift(evo);
+  await persistAll();
+  const p = patients.find(x=>x.id===currentEvoMinPacId);
+  addLog('evolve',`Evo Min: ${p?.apellido} (${fmtDate(date)})`);
+  showToast('Evolución guardada','success');
+  renderEvoMinTimeline(currentEvoMinPacId);
+  renderAll();
+}
+
+function renderEvoMinTimeline(patientId){
+  const evos = evoluciones.filter(e=>e.patientId===patientId)
+    .sort((a,b)=>b.date.localeCompare(a.date)||b.id-a.id);
+  const el = document.getElementById('evoMinTimeline');
+  if(!evos.length){ el.innerHTML='<div class="empty"><i class="ti ti-notes-off"></i><p>Sin evoluciones</p></div>'; return; }
+  el.innerHTML='<div class="timeline">'+evos.slice(0,10).map((e,i)=>{
+    if(e.tipo==='traslado'||e.tipo==='alta'||e.tipo==='obito'){
+      const cm={traslado:'var(--blue-400)',alta:'var(--teal-400)',obito:'var(--red-400)'};
+      const im={traslado:'ti-arrows-transfer-up',alta:'ti-home-check',obito:'ti-heart-off'};
+      return `<div class="evo-entry"><div class="evo-card" style="border-left:3px solid ${cm[e.tipo]}">
+        <div class="evo-card-header"><span class="evo-date">${fmtDate(e.date)}</span><span class="evo-kine">${e.kine||''}</span></div>
+        <div style="font-size:12px;font-weight:500">${e.obs||''}</div>
+      </div></div>`;
+    }
+    const logrosHtml = e.logros?.length ? e.logros.map(l=>`<span class="badge badge-teal" style="font-size:9px;margin:1px">${l}</span>`).join('') : '';
+    return `<div class="evo-entry ${i===0?'latest':''}"><div class="evo-card">
+      <div class="evo-card-header">
+        <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
+          <span class="evo-date">${fmtDate(e.date)}</span>
+          <span class="badge badge-gray" style="font-size:9px">${e.turno||''}</span>
+          ${e.fac?`<span class="badge badge-blue" style="font-size:9px">FAC ${e.fac.split(' ')[0]}</span>`:''}
+          ${e.tolerancia?`<span class="badge ${e.tolerancia.startsWith('Buena')?'badge-teal':e.tolerancia.startsWith('Regular')?'badge-amber':'badge-red'}" style="font-size:9px">${e.tolerancia.split(' ')[0]}</span>`:''}
+          ${e.frecuencia?`<span class="badge badge-purple" style="font-size:9px">${e.frecuencia==='manana'?'Mañana':e.frecuencia==='cada3'?'Cada 3d':e.frecuencia==='cada5'?'Cada 5d':'Sin criterio'}</span>`:''}
+        </div>
+        <span class="evo-kine">${e.kine||'—'}</span>
+      </div>
+      ${e.conciencia?`<div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">${e.conciencia}${e.orientacion?'. '+e.orientacion:''}</div>`:''}
+      ${e.noAtencion && e.noAtencion!=='Sí se realizó atención'?`<div style="font-size:11px;color:var(--amber-600);font-weight:600">⚠ ${e.noAtencion}</div>`:''}
+      ${e.interfazO2?`<div style="font-size:11px;color:var(--blue-700);margin-bottom:3px"><i class="ti ti-lungs"></i> ${e.interfazO2}${e.flujoO2?' — '+e.flujoO2:''}${e.spo2?' · SpO₂ '+e.spo2+'%':''}</div>`:''}
+      ${logrosHtml?`<div style="margin:4px 0">${logrosHtml}</div>`:''}
+      ${e.obs?`<div class="evo-obs">${e.obs}</div>`:''}
+    </div></div>`;
+  }).join('')+'</div>';
+}
+
+function openFichaNeuroFromEvo(){
+  closeModal('modalEvoMin');
+  openFichaNeuro(currentEvoMinPacId);
+}
+
+// ════════════════════════════════════════════════════════
+//  FICHA NEUROLÓGICA
+// ════════════════════════════════════════════════════════
+function openFichaNeuro(patientId){
+  const p = patients.find(x=>x.id===patientId);
+  if(!p) return;
+  neuroEditPacId = patientId;
+
+  document.getElementById('neuroModalTitulo').textContent = 'Ficha Neurológica Kinésica';
+  document.getElementById('neuroModalSub').textContent = `${p.apellido}, ${p.nombre} · ${p.edad||'?'} años · ${p.diagnostico||'—'}`;
+  document.getElementById('neuroFecha').value = today();
+  document.getElementById('neuroKine').value = currentUser.name;
+
+  // Cargar datos previos si existen
+  const fichaExistente = (p.fichasNeuro||[])[0];
+  if(fichaExistente){
+    const M=(id,v)=>{ const el=document.getElementById(id); if(el) el.value=v||''; };
+    M('neuroTipo', fichaExistente.tipo);
+    M('neuroDx', fichaExistente.dx);
+    M('neuroHC', fichaExistente.hc);
+    M('neuroAtc', fichaExistente.atc);
+    M('neuroExFisica', fichaExistente.exFisica);
+    M('neuroHemi', fichaExistente.hemi);
+    M('neuroMotor', fichaExistente.motor);
+    M('neuroTono', fichaExistente.tono);
+    M('neuroBarthelPrev', fichaExistente.barthelPrev);
+    M('neuroBarthelAct', fichaExistente.barthelAct);
+    M('neuroFACPrev', fichaExistente.facPrev);
+    M('neuroFACAct', fichaExistente.facAct);
+    M('neuroPASSMov', fichaExistente.passMov);
+    M('neuroPASSEq', fichaExistente.passEq);
+    M('neuroTCT', fichaExistente.tct);
+    M('neuroSaludAP', fichaExistente.saludAP);
+    // MRC
+    (fichaExistente.mrc||[]).forEach((v,i)=>{
+      document.getElementById(`mrcD${Math.floor(i/2)}`)?.value && null;
+    });
+    if(fichaExistente.mrcD) fichaExistente.mrcD.forEach((v,i)=>{ const el=document.getElementById(`mrcD${i}`); if(el) el.value=v||''; });
+    if(fichaExistente.mrcI) fichaExistente.mrcI.forEach((v,i)=>{ const el=document.getElementById(`mrcI${i}`); if(el) el.value=v||''; });
+    M('neuroConciencia', fichaExistente.conciencia);
+    M('neuroLenguaje', fichaExistente.lenguaje);
+    M('neuroAtencion', fichaExistente.atencion);
+    M('neuroMemoria', fichaExistente.memoria);
+    M('neuroPraxias', fichaExistente.praxias);
+    M('neuroGnosias', fichaExistente.gnosias);
+    M('neuroPfeiffer', fichaExistente.pfeiffer);
+    M('neuroDelirium', fichaExistente.delirium);
+    M('neuroDisfagia', fichaExistente.disfagia);
+    M('neuroDeglObs', fichaExistente.deglObs);
+    M('neuroObjetivos', fichaExistente.objetivos);
+    M('neuroHerramientas', fichaExistente.herramientas);
+    M('neuroConclusiones', fichaExistente.conclusiones);
+  } else {
+    // Prellenar con datos del paciente
+    document.getElementById('neuroDx').value = p.diagnostico||'';
+    document.getElementById('neuroAtc').value = [p.hta==='Sí'?'HTA':'', p.dbt==='Sí'?'DBT':'', p.respi||'', p.cardio||'', p.otrosAnt||''].filter(Boolean).join(', ');
+    // Limpiar resto
+    ['neuroHC','neuroExFisica','neuroObjetivos','neuroHerramientas','neuroConclusiones','neuroDeglObs'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+    ['neuroHemi','neuroMotor','neuroTono','neuroConciencia','neuroLenguaje','neuroAtencion','neuroMemoria','neuroPraxias','neuroGnosias','neuroPfeiffer','neuroDelirium','neuroDisfagia','neuroTipo'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+    ['neuroBarthelPrev','neuroBarthelAct','neuroFACPrev','neuroFACAct','neuroPASSMov','neuroPASSEq','neuroTCT','neuroSaludAP'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+    for(let i=0;i<10;i++){ const d=document.getElementById(`mrcD${i}`), ii=document.getElementById(`mrcI${i}`); if(d)d.value=''; if(ii)ii.value=''; }
+  }
+
+  calcMRCScore();
+  openModal('modalNeuro');
+}
+
+function calcMRCScore(){
+  let sumD=0, sumI=0, total=0, count=0;
+  for(let i=0;i<10;i++){
+    const d=parseFloat(document.getElementById(`mrcD${i}`)?.value)||0;
+    const ii=parseFloat(document.getElementById(`mrcI${i}`)?.value)||0;
+    sumD+=d; sumI+=ii; total+=d+ii; count+=2;
+  }
+  const scoreEl = document.getElementById('mrcSumScore');
+  const totalEl = document.getElementById('mrcTotal');
+  if(scoreEl) scoreEl.textContent = `${sumD}/30 (D) + ${sumI}/30 (I) = ${sumD+sumI}/60`;
+  if(totalEl) totalEl.textContent = `${total}/${count}`;
+}
+
+// Listener para auto-calcular MRC
+for(let i=0;i<10;i++){
+  document.getElementById(`mrcD${i}`)?.addEventListener('input', calcMRCScore);
+  document.getElementById(`mrcI${i}`)?.addEventListener('input', calcMRCScore);
+}
+
+async function guardarFichaNeuro(){
+  const p = patients.find(x=>x.id===neuroEditPacId);
+  if(!p) return;
+  const G = id => document.getElementById(id)?.value?.trim()||'';
+  const GN = id => { const v=parseFloat(G(id)); return isNaN(v)?null:v; };
+
+  const mrcD = [], mrcI = [];
+  for(let i=0;i<10;i++){
+    mrcD.push(GN(`mrcD${i}`));
+    mrcI.push(GN(`mrcI${i}`));
+  }
+  const sumMRC = mrcD.reduce((a,v)=>a+(v||0),0) + mrcI.reduce((a,v)=>a+(v||0),0);
+
+  const ficha = {
+    id:Date.now(), fecha:G('neuroFecha'), kine:G('neuroKine'), tipo:G('neuroTipo'),
+    dx:G('neuroDx'), hc:G('neuroHC'), atc:G('neuroAtc'), exFisica:G('neuroExFisica'),
+    hemi:G('neuroHemi'), motor:G('neuroMotor'), tono:G('neuroTono'),
+    barthelPrev:GN('neuroBarthelPrev'), barthelAct:GN('neuroBarthelAct'),
+    facPrev:GN('neuroFACPrev'), facAct:GN('neuroFACAct'),
+    passMov:GN('neuroPASSMov'), passEq:GN('neuroPASSEq'),
+    tct:GN('neuroTCT'), saludAP:GN('neuroSaludAP'),
+    mrcD, mrcI, sumMRC,
+    conciencia:G('neuroConciencia'), lenguaje:G('neuroLenguaje'),
+    atencion:G('neuroAtencion'), memoria:G('neuroMemoria'),
+    praxias:G('neuroPraxias'), gnosias:G('neuroGnosias'),
+    pfeiffer:G('neuroPfeiffer'), delirium:G('neuroDelirium'),
+    disfagia:G('neuroDisfagia'), deglObs:G('neuroDeglObs'),
+    objetivos:G('neuroObjetivos'), herramientas:G('neuroHerramientas'),
+    conclusiones:G('neuroConclusiones'),
+  };
+
+  const idx = patients.findIndex(x=>x.id===neuroEditPacId);
+  if(!patients[idx].fichasNeuro) patients[idx].fichasNeuro = [];
+  patients[idx].fichasNeuro.unshift(ficha);
+
+  await persistAll();
+  showToast('Ficha neurológica guardada','success');
+  closeModal('modalNeuro');
+}
+
+// ── Exportar ficha neurológica como HTML imprimible ──────
+async function exportarFichaNeuro(){
+  const p = patients.find(x=>x.id===neuroEditPacId);
+  if(!p){ showToast('Guardá la ficha primero','error'); return; }
+  const G = id => document.getElementById(id)?.value?.trim()||'';
+  const GN = id => { const v=parseFloat(G(id)); return isNaN(v)?'—':v; };
+
+  const MRC_GRUPOS = ['Abd. hombro','Flex. codo','Ext. muñeca','Ext. codo','Ext. dedos','Flex. cadera','Ext. rodilla','Dorsifl. tobillo','Ext. hallux','Flex. plantar'];
+  const mrcRows = MRC_GRUPOS.map((g,i)=>`
+    <tr><td>${g}</td><td style="text-align:center">${G(`mrcD${i}`)||'—'}</td><td style="text-align:center">${G(`mrcI${i}`)||'—'}</td></tr>`).join('');
+
+  // Convertir logo a base64 (ya están en el HTML)
+  const logos64 = document.querySelector('.login-logo img')?.src || '';
+
+  const html = `<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8">
+<title>Ficha Neurológica — ${p.apellido}, ${p.nombre}</title>
+<style>
+  @page { size: A4; margin: 15mm 18mm; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, sans-serif; font-size: 11px; color: #222; line-height: 1.5; }
+  .header { display:flex; align-items:center; justify-content:space-between; border-bottom:3px solid #185FA5; padding-bottom:8px; margin-bottom:12px; }
+  .header-logos { display:flex; align-items:center; gap:8px; }
+  .header-logo-img { height:36px; }
+  .header-title { text-align:right; }
+  .header-title h2 { font-size:14px; color:#185FA5; font-weight:700; }
+  .header-title p { font-size:10px; color:#666; }
+  .patient-bar { background:#E6F1FB; padding:8px 12px; border-radius:6px; margin-bottom:12px; display:flex; gap:20px; flex-wrap:wrap; }
+  .patient-bar span { font-size:11px; } .patient-bar strong { color:#185FA5; }
+  h3 { font-size:11px; font-weight:700; color:#185FA5; text-transform:uppercase; letter-spacing:.5px; border-bottom:1px solid #B5D4F4; padding-bottom:3px; margin:12px 0 6px; }
+  table { width:100%; border-collapse:collapse; font-size:10.5px; margin-bottom:8px; }
+  th { background:#E6F1FB; padding:5px 8px; text-align:left; font-size:10px; color:#185FA5; }
+  td { padding:4px 8px; border-bottom:1px solid #eee; vertical-align:top; }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .grid3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }
+  .grid4 { display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:8px; }
+  .field { margin-bottom:5px; }
+  .field label { font-size:9px; color:#666; text-transform:uppercase; letter-spacing:.4px; display:block; }
+  .field span { font-size:11px; font-weight:600; }
+  .score-box { display:inline-flex; flex-direction:column; align-items:center; padding:6px 12px; border-radius:8px; background:#E6F1FB; margin:4px; }
+  .score-box .val { font-size:20px; font-weight:700; color:#185FA5; }
+  .score-box .lbl { font-size:9px; color:#666; text-transform:uppercase; }
+  .obs-box { background:#fffbf0; border-left:3px solid #BA7517; padding:6px 10px; border-radius:0 6px 6px 0; font-size:11px; margin-top:4px; }
+  .footer { margin-top:20px; border-top:1px solid #ccc; padding-top:10px; display:flex; justify-content:space-between; font-size:10px; color:#666; }
+  .firma { text-align:center; margin-top:40px; }
+  .firma-line { border-top:1px solid #333; width:200px; margin:0 auto 4px; }
+  @media print { body { -webkit-print-color-adjust:exact; print-color-adjust:exact; } }
+  .circles-bg { position:fixed; bottom:0; right:0; opacity:.06; z-index:-1; }
+</style>
+</head><body>
+
+<div class="header">
+  <div class="header-logos">
+    ${logos64 ? `<img src="${logos64}" alt="HBEE" class="header-logo-img" style="border-radius:8px">` : ''}
+    <div>
+      <div style="font-size:13px;font-weight:700;color:#185FA5">Hospital de Alta Complejidad del</div>
+      <div style="font-size:13px;font-weight:700;color:#185FA5">Bicentenario Esteban Echeverría</div>
+      <div style="font-size:10px;color:#666">Servicio de Kinesiología</div>
+    </div>
+  </div>
+  <div class="header-title">
+    <h2>FICHA DE EVALUACIÓN NEUROLÓGICA KINÉSICA</h2>
+    <p>Fecha: ${fmtDate(G('neuroFecha'))} · ${G('neuroTipo')||'Evaluación'}</p>
+  </div>
+</div>
+
+<div class="patient-bar">
+  <span><strong>Paciente:</strong> ${p.apellido}, ${p.nombre}</span>
+  <span><strong>DNI:</strong> ${p.dni||'—'}</span>
+  <span><strong>Edad:</strong> ${p.edad||'—'} años</span>
+  <span><strong>Sala:</strong> ${SALA_LABEL[p.sala]||p.sala} — Cama ${p.cama||'—'}</span>
+  <span><strong>Dx:</strong> ${G('neuroDx')||p.diagnostico||'—'}</span>
+  <span><strong>FI Hospital:</strong> ${fmtDate(p.fIHosp)}</span>
+</div>
+
+<h3>Resumen de Historia Clínica</h3>
+<p>${G('neuroHC')||'—'}</p>
+<div class="field" style="margin-top:5px"><label>Antecedentes</label><span>${G('neuroAtc')||'—'}</span></div>
+
+<h3>Exploración Física</h3>
+<p>${G('neuroExFisica')||'—'}</p>
+<div class="grid3" style="margin-top:6px">
+  <div class="field"><label>Hemicuerpo afectado</label><span>${G('neuroHemi')||'—'}</span></div>
+  <div class="field"><label>Alteración motora</label><span>${G('neuroMotor')||'—'}</span></div>
+  <div class="field"><label>Tono muscular</label><span>${G('neuroTono')||'—'}</span></div>
+</div>
+
+<h3>Escalas Funcionales</h3>
+<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px">
+  ${[['Barthel previo',GN('neuroBarthelPrev'),'/100'],['Barthel actual',GN('neuroBarthelAct'),'/100'],
+     ['FAC previo',GN('neuroFACPrev'),'/5'],['FAC actual',GN('neuroFACAct'),'/5'],
+     ['PASS movilidad',GN('neuroPASSMov'),'/21'],['PASS equilibrio',GN('neuroPASSEq'),'/15'],
+     ['TCT',GN('neuroTCT'),'/100'],['Salud autopercibida',GN('neuroSaludAP'),'/10']
+  ].map(([l,v,u])=>`<div class="score-box"><div class="val">${v}${u}</div><div class="lbl">${l}</div></div>`).join('')}
+</div>
+
+<h3>MRC — Fuerza Muscular por Grupos</h3>
+<table>
+  <thead><tr><th>Grupo muscular</th><th style="text-align:center">Derecho</th><th style="text-align:center">Izquierdo</th></tr></thead>
+  <tbody>${mrcRows}</tbody>
+  <tfoot><tr style="background:#E6F1FB;font-weight:700">
+    <td>MRC Sum Score</td>
+    <td colspan="2" style="text-align:center">${document.getElementById('mrcSumScore')?.textContent||'—'}</td>
+  </tr></tfoot>
+</table>
+
+<h3>Funciones Cerebrales Superiores</h3>
+<div class="grid4">
+  ${[['Conciencia',G('neuroConciencia')],['Lenguaje',G('neuroLenguaje')],['Atención',G('neuroAtencion')],['Memoria',G('neuroMemoria')],['Praxias',G('neuroPraxias')],['Gnosias',G('neuroGnosias')],['Pfeiffer',G('neuroPfeiffer')],['Delirium',G('neuroDelirium')]].map(([l,v])=>`<div class="field"><label>${l}</label><span>${v||'—'}</span></div>`).join('')}
+</div>
+
+<h3>Deglución</h3>
+<div class="grid2">
+  <div class="field"><label>Grado de disfagia</label><span>${G('neuroDisfagia')||'—'}</span></div>
+  <div class="field"><label>Observaciones</label><span>${G('neuroDeglObs')||'—'}</span></div>
+</div>
+
+<h3>Objetivos de Rehabilitación</h3>
+<div class="obs-box">${G('neuroObjetivos')||'—'}</div>
+
+<h3>Herramientas / Puntos Terapéuticos</h3>
+<div class="obs-box">${G('neuroHerramientas')||'—'}</div>
+
+<h3>Conclusiones y Recomendaciones</h3>
+<div class="obs-box">${G('neuroConclusiones')||'—'}</div>
+
+<div class="firma">
+  <div class="firma-line"></div>
+  <div style="font-size:11px;font-weight:700">${G('neuroKine') || currentUser?.name || '—'}</div>
+  <div style="font-size:10px;color:#666">Kinesióloga/o · Servicio de Kinesiología HBEE</div>
+</div>
+
+<div class="footer">
+  <span>Hospital de Alta Complejidad del Bicentenario Esteban Echeverría</span>
+  <span>Pase de Kinesiología · ${new Date().getFullYear()} — Año de la Grandeza Argentina</span>
+</div>
+
+</body></html>`;
+
+  const w = window.open('', '_blank');
+  w.document.write(html);
+  w.document.close();
+  setTimeout(()=>w.print(), 600);
+}
+
 // ════════════════════════════════════════════════════════
 //  EGRESO / TRASLADO
 // ════════════════════════════════════════════════════════
@@ -2209,10 +3164,10 @@ function renderPatientRow(p, todayStr){
         ${!tieneHoy ? '<span class="badge badge-red" style="font-size:9px;"><i class="ti ti-alert-circle"></i> Sin evo. hoy</span>' : ''}
       </div>
       <div class="p-name" style="margin-top:4px">${p.apellido}, ${p.nombre}</div>
-      <div class="p-meta">${p.diagnostico||'—'} · ${p.edad||'?'} años · ${diasUTI!=null?diasUTI+' días UTI':'—'}</div>
+      <div class="p-meta">${p.tipoKine?`<span class="tipo-kine-badge">${TIPO_KINE_LABEL[p.tipoKine]||p.tipoKine}</span> · `:''}${p.diagnostico||'—'} · ${p.edad||'?'} años · ${diasUTI!=null?diasUTI+' días '+(''+diasUTI).replace(/\d+/,'')+' sector':'—'}</div>
     </div>
     <div class="p-actions">
-      <button class="btn-evolve" onclick="openEvolucion(${p.id})">
+      <button class="btn-evolve" onclick="openEvolucionAdaptado(${p.id})">
         <i class="ti ti-stethoscope"></i> Evolucionar
         <span class="evo-count">${nEvo}</span>
       </button>
@@ -2253,7 +3208,7 @@ function _OLD_renderDashboard_REPLACED(){ // placeholder
           ${!tieneHoy ? '<span class="badge badge-red" style="font-size:9px;"><i class="ti ti-alert-circle"></i> Sin evo. hoy</span>' : ''}
         </div>
         <div class="p-name" style="margin-top:4px">${p.apellido}, ${p.nombre}</div>
-        <div class="p-meta">${p.diagnostico||'—'} · ${p.edad||'?'} años · ${diasUTI!=null?diasUTI+' días UTI':'—'}</div>
+        <div class="p-meta">${p.tipoKine?`<span class="tipo-kine-badge">${TIPO_KINE_LABEL[p.tipoKine]||p.tipoKine}</span> · `:''}${p.diagnostico||'—'} · ${p.edad||'?'} años · ${diasUTI!=null?diasUTI+' días '+(''+diasUTI).replace(/\d+/,'')+' sector':'—'}</div>
       </div>
       <div class="p-actions">
         <button class="btn-evolve" onclick="openEvolucion(${p.id})">
@@ -2322,7 +3277,7 @@ function filterDash(q){
           ${!tieneHoy?'<span class="badge badge-red" style="font-size:9px;"><i class="ti ti-alert-circle"></i> Sin evo. hoy</span>':''}
         </div>
         <div class="p-name" style="margin-top:4px">${p.apellido}, ${p.nombre}</div>
-        <div class="p-meta">${p.diagnostico||'—'} · ${p.edad||'?'} años · ${diasUTI!=null?diasUTI+' días UTI':'—'}</div>
+        <div class="p-meta">${p.tipoKine?`<span class="tipo-kine-badge">${TIPO_KINE_LABEL[p.tipoKine]||p.tipoKine}</span> · `:''}${p.diagnostico||'—'} · ${p.edad||'?'} años · ${diasUTI!=null?diasUTI+' días '+(''+diasUTI).replace(/\d+/,'')+' sector':'—'}</div>
       </div>
       <div class="p-actions">
         <button class="btn-evolve" onclick="openEvolucion(${p.id})"><i class="ti ti-stethoscope"></i> Evolucionar <span class="evo-count">${nEvo}</span></button>
@@ -2376,6 +3331,11 @@ function openNuevoPaciente(){
   campos.forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   document.getElementById('fEstado').value = 'Activo';
   document.getElementById('fKine').value = currentUser.name;
+  document.getElementById('fTipoKine').value = '';
+  document.getElementById('fEstFx').value = '';
+  document.getElementById('fFrecuencia').value = '';
+  document.getElementById('fTipoKineRow').style.display = 'none';
+  document.getElementById('fEstFxRow').style.display = 'none';
   document.getElementById('fFIUTI').value = today();
   if(currentSector) document.getElementById('fSala').value = currentSector;
   openModal('modalPaciente');
@@ -2392,6 +3352,10 @@ function openEditPaciente(id){
   M('fSala',p.sala); M('fCama',p.cama); M('fKine',p.kine);
   M('fFIHosp',p.fIHosp); M('fFIUTI',p.fIUTI); M('fTipoIngreso',p.tipoIngreso);
   M('fDiag',p.diagnostico); M('fMotivo',p.motivo);
+  M('fTipoKine',p.tipoKine); M('fEstFx',p.estFx); M('fFrecuencia',p.frecuencia);
+  const esMin = ES_MINIMOS(p.sala);
+  document.getElementById('fTipoKineRow').style.display = esMin ? 'block' : 'none';
+  document.getElementById('fEstFxRow').style.display = esMin ? 'grid' : 'none';
   M('fApache',p.apache); M('fSaps',p.saps); M('fCharlson',p.charlson); M('fSofa',p.sofa);
   M('fHTA',p.hta); M('fDBT',p.dbt); M('fObesidad',p.obesidad); M('fTBQ',p.tbq);
   M('fRespi',p.respi); M('fCardio',p.cardio); M('fOtrosAnt',p.otrosAnt);
@@ -2411,6 +3375,7 @@ async function guardarPaciente(){
   const data = {
     apellido, nombre:G('fNombre'), dni:G('fDNI'), edad:parseInt(G('fEdad'))||null, genero:G('fGenero'),
     peso, talla, imc, sala:G('fSala'), cama:G('fCama'), kine:G('fKine'),
+    tipoKine:G('fTipoKine'), estFx:G('fEstFx'), frecuencia:G('fFrecuencia'),
     fIHosp:G('fFIHosp'), fIUTI:G('fFIUTI'), tipoIngreso:G('fTipoIngreso'),
     diagnostico:G('fDiag'), motivo:G('fMotivo'),
     apache:parseInt(G('fApache'))||null, saps:parseInt(G('fSaps'))||null,
@@ -2594,6 +3559,8 @@ async function guardarEvolucion(){
     extubacion:G('eExtubacion'), interfazPE:G('eInterfazPE'), nPVE:GN('eNPVE'),
     cuffM:GN('eCuffM'), cuffT:GN('eCuffT'), cuffN:GN('eCuffN'),
     oclusionCanula:G('eOclusionCanula'), deglusion:G('eDeglusion'),
+    tipoCan:G('eTipoCan'), canDI:G('eCanDI'), canDE:G('eCanDE'), estadoBajon:G('eEstadoBajon'),
+    ostoma:G('eOstoma'), secTrqCant:G('eSecTrqCant'), secTrqCal:G('eSecTrqCal'), lof:G('eLOF'),
     tecnicas, secCant:G('eSecCant'), secChar:G('eSecChar'),
     tolerancia:G('eTolerancia'), obs:G('eObs'),
   };
@@ -2605,10 +3572,10 @@ async function guardarEvolucion(){
   // Reset
   const nFields = ['eVT','eVTkg','eFR','ePEEP','eFiO2','eTi','ePC','ePpico','ePplat','ePEEPt','eDP','eCrs','eRinsp','eFlujo',
     'eMP','eER','eCT','eSI','ePH','ePCO2','ePO2','eHCO3','eSpO2','ePAFI',
-    'eSedacion','eAnalgesia','eBNM','eVasoact','ePVEtmin','eNPVE','eCuffM','eCuffT','eCuffN','eObs'];
+    'eSedacion','eAnalgesia','eBNM','eVasoact','ePVEtmin','eNPVE','eCuffM','eCuffT','eCuffN','eCanDI','eCanDE','eObs'];
   nFields.forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   ['eModo','eInterfaz','eRASS','eCPOT','eCAMICU','eVentSed','eAKM1','eAKM2','eMRC',
-   'ePVE','ePVETipo','ePVEresult','eExtubacion','eInterfazPE','eOclusionCanula','eDeglusion',
+   'ePVE','ePVETipo','ePVEresult','eExtubacion','eInterfazPE','eOclusionCanula','eDeglusion','eTipoCan','eEstadoBajon','eOstoma','eSecTrqCant','eSecTrqCal','eLOF',
    'eSecCant','eSecChar','eTolerancia'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   document.querySelectorAll('.tag.active').forEach(t=>t.classList.remove('active'));
   // Reset OCR
