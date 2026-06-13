@@ -1065,6 +1065,63 @@ const LS = {
   set: (k, v) => localStorage.setItem(k, JSON.stringify(v)),
 };
 
+// ── SUPABASE ──────────────────────────────────────────
+const SUPA_URL = 'https://mahtdvrakymuwiapcxjj.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1haHRkdnJha3ltdXdpYXBjeGpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzMjMxMzcsImV4cCI6MjA5Njg5OTEzN30.2ozV6aouldSjqEwKpYnzQdEDdNqu_DGa0qJS6RoPxOo';
+const supaH = { 'Content-Type':'application/json', 'apikey':SUPA_KEY, 'Authorization':'Bearer '+SUPA_KEY };
+
+async function supaFetch(path, options={}){
+  const r = await fetch(SUPA_URL+path, { ...options, headers:{ ...supaH, ...(options.headers||{}) } });
+  if(!r.ok){ const e=await r.text(); throw new Error(e); }
+  return r.status===204 ? null : r.json();
+}
+
+async function loadFromSupabase(){
+  setSyncStatus('syncing');
+  try {
+    const [pacs, evos] = await Promise.all([
+      supaFetch('/rest/v1/pacientes?select=id,data&order=created_at.desc'),
+      supaFetch('/rest/v1/evoluciones?select=id,patient_id,data&order=created_at.desc'),
+    ]);
+    if(pacs && pacs.length > 0){
+      patients = pacs.map(r => ({ ...r.data, id:r.id }));
+      evoluciones = evos ? evos.map(r => ({ ...r.data, id:r.id, patientId:r.patient_id })) : [];
+      savePacientes(); saveEvos();
+    }
+    setSyncStatus('ok');
+    renderAll();
+  } catch(e){
+    console.error(e);
+    setSyncStatus('error');
+    showToast('Error al cargar desde Supabase. Modo local.','error');
+  }
+}
+
+async function saveToSupabase(){
+  setSyncStatus('syncing');
+  try {
+    const pacsPayload = patients.map(p => ({ id:p.id, data:p }));
+    await supaFetch('/rest/v1/pacientes', {
+      method:'POST',
+      headers:{ 'Prefer':'resolution=merge-duplicates' },
+      body: JSON.stringify(pacsPayload)
+    });
+    const evosPayload = evoluciones.map(e => ({ id:e.id, patient_id:e.patientId, data:e }));
+    if(evosPayload.length){
+      await supaFetch('/rest/v1/evoluciones', {
+        method:'POST',
+        headers:{ 'Prefer':'resolution=merge-duplicates' },
+        body: JSON.stringify(evosPayload)
+      });
+    }
+    setSyncStatus('ok');
+  } catch(e){
+    console.error(e);
+    setSyncStatus('error');
+    showToast('Error al guardar en Supabase','error');
+  }
+}
+
 // ════════════════════════════════════════════════════════
 //  DATOS
 // ════════════════════════════════════════════════════════
@@ -1218,9 +1275,9 @@ function startSession(user){
   document.getElementById('navName').textContent = user.name;
   addLog('login',`Ingresó: ${user.name}`);
   updateDashHeader();
-  if(GDRIVE_CONFIG?.clientId) initGoogleDrive();
-  else setSyncStatus('local');
+  setSyncStatus('syncing');
   renderAll();
+  await loadFromSupabase();
 }
 function doLogout(){
   addLog('logout',`Salió: ${currentUser.name}`);
@@ -1334,14 +1391,13 @@ async function saveToDrive(){
 }
 
 async function syncNow(){
-  if(!GDRIVE_CONFIG?.clientId){ showToast('Drive no configurado. Tocá "⚙ Configurar Google Drive" en el login','error'); return; }
-  if(!gAccessToken) initGoogleDrive();
-  else await loadFromDrive();
+  await loadFromSupabase();
+  showToast('Datos actualizados desde Supabase ✓','success');
 }
 
 async function persistAll(){
   savePacientes(); saveEvos();
-  if(gAccessToken) await saveToDrive();
+  await saveToSupabase();
 }
 
 // ════════════════════════════════════════════════════════
