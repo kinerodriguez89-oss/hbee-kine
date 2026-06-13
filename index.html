@@ -1277,7 +1277,7 @@ function startSession(user){
   updateDashHeader();
   setSyncStatus('syncing');
   renderAll();
-  await loadFromSupabase();
+  loadFromSupabase();
 }
 function doLogout(){
   addLog('logout',`Salió: ${currentUser.name}`);
