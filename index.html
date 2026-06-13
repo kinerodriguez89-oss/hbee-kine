@@ -290,6 +290,20 @@ tr:hover td{ background:var(--blue-50); }
 .sala-MIN-B{ background:#d1fae5; color:#065f46; }
 .sala-MIN-C{ background:#f0fdf4; color:#166534; }
 
+/* ── SECTOR SCREEN ── */
+.sector-btn{ display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
+  padding:1.2rem .8rem;border-radius:var(--radius-lg);border:2px solid var(--border);
+  background:var(--gray-50);cursor:pointer;transition:all .15s;font-family:var(--font);
+  font-size:13px;font-weight:600;color:var(--blue-900); }
+.sector-btn i{ font-size:24px;color:var(--blue-400); }
+.sector-btn:hover{ border-color:var(--blue-400);background:var(--blue-50);color:var(--blue-800); }
+.sector-btn:hover i{ color:var(--blue-600); }
+.sector-btn.selected{ border-color:var(--teal-400);background:var(--teal-50);color:var(--teal-800); }
+.sector-badge{ display:inline-flex;align-items:center;gap:5px;background:var(--teal-50);
+  border:1px solid var(--teal-100);color:var(--teal-800);font-size:11px;font-weight:600;
+  padding:3px 10px;border-radius:20px;cursor:pointer; }
+.sector-badge:hover{ background:var(--teal-100); }
+
 /* ─── NÚMERO CELL ─── */
 input[type=number]{ -moz-appearance:textfield; }
 input[type=number]::-webkit-inner-spin-button,
@@ -419,6 +433,44 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
   </div>
 </div>
 
+<!-- ════ SECTOR SCREEN ════ -->
+<div id="sectorScreen" style="display:none;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(145deg,#042C53 0%,#185FA5 55%,#0F6E56 100%);padding:1rem">
+  <div style="background:#fff;border-radius:20px;padding:2rem;width:420px;max-width:100%;box-shadow:0 24px 64px rgba(0,0,0,.28)">
+    <div style="text-align:center;margin-bottom:1.5rem">
+      <div style="display:inline-flex;align-items:center;gap:6px;background:var(--teal-50);color:var(--teal-800);font-size:10px;font-weight:700;padding:4px 12px;border-radius:20px;letter-spacing:.8px;text-transform:uppercase;margin-bottom:1rem"><i class="ti ti-map-pin"></i> Guardia de hoy</div>
+      <h2 style="font-size:18px;font-weight:700;color:var(--blue-900);margin-bottom:4px">¿En qué sector trabajás hoy?</h2>
+      <p style="font-size:12px;color:var(--text-muted)" id="sectorGreeting">Seleccioná tu sector para ver solo tus pacientes</p>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1.5rem" id="sectorBtns">
+      <button class="sector-btn" onclick="selectSector('UTI-A')" data-sala="UTI-A">
+        <i class="ti ti-heart-rate-monitor"></i>
+        <span>UTI A</span>
+      </button>
+      <button class="sector-btn" onclick="selectSector('UTI-B')" data-sala="UTI-B">
+        <i class="ti ti-heart-rate-monitor"></i>
+        <span>UTI B</span>
+      </button>
+      <button class="sector-btn" onclick="selectSector('UTI-C')" data-sala="UTI-C">
+        <i class="ti ti-heart-rate-monitor"></i>
+        <span>UTI C</span>
+      </button>
+      <button class="sector-btn" onclick="selectSector('EMERG')" data-sala="EMERG">
+        <i class="ti ti-ambulance"></i>
+        <span>Emergencia</span>
+      </button>
+      <button class="sector-btn" onclick="selectSector('MIN-B')" data-sala="MIN-B">
+        <i class="ti ti-bed"></i>
+        <span>Cuid. Mínimos B</span>
+      </button>
+      <button class="sector-btn" onclick="selectSector('MIN-C')" data-sala="MIN-C">
+        <i class="ti ti-bed"></i>
+        <span>Cuid. Mínimos C</span>
+      </button>
+    </div>
+    <button class="btn btn-ghost btn-block btn-sm" onclick="doLogout()" style="color:var(--text-muted)"><i class="ti ti-logout"></i>Volver al login</button>
+  </div>
+</div>
+
 <!-- ════ LOGIN ════ -->
 <div id="loginScreen">
   <div class="login-card">
@@ -477,6 +529,9 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
       </div>
       <div class="nav-avatar" id="navAvatar">--</div>
       <span class="nav-user-name" id="navName">--</span>
+      <span class="sector-badge hide-mobile" id="sectorBadge" onclick="changeSector()" style="display:none" title="Cambiar sector">
+        <i class="ti ti-map-pin"></i><span id="sectorBadgeLabel">—</span>
+      </span>
       <button class="btn-logout" onclick="doLogout()"><i class="ti ti-logout"></i></button>
     </div>
   </nav>
@@ -1199,6 +1254,7 @@ let evoluciones = LS.get('hbee_evos') || [
 
 let logs = LS.get('hbee_logs') || [];
 let currentUser = null;
+let currentSector = null; // null = todos (admin), string = sector del kine
 let editPacId = null;
 let currentEvoPacId = null;
 
@@ -1269,11 +1325,43 @@ function quickLogin(name, pass){
 function startSession(user){
   currentUser = user;
   document.getElementById('loginScreen').style.display = 'none';
+  if(user.role === 'kine'){
+    // Mostrar selector de sector
+    document.getElementById('sectorGreeting').textContent = `Bienvenido/a, ${user.name}`;
+    document.getElementById('sectorScreen').style.display = 'flex';
+  } else {
+    // Admin: entra directo con todos los sectores
+    currentSector = null;
+    launchApp();
+  }
+}
+
+function selectSector(sala){
+  currentSector = sala;
+  document.getElementById('sectorScreen').style.display = 'none';
+  launchApp();
+}
+
+function changeSector(){
+  document.getElementById('sectorScreen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+}
+
+function launchApp(){
   document.getElementById('app').style.display = 'flex';
   const av = document.getElementById('navAvatar');
-  av.textContent = user.name.split(' ').map(p=>p[0]).join('').slice(0,2).toUpperCase();
-  document.getElementById('navName').textContent = user.name;
-  addLog('login',`Ingresó: ${user.name}`);
+  av.textContent = currentUser.name.split(' ').map(p=>p[0]).join('').slice(0,2).toUpperCase();
+  document.getElementById('navName').textContent = currentUser.name;
+  // Mostrar badge de sector
+  const badge = document.getElementById('sectorBadge');
+  const badgeLabel = document.getElementById('sectorBadgeLabel');
+  if(currentSector){
+    badge.style.display = 'inline-flex';
+    badgeLabel.textContent = SALA_LABEL[currentSector] || currentSector;
+  } else {
+    badge.style.display = 'none';
+  }
+  addLog('login',`Ingresó: ${currentUser.name}${currentSector?' ('+currentSector+')':''}`);
   updateDashHeader();
   setSyncStatus('syncing');
   renderAll();
@@ -1282,8 +1370,10 @@ function startSession(user){
 function doLogout(){
   addLog('logout',`Salió: ${currentUser.name}`);
   currentUser = null;
+  currentSector = null;
   gAccessToken = null;
   document.getElementById('app').style.display = 'none';
+  document.getElementById('sectorScreen').style.display = 'none';
   document.getElementById('loginScreen').style.display = 'flex';
   document.getElementById('loginUser').value = '';
   document.getElementById('loginPass').value = '';
@@ -1680,6 +1770,75 @@ function renderAll(){
 }
 
 function renderDashboard(){
+  let activos = patients.filter(p=>p.estado==='Activo');
+  // Filtrar por sector si es kine
+  if(currentSector) activos = activos.filter(p=>p.sala===currentSector);
+  // Ordenar por sector para admin (UTI-A, UTI-B, UTI-C, EMERG, MIN-B, MIN-C) y por cama dentro de cada sector
+  const SALA_ORDER = {'UTI-A':1,'UTI-B':2,'UTI-C':3,'EMERG':4,'MIN-B':5,'MIN-C':6};
+  activos.sort((a,b)=>{
+    const so = (SALA_ORDER[a.sala]||9) - (SALA_ORDER[b.sala]||9);
+    if(so!==0) return so;
+    return (parseInt(a.cama)||0) - (parseInt(b.cama)||0);
+  });
+
+  const todayStr = today();
+  const evosHoy = evoluciones.filter(e=>e.date===todayStr && activos.some(p=>p.id===e.patientId));
+  const conARM = activos.filter(p=>p.inicioARM && !p.finARM);
+  const sinEvo = activos.filter(p=>!evoluciones.some(e=>e.patientId===p.id && e.date===todayStr));
+
+  document.getElementById('statActivos').textContent = activos.length;
+  document.getElementById('statHoy').textContent = evosHoy.length;
+  document.getElementById('statARM').textContent = conARM.length;
+  document.getElementById('statSinEvo').textContent = sinEvo.length;
+
+  const cont = document.getElementById('dashPacientes');
+  if(!activos.length){
+    const msg = currentSector ? `No hay pacientes activos en ${SALA_LABEL[currentSector]||currentSector}.` : 'No hay pacientes activos.';
+    cont.innerHTML=`<div class="empty"><i class="ti ti-users-off"></i><p>${msg}</p></div>`;
+    return;
+  }
+  // Para admin: separar por sector con subtítulos
+  let html = '';
+  if(!currentSector){
+    let lastSala = null;
+    activos.forEach(p=>{
+      if(p.sala !== lastSala){
+        html += `<div style="padding:8px 14px 4px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--blue-600);background:var(--blue-50);border-bottom:1px solid var(--border)">${SALA_LABEL[p.sala]||p.sala}</div>`;
+        lastSala = p.sala;
+      }
+      html += renderPatientRow(p, todayStr);
+    });
+  } else {
+    html = activos.map(p=>renderPatientRow(p, todayStr)).join('');
+  }
+  cont.innerHTML = html;
+}
+
+function renderPatientRow(p, todayStr){
+  const nEvo = evoluciones.filter(e=>e.patientId===p.id).length;
+  const tieneHoy = evoluciones.some(e=>e.patientId===p.id && e.date===todayStr);
+  const diasUTI = daysBetween(p.fIUTI, todayStr);
+  return `<div class="patient-row" data-id="${p.id}">
+    <div style="flex:1;min-width:0">
+      <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">
+        ${currentSector?'':salaChip(p.sala)}
+        <span style="font-size:10px;font-weight:600;color:var(--text-muted)">Cama ${p.cama||'—'}</span>
+        ${!tieneHoy ? '<span class="badge badge-red" style="font-size:9px;"><i class="ti ti-alert-circle"></i> Sin evo. hoy</span>' : ''}
+      </div>
+      <div class="p-name" style="margin-top:4px">${p.apellido}, ${p.nombre}</div>
+      <div class="p-meta">${p.diagnostico||'—'} · ${p.edad||'?'} años · ${diasUTI!=null?diasUTI+' días UTI':'—'}</div>
+    </div>
+    <div class="p-actions">
+      <button class="btn-evolve" onclick="openEvolucion(${p.id})">
+        <i class="ti ti-stethoscope"></i> Evolucionar
+        <span class="evo-count">${nEvo}</span>
+      </button>
+      <button class="btn btn-icon btn-sm" onclick="openEditPaciente(${p.id})" title="Editar"><i class="ti ti-pencil"></i></button>
+    </div>
+  </div>`;
+}
+
+function _OLD_renderDashboard_REPLACED(){ // placeholder
   const activos = patients.filter(p=>p.estado==='Activo');
   const todayStr = today();
   const evosHoy = evoluciones.filter(e=>e.date===todayStr);
@@ -1726,7 +1885,11 @@ function renderTabla(){
   const tbody = document.getElementById('tbodyPacientes');
   const filtroE = document.getElementById('filtroEstado')?.value || '';
   let lista = [...patients];
+  if(currentSector) lista = lista.filter(p=>p.sala===currentSector);
   if(filtroE) lista = lista.filter(p=>p.estado===filtroE);
+  // Ordenar por sala y cama
+  const SALA_ORDER = {'UTI-A':1,'UTI-B':2,'UTI-C':3,'EMERG':4,'MIN-B':5,'MIN-C':6};
+  lista.sort((a,b)=>{ const so=(SALA_ORDER[a.sala]||9)-(SALA_ORDER[b.sala]||9); return so||((parseInt(a.cama)||0)-(parseInt(b.cama)||0)); });
   if(!lista.length){
     tbody.innerHTML='<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text-muted)">Sin resultados</td></tr>';
     return;
@@ -1829,6 +1992,7 @@ function openNuevoPaciente(){
   document.getElementById('fEstado').value = 'Activo';
   document.getElementById('fKine').value = currentUser.name;
   document.getElementById('fFIUTI').value = today();
+  if(currentSector) document.getElementById('fSala').value = currentSector;
   openModal('modalPaciente');
 }
 
