@@ -3914,20 +3914,24 @@ function renderIndicadores(){
 //  EXPORTAR DATOS
 // ════════════════════════════════════════════════════════
 function exportarDatos(){
-  // ── Hoja 1: Pacientes ────────────────────────────────
-  const encPac = [
-    'Apellido','Nombre','DNI','Edad','Género','Peso (kg)','Talla (cm)','IMC',
-    'Sala','Cama','Kinesiólogo','Estado',
-    'Fecha ingreso hospital','Fecha ingreso sector','Origen ingreso',
-    'Diagnóstico','Motivo de ingreso',
-    'HTA','DBT','Obesidad','TBQ','Patología respiratoria','Patología cardiovascular','Otros antecedentes',
-    'APACHE II','SAPS II','Charlson','SOFA inicial',
-    'Causa VM','Fecha IOT','Inicio ARM','Fin ARM','Reintubado','TQT','Prono (sesiones)',
-    'Tipo kinesiológico','Estado funcional previo','Frecuencia atención',
-    'Fecha egreso UTI','Fecha alta kinésica',
-  ];
+  const NL = "\n";
+  const BOM = "\uFEFF";
 
-  const filasPac = patients.map(p => [
+  const esc = v => {
+    const s = String(v===null||v===undefined?'':v).replace(/\n/g,' ');
+    return (s.includes(',') || s.includes('"')) ? '"' + s.replace(/"/g,'""') + '"' : s;
+  };
+  const fila = arr => arr.map(esc).join(',');
+
+  // ── Hoja 1: Pacientes ──
+  const encPac = ['Apellido','Nombre','DNI','Edad','Genero','Peso kg','Talla cm','IMC',
+    'Sala','Cama','Kinesiologo','Estado','FI Hospital','FI Sector','Origen ingreso',
+    'Diagnostico','Motivo','HTA','DBT','Obesidad','TBQ','Patol.Resp','Patol.CV','Otros Atc',
+    'APACHE II','SAPS II','Charlson','SOFA','Causa VM','Fecha IOT','Inicio ARM','Fin ARM',
+    'Reintubado','TQT','Prono sesiones','Tipo Kine','Est.Funcional Previo','Frecuencia',
+    'FEgreso UTI','FAlta Kine'];
+
+  const filasPac = patients.map(p => fila([
     p.apellido||'', p.nombre||'', p.dni||'', p.edad||'', p.genero||'',
     p.peso||'', p.talla||'', p.imc||'',
     SALA_LABEL[p.sala]||p.sala||'', p.cama||'', p.kine||'', p.estado||'',
@@ -3940,95 +3944,60 @@ function exportarDatos(){
     p.reintubado||'', p.tqt||'', p.prono||'',
     TIPO_KINE_LABEL[p.tipoKine]||p.tipoKine||'', p.estFx||'', p.frecuencia||'',
     fmtDate(p.fEUTI), fmtDate(p.fEK),
-  ]);
+  ]));
 
-  // ── Hoja 2: Evoluciones ──────────────────────────────
-  const encEvo = [
-    'Apellido','Nombre','DNI','Sala','Cama','Fecha','Turno','Kinesiólogo',
-    'Tipo evolución','Día hosp.','Día sector','Día ARM',
-    'Interfaz','Modo ventilatorio','VT (ml)','VT ml/kg','FR','PEEP','FiO2 (%)','Ti (s)',
-    'Ppico','Pplat','PEEPt','DP','Crs','Rinsp','Flujo','Mec.Power','Elastic Ratio','Cte.Tiempo','Stress Index',
-    'pH','pCO2','pO2','HCO3','SpO2 (%)','PAFI',
-    'RASS','CPOT','CAM-ICU','Ventana sedación',
-    'Sedación','Analgesia','BNM','Vasoactivos',
-    'AKM Mañana','AKM Tarde/Noche','MRC Score',
-    'PVE','Tipo PVE','Duración PVE (min)','Resultado PVE','Extubación','Interfaz post-ext.','N° PVEs',
-    'P.Cuff Mañana','P.Cuff Tarde','P.Cuff Noche',
-    'Tipo cánula','Ø interno','Ø externo','Estado balón',
-    'Sec.traqueales cantidad','Sec.traqueales calidad','LOF','Deglución',
-    'FAC (Mínimos)','Tolerancia','Frecuencia próxima',
-    'Logros del día','Conciencia','Orientación','Auscultación','Tos',
-    'Secreciones cantidad','Secreciones calidad','Tolerancia al tto.',
-    'Técnicas kinesiológicas','Observaciones',
-  ];
+  // ── Hoja 2: Evoluciones ──
+  const encEvo = ['Apellido','Nombre','Sala','Cama','Fecha','Turno','Kinesiologo',
+    'Tipo Evo','Dia Hosp','Dia Sector','Dia ARM',
+    'Interfaz','Modo','VT ml','FR','PEEP','FiO2','Ppico','Pplat','DP','Crs',
+    'pH','pCO2','pO2','SpO2','PAFI',
+    'RASS','CAM-ICU','Sedacion','Analgesia','BNM',
+    'AKM','MRC','PVE','Result PVE','Extubacion',
+    'Cuff M','Cuff T','Cuff N','Tipo Canula','SecTrq Cant','SecTrq Cal','LOF','Deglucion',
+    'FAC','Tolerancia','Frecuencia','Logros','Tecnicas','Observaciones'];
 
   const filasEvo = evoluciones.map(e => {
     const p = patients.find(x=>x.id===e.patientId)||{};
-    return [
-      p.apellido||'', p.nombre||'', p.dni||'',
+    return fila([
+      p.apellido||'', p.nombre||'',
       SALA_LABEL[p.sala]||p.sala||'', p.cama||'',
       fmtDate(e.date), e.turno||'', e.kine||'',
-      e.tipo_evo==='minimos'?'Mínimos':(e.tipo||'UTI/Emergencia'),
+      e.tipo_evo==='minimos'?'Minimos':(e.tipo||'UTI/Emerg'),
       e.diasHosp||'', e.utiDia||'', e.armDia||'',
       e.interfaz||e.interfazO2||'', e.modo||'',
-      e.vt||'', e.vtkg||'', e.fr||'', e.peep||'', e.fio2||'', e.ti||'',
-      e.ppico||'', e.pplat||'', e.peept||'', e.dp||'',
-      e.crs||'', e.rinsp||'', e.flujo||'', e.mp||'', e.er||'', e.ct||'', e.si||'',
-      e.ph||'', e.pco2||'', e.po2||'', e.hco3||'', e.spo2||e.emSpO2||'', e.pafi||'',
-      e.rass||'', e.cpot||'', e.camicu||'', e.ventSed||'',
-      e.sedacion||'', e.analgesia||'', e.bnm||'', e.vasoact||'',
-      e.akm1||'', e.akm2||'', e.mrc||'',
-      e.pve||'', e.pveTipo||'', e.pveMin||'', e.pveResult||'',
-      e.extubacion||'', e.interfazPE||'', e.nPVE||'',
+      e.vt||'', e.fr||'', e.peep||'', e.fio2||'',
+      e.ppico||'', e.pplat||'', e.dp||'', e.crs||'',
+      e.ph||'', e.pco2||'', e.po2||'', e.spo2||'', e.pafi||'',
+      e.rass||'', e.camicu||'', e.sedacion||'', e.analgesia||'', e.bnm||'',
+      e.akm1||'', e.mrc||'', e.pve||'', e.pveResult||'', e.extubacion||'',
       e.cuffM||'', e.cuffT||'', e.cuffN||'',
-      e.tipoCan||'', e.canDI||'', e.canDE||'', e.estadoBajon||'',
-      e.secTrqCant||'', e.secTrqCal||'', e.lof||'', e.deglusion||'',
+      e.tipoCan||'', e.secTrqCant||'', e.secTrqCal||'', e.lof||'', e.deglusion||'',
       e.fac||'', e.tolerancia||'', e.frecuencia||'',
-      (e.logros||[]).join(' | '), e.conciencia||'', e.orientacion||'',
-      e.auscultacion||'', e.tos||'',
-      e.secCant||'', e.secChar||'', e.tolerancia||'',
-      (e.tecnicas||[]).join(' | '), e.obs||'',
-    ];
+      (e.logros||[]).join(' | '),
+      (e.tecnicas||[]).join(' | '),
+      e.obs||'',
+    ]);
   });
 
-  // ── Construir CSV con BOM para Excel (caracteres especiales) ──
-  const toCsv = (headers, rows) => {
-    const esc = v => {
-      const s = String(v===null||v===undefined?'':v);
-      return s.includes(',') || s.includes('"') || s.includes('
-')
-        ? '"' + s.replace(/"/g,'""') + '"' : s;
-    };
-    return [headers, ...rows].map(r => r.map(esc).join(',')).join('
-');
-  };
+  const csv = BOM
+    + "PACIENTES" + NL
+    + fila(encPac) + NL
+    + filasPac.join(NL)
+    + NL + NL
+    + "EVOLUCIONES" + NL
+    + fila(encEvo) + NL
+    + filasEvo.join(NL);
 
-  const csv1 = '﻿' + '=== PACIENTES ===
-' + toCsv(encPac, filasPac);
-  const csv2 = '
-
-=== EVOLUCIONES ===
-' + toCsv(encEvo, filasEvo);
-  const csvFinal = csv1 + csv2;
-
-  const blob = new Blob([csvFinal], { type:'text/csv;charset=utf-8;' });
+  const blob = new Blob([csv], { type:'text/csv;charset=utf-8;' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `HBEE_Kine_${today()}.csv`;
+  a.download = 'HBEE_Kine_' + today() + '.csv';
   a.click();
-
-  addLog('export',`Exportación Excel (${patients.length} pacientes, ${evoluciones.length} evoluciones)`);
-  showToast(`Exportado: ${patients.length} pacientes, ${evoluciones.length} evoluciones`, 'success');
+  addLog('export','Exportacion Excel (' + patients.length + ' pacientes, ' + evoluciones.length + ' evoluciones)');
+  showToast('Exportado: ' + patients.length + ' pacientes, ' + evoluciones.length + ' evoluciones', 'success');
 }
 
-// ════════════════════════════════════════════════════════
-//  INIT
-// ════════════════════════════════════════════════════════
-// Guardar datos demo si no existe nada
-if(!LS.get('hbee_patients')) savePacientes();
-if(!LS.get('hbee_evos')) saveEvos();
 
-// Inicializar visibilidad del formulario de paciente
 function initFormPaciente(){
   document.getElementById('fSeccionScores').style.display = 'block';
   document.getElementById('fSeccionARM').style.display = 'block';
