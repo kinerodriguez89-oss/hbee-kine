@@ -1934,6 +1934,31 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
   </div>
 </div>
 
+<!-- ════ MODAL RESUMEN IA ════ -->
+<div class="modal-overlay" id="modalResumenIA">
+  <div class="modal" style="width:600px">
+    <div class="modal-header">
+      <div>
+        <h3><i class="ti ti-sparkles" style="color:var(--teal-600);margin-right:6px"></i>Resumen para el pase</h3>
+        <div class="modal-subtitle" id="resumenIASub"></div>
+      </div>
+      <button class="modal-close" onclick="closeModal('modalResumenIA')">&times;</button>
+    </div>
+
+    <div id="resumenIAContent" style="min-height:160px">
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2.5rem 1rem;gap:12px">
+        <span class="ocr-spinner" style="width:28px;height:28px;border-width:3px"></span>
+        <div style="font-size:13px;color:var(--text-muted)">Generando resumen con IA…</div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modalResumenIA')">Cerrar</button>
+      <button class="btn btn-success" id="btnRegenerarResumen" onclick="regenerarResumenIA()"><i class="ti ti-refresh"></i>Regenerar</button>
+    </div>
+  </div>
+</div>
+
 <!-- ════ MODAL HISTORIAL RÁPIDO ════ -->
 <div class="modal-overlay" id="modalHistRapido">
   <div class="modal">
@@ -2609,6 +2634,158 @@ function fileToBase64(file){
     r.onerror = rej;
     r.readAsDataURL(file);
   });
+}
+
+// ════════════════════════════════════════════════════════
+//  RESUMEN IA PARA EL PASE
+// ════════════════════════════════════════════════════════
+let currentResumenPacId = null;
+
+function openResumenIA(patientId){
+  currentResumenPacId = patientId;
+  const p = patients.find(x=>x.id===patientId);
+  if(!p) return;
+  document.getElementById('resumenIASub').textContent = `${p.apellido}, ${p.nombre} · ${SALA_LABEL[p.sala]||p.sala} C${p.cama||'—'}`;
+  openModal('modalResumenIA');
+  generarResumenIA();
+}
+
+function regenerarResumenIA(){
+  generarResumenIA();
+}
+
+async function generarResumenIA(){
+  const p = patients.find(x=>x.id===currentResumenPacId);
+  const cont = document.getElementById('resumenIAContent');
+  const btnRegen = document.getElementById('btnRegenerarResumen');
+  if(!p){ cont.innerHTML = '<div class="empty"><i class="ti ti-alert-circle"></i><p>Paciente no encontrado</p></div>'; return; }
+
+  cont.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2.5rem 1rem;gap:12px">
+    <span class="ocr-spinner" style="width:28px;height:28px;border-width:3px"></span>
+    <div style="font-size:13px;color:var(--text-muted)">Generando resumen con IA…</div>
+  </div>`;
+  btnRegen.disabled = true;
+
+  const GEMINI_KEY = LS.get('hbee_gemini_key') || '';
+  if(!GEMINI_KEY){
+    cont.innerHTML = '<div class="empty"><i class="ti ti-key-off"></i><p>Configurá tu API key de Gemini en Ajustes para usar esta función.</p></div>';
+    btnRegen.disabled = false;
+    return;
+  }
+
+  // Últimas 10 evoluciones de este paciente (cualquier sector/tipo)
+  const evosPac = evoluciones
+    .filter(e => e.patientId === currentResumenPacId)
+    .sort((a,b)=> b.date.localeCompare(a.date) || (b.id - a.id))
+    .slice(0, 10);
+
+  if(!evosPac.length){
+    cont.innerHTML = '<div class="empty"><i class="ti ti-notes-off"></i><p>Este paciente todavía no tiene evoluciones cargadas.</p></div>';
+    btnRegen.disabled = false;
+    return;
+  }
+
+  // Armar texto de datos de ingreso
+  const tipoLabel = TIPO_KINE_LABEL[p.tipoKine] || '';
+  const datosIngreso = [
+    `Apellido y nombre: ${p.apellido}, ${p.nombre}`,
+    `Edad: ${p.edad||'—'} años, sexo: ${p.genero||'—'}`,
+    `Sala: ${SALA_LABEL[p.sala]||p.sala}, cama ${p.cama||'—'}`,
+    p.tipoKine ? `Tipo kinesiológico: ${tipoLabel}` : '',
+    `Diagnóstico principal: ${p.diagnostico||'—'}`,
+    `Motivo de ingreso: ${p.motivo||'—'}`,
+    `Fecha ingreso hospital: ${fmtDate(p.fIHosp)||'—'}`,
+    `Fecha ingreso al sector: ${fmtDate(p.fIUTI)||'—'}`,
+    `Origen del ingreso: ${p.tipoIngreso||'—'}`,
+    p.apache ? `APACHE II: ${p.apache}` : '',
+    p.saps ? `SAPS: ${p.saps}` : '',
+    [p.hta==='Sí'?'HTA':'', p.dbt==='Sí'?'DBT':'', p.obesidad==='Sí'?'Obesidad':'', p.tbq==='Sí'?'Tabaquista':''].filter(Boolean).join(', ') ? `Antecedentes: ${[p.hta==='Sí'?'HTA':'', p.dbt==='Sí'?'DBT':'', p.obesidad==='Sí'?'Obesidad':'', p.tbq==='Sí'?'Tabaquista':''].filter(Boolean).join(', ')}` : '',
+    p.causaVM ? `Causa de VM: ${p.causaVM}` : '',
+    p.fIOT ? `Fecha IOT: ${fmtDate(p.fIOT)}` : '',
+    p.tqt ? `TQT: ${p.tqt}` : '',
+    p.tqtMin==='Sí' ? `TQT (Mínimos): Sí — ${p.tqtMinTipo||''} ID ${p.tqtMinID||'—'}` : '',
+  ].filter(Boolean).join('\n');
+
+  // Armar texto de cada evolución (resumido, en orden cronológico ascendente para que la IA lea como una historia)
+  const evosTexto = evosPac.slice().reverse().map(e => {
+    const partes = [`— Evolución del ${fmtDate(e.date)} (${e.turno||'—'}, kine: ${e.kine||'—'}):`];
+    if(e.tipo_evo === 'minimos'){
+      if(e.conciencia) partes.push(`Conciencia: ${e.conciencia}.`);
+      if(e.interfazO2) partes.push(`O2: ${e.interfazO2}${e.spo2?' SpO2 '+e.spo2+'%':''}.`);
+      if(e.fac) partes.push(`FAC: ${e.fac}.`);
+      if((e.logros||[]).length) partes.push(`Logros: ${e.logros.join(', ')}.`);
+      if(e.hemi) partes.push(`Hemicuerpo afectado: ${e.hemi}.`);
+      if(e.deglusion) partes.push(`Deglución: ${e.deglusion}.`);
+      if(e.diaPOP) partes.push(`Día POP: ${e.diaPOP}.`);
+      if(e.tolDesinf) partes.push(`Tolera desinflado balón: ${e.tolDesinf}.`);
+      if(e.blueTest) partes.push(`Blue test: ${e.blueTest}.`);
+      if(e.obs) partes.push(`Obs: ${e.obs}`);
+    } else {
+      if(e.interfaz) partes.push(`Interfaz: ${e.interfaz}.`);
+      if(e.modo) partes.push(`Modo: ${e.modo}, VT ${e.vt||'—'}ml, FiO2 ${e.fio2||'—'}%, PEEP ${e.peep||'—'}.`);
+      if(e.pafi) partes.push(`PAFI: ${e.pafi}.`);
+      if(e.rass) partes.push(`RASS: ${e.rass}.`);
+      if(e.akm1) partes.push(`AKM: ${e.akm1}.`);
+      if(e.mrc) partes.push(`MRC: ${e.mrc}.`);
+      if(e.pve==='Sí') partes.push(`PVE realizada (${e.pveTipo||'—'}, ${e.pveMin||'—'}min): ${e.pveResult||'sin resultado registrado'}.`);
+      if(e.extubacion && e.extubacion!=='No') partes.push(`Extubación: ${e.extubacion}.`);
+      if((e.tecnicas||[]).length) partes.push(`Técnicas: ${e.tecnicas.join(', ')}.`);
+      if(e.obs) partes.push(`Obs: ${e.obs}`);
+    }
+    return partes.join(' ');
+  }).join('\n');
+
+  const prompt = `Sos un kinesiólogo redactando un resumen clínico breve para el pase interdisciplinario de terapia intensiva o emergencias. Te paso los datos de ingreso de un paciente y sus últimas evoluciones kinésicas. Generá un resumen en prosa, claro y conciso, organizado en estos bloques cortos (usá estos títulos exactos en negrita seguidos de dos puntos, sin usar markdown de encabezados, todo en texto corrido normal):
+
+**Cuadro clínico:** diagnóstico, motivo de ingreso y antecedentes relevantes en 1-2 oraciones.
+**Evolución respiratoria:** estado ventilatorio actual y su evolución (si mejoró, empeoró, se mantiene), interfaz actual, días aproximados en el sector.
+**Evolución neuromuscular/funcional:** estado de conciencia, nivel de AKM o FAC actual, deglución si aplica, hitos relevantes (PVEs, extubación, etc.).
+**Pendientes / a tener en cuenta hoy:** lo más reciente y relevante para continuar el seguimiento hoy.
+
+Sé breve (4-6 oraciones en total, no más), priorizá lo clínicamente relevante y NO repitas literalmente cada evolución, sintetizá la tendencia. Si algún bloque no tiene información suficiente, escribí "Sin datos suficientes" en ese bloque. Escribí en español, tono profesional médico, sin inventar datos que no estén en la información provista.
+
+DATOS DE INGRESO:
+${datosIngreso}
+
+EVOLUCIONES (de la más antigua a la más reciente):
+${evosTexto}`;
+
+  try {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(GEMINI_KEY)}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+      }
+    );
+    const data = await response.json();
+    if(!response.ok){
+      const apiMsg = data?.error?.message || `HTTP ${response.status}`;
+      throw new Error(apiMsg);
+    }
+    const text = data.candidates?.[0]?.content?.parts?.map(x=>x.text||'').join('') || '';
+    if(!text){ throw new Error('Gemini no devolvió texto.'); }
+
+    // Convertir **negrita** simple a <strong>, y saltos de línea a párrafos
+    const html = text
+      .split('\n').filter(l=>l.trim())
+      .map(l => l.replace(/\*\*(.+?)\*\*/g, '<strong style="color:var(--blue-800)">$1</strong>'))
+      .map(l => `<p style="margin-bottom:10px;line-height:1.6;font-size:13.5px;color:var(--text)">${l}</p>`)
+      .join('');
+
+    cont.innerHTML = `
+      <div style="background:var(--teal-50);border:1px solid var(--teal-100);border-radius:var(--radius);padding:16px">
+        ${html}
+      </div>
+      <div style="font-size:10px;color:var(--text-light);margin-top:8px;text-align:right">
+        <i class="ti ti-sparkles"></i> Generado por IA en base a ${evosPac.length} evolución(es) · Verificar antes de usar clínicamente
+      </div>`;
+  } catch(e){
+    console.error('Resumen IA error:', e);
+    cont.innerHTML = `<div class="empty"><i class="ti ti-x" style="color:var(--red-600)"></i><p>Error al generar el resumen: ${e.message||'desconocido'}</p></div>`;
+  }
+  btnRegen.disabled = false;
 }
 
 // ════════════════════════════════════════════════════════
@@ -3635,6 +3812,7 @@ function renderPatientRow(p, todayStr){
       </button>
       <button class="btn btn-icon btn-sm" onclick="openEditPaciente(${p.id})" title="Editar"><i class="ti ti-pencil"></i></button>
       <button class="btn btn-icon btn-sm" onclick="openHistorialRapido(${p.id})" title="Ver evoluciones" style="color:var(--purple-400)"><i class="ti ti-history"></i></button>
+      <button class="btn btn-icon btn-sm" onclick="openResumenIA(${p.id})" title="Resumen IA para el pase" style="color:var(--teal-600)"><i class="ti ti-sparkles"></i></button>
       <button class="btn btn-icon btn-sm" onclick="openEgreso(${p.id})" title="Egreso / Traslado" style="color:var(--amber-600)"><i class="ti ti-logout"></i></button>
     </div>
   </div>`;
@@ -3758,6 +3936,7 @@ function filterDash(q){
       <div class="p-actions">
         <button class="btn-evolve" onclick="openEvolucion(${p.id})"><i class="ti ti-stethoscope"></i> Evolucionar <span class="evo-count">${nEvo}</span></button>
         <button class="btn btn-icon btn-sm" onclick="openEditPaciente(${p.id})"><i class="ti ti-pencil"></i></button>
+        <button class="btn btn-icon btn-sm" onclick="openResumenIA(${p.id})" title="Resumen IA" style="color:var(--teal-600)"><i class="ti ti-sparkles"></i></button>
       </div>
     </div>`;
   }).join('') || '<div class="empty"><i class="ti ti-search-off"></i><p>Sin resultados</p></div>';
