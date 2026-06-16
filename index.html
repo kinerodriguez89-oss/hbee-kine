@@ -290,6 +290,14 @@ tr:hover td{ background:var(--blue-50); }
 .sala-MIN-B{ background:#d1fae5; color:#065f46; }
 .sala-MIN-C{ background:#f0fdf4; color:#166534; }
 
+.pcp-card{ display:flex;flex-direction:column;align-items:center;padding:10px 16px;
+  border-radius:var(--radius);background:var(--blue-50);border:1.5px solid var(--blue-100);min-width:90px; }
+.pcp-card .pv{ font-size:20px;font-weight:700;color:var(--blue-700);line-height:1; }
+.pcp-card .pl{ font-size:9px;text-transform:uppercase;letter-spacing:.4px;color:var(--blue-500);margin-top:3px; }
+.pcp-card.pcp-main{ background:var(--teal-50);border-color:var(--teal-200); }
+.pcp-card.pcp-main .pv{ color:var(--teal-700);font-size:22px; }
+.pcp-card.pcp-main .pl{ color:var(--teal-600); }
+
 /* ── MÍNIMOS ── */
 .tipo-kine-badge{ display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;
   font-size:10px;font-weight:700;background:var(--purple-50);color:var(--purple-800);border:1px solid var(--purple-50); }
@@ -711,6 +719,9 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
         <div class="form-group"><label>Talla (cm)</label><input type="number" id="fTalla" inputmode="decimal" placeholder="cm"></div>
         <div class="form-group"><label>IMC</label><input type="text" id="fIMC" readonly style="background:var(--gray-50);color:var(--text-muted)"></div>
       </div>
+      <div class="form-row">
+        <div class="form-group"><label>Peso corporal predicho (PCP)</label><input type="text" id="fPCP" readonly style="background:var(--blue-50);color:var(--blue-800);font-weight:600"><div class="form-hint">Calculado por talla y sexo — Devine</div></div>
+      </div>
     </div>
 
     <!-- Ubicación -->
@@ -945,6 +956,12 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
       <input type="hidden" id="eInterfazPrincipal">
     </div>
 
+    <!-- Peso Corporal Predicho — destacado -->
+    <div class="form-section" id="pcpBox" style="display:none">
+      <div class="form-section-title"><i class="ti ti-ruler-2"></i> Peso corporal predicho (ventilación protectora)</div>
+      <div id="pcpContent" style="display:flex;flex-wrap:wrap;gap:10px"></div>
+    </div>
+
     <!-- Mecánica ventilatoria -->
     <div class="accordion-header" onclick="toggleAccordion('accVent')">
       <span><i class="ti ti-lungs" style="margin-right:6px;color:var(--blue-400)"></i>Mecánica ventilatoria</span>
@@ -1020,16 +1037,9 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
         <div class="form-group"><label>pO₂ (mmHg)</label><input type="number" id="ePO2" inputmode="decimal"></div>
         <div class="form-group"><label>HCO₃ (mEq/L)</label><input type="number" id="eHCO3" inputmode="decimal" placeholder="22–26"></div>
       </div>
-      <div class="form-row three">
+      <div class="form-row">
         <div class="form-group"><label>SpO₂ (%)</label><input type="number" id="eSpO2" inputmode="numeric" max="100"></div>
         <div class="form-group"><label>PAFI</label><input type="number" id="ePAFI" inputmode="decimal"><div class="form-hint">PO₂ / FiO₂</div></div>
-        <div class="form-group"><label>Interfaz</label>
-          <select id="eInterfaz">
-            <option value="">-</option><option>TET</option><option>TQT</option><option>Máscara VMNI</option>
-            <option>Casco CPAP</option><option>CAFO</option><option>Cánula nasal</option>
-            <option>Máscara</option><option>Espontánea</option>
-          </select>
-        </div>
       </div>
     </div>
 
@@ -3399,6 +3409,7 @@ function openEditPaciente(id){
   const M = (fid, val) => { const el=document.getElementById(fid); if(el) el.value = val||''; };
   M('fApellido',p.apellido); M('fNombre',p.nombre); M('fDNI',p.dni); M('fEdad',p.edad); M('fGenero',p.genero);
   M('fPeso',p.peso); M('fTalla',p.talla); M('fIMC', (p.peso&&p.talla)?(p.peso/Math.pow(p.talla/100,2)).toFixed(1):'');
+  { const pcpEdit = calcPCP(p.talla, p.genero); M('fPCP', pcpEdit!==null ? pcpEdit.toFixed(1)+' kg' : ''); }
   M('fSala',p.sala); M('fCama',p.cama); M('fKine',p.kine);
   M('fFIHosp',p.fIHosp); M('fFIUTI',p.fIUTI); M('fTipoIngreso',p.tipoIngreso);
   M('fDiag',p.diagnostico); M('fMotivo',p.motivo);
@@ -3420,9 +3431,12 @@ async function guardarPaciente(){
   const peso = parseFloat(G('fPeso')) || null;
   const talla = parseFloat(G('fTalla')) || null;
   const imc = (peso && talla) ? +(peso/Math.pow(talla/100,2)).toFixed(1) : null;
+  const genero = G('fGenero');
+  const pcp = calcPCP(talla, genero);
   const data = {
-    apellido, nombre:G('fNombre'), dni:G('fDNI'), edad:parseInt(G('fEdad'))||null, genero:G('fGenero'),
-    peso, talla, imc, sala:G('fSala'), cama:G('fCama'), kine:G('fKine'),
+    apellido, nombre:G('fNombre'), dni:G('fDNI'), edad:parseInt(G('fEdad'))||null, genero,
+    peso, talla, imc, pcp: pcp!==null ? +pcp.toFixed(1) : null,
+    sala:G('fSala'), cama:G('fCama'), kine:G('fKine'),
     tipoKine:G('fTipoKine'), estFx:G('fEstFx'), frecuencia:G('fFrecuencia'),
     fIHosp:G('fFIHosp'), fIUTI:G('fFIUTI'), tipoIngreso:G('fTipoIngreso'),
     diagnostico:G('fDiag'), motivo:G('fMotivo'),
@@ -3460,14 +3474,29 @@ async function eliminarPaciente(id){
   renderAll();
 }
 
-// IMC auto
-['fPeso','fTalla'].forEach(id=>{
-  document.getElementById(id)?.addEventListener('input',()=>{
-    const p = parseFloat(document.getElementById('fPeso').value);
-    const t = parseFloat(document.getElementById('fTalla').value);
-    document.getElementById('fIMC').value = (p&&t) ? (p/Math.pow(t/100,2)).toFixed(1) : '';
-  });
+// Fórmula de Devine — Peso Corporal Predicho (PCP)
+function calcPCP(tallaCm, genero){
+  const t = parseFloat(tallaCm);
+  if(!t || t<=0) return null;
+  const base = (t - 152.4) * 0.91;
+  if(genero === 'Femenino') return base + 45.5;
+  return base + 50; // Masculino u Otro -> fórmula masculina por defecto
+}
+
+// IMC + PCP auto
+['fPeso','fTalla','fGenero'].forEach(id=>{
+  document.getElementById(id)?.addEventListener('input',()=>{ updateIMCyPCP(); });
+  document.getElementById(id)?.addEventListener('change',()=>{ updateIMCyPCP(); });
 });
+
+function updateIMCyPCP(){
+  const p = parseFloat(document.getElementById('fPeso').value);
+  const t = parseFloat(document.getElementById('fTalla').value);
+  const g = document.getElementById('fGenero').value;
+  document.getElementById('fIMC').value = (p&&t) ? (p/Math.pow(t/100,2)).toFixed(1) : '';
+  const pcp = calcPCP(t, g);
+  document.getElementById('fPCP').value = pcp!==null ? pcp.toFixed(1)+' kg' : '';
+}
 
 // ════════════════════════════════════════════════════════
 //  EVOLUCIÓN
@@ -3533,6 +3562,24 @@ function openEvolucion(patientId){
     p.inicioARM && !yaExtubado && diasARM ? `<div class="day-counter" style="background:var(--red-50);border-color:var(--red-100)"><div class="dc-val" style="color:var(--red-600)">${diasARM}</div><div class="dc-label" style="color:var(--red-400)">Día ARM</div></div>` : '',
     yaExtubado ? `<div class="day-counter" style="background:var(--green-50);border-color:#d1fae5"><div class="dc-val" style="color:var(--green-800)">✓</div><div class="dc-label" style="color:var(--green-400)">Extubado</div></div>` : '',
   ].filter(Boolean).join('');
+
+  // ── Peso Corporal Predicho (PCP) y volúmenes de ventilación protectora ──
+  const pcpBox = document.getElementById('pcpBox');
+  const pcpContent = document.getElementById('pcpContent');
+  const pcpVal = p.pcp || calcPCP(p.talla, p.genero);
+  if(pcpVal && p.talla){
+    pcpBox.style.display = 'block';
+    const vol6 = pcpVal*6, vol7 = pcpVal*7, vol8 = pcpVal*8;
+    pcpContent.innerHTML = `
+      <div class="pcp-card pcp-main"><div class="pv">${pcpVal.toFixed(1)} kg</div><div class="pl">PCP (talla ${p.talla}cm, ${p.genero||'—'})</div></div>
+      <div class="pcp-card"><div class="pv">${Math.round(vol6)} ml</div><div class="pl">6 ml/kg PCP</div></div>
+      <div class="pcp-card"><div class="pv">${Math.round(vol7)} ml</div><div class="pl">7 ml/kg PCP</div></div>
+      <div class="pcp-card"><div class="pv">${Math.round(vol8)} ml</div><div class="pl">8 ml/kg PCP</div></div>
+    `;
+  } else {
+    pcpBox.style.display = 'none';
+    pcpContent.innerHTML = '';
+  }
 
   // Reset botones de interfaz
   document.querySelectorAll('.interfaz-btn').forEach(b=>b.className='interfaz-btn');
