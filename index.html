@@ -4393,6 +4393,7 @@ function renderIndicadores(){
 //  EXPORTAR DATOS
 // ════════════════════════════════════════════════════════
 function exportarDatos(){
+  try {
   const NL = "\n";
   const BOM = "\uFEFF";
 
@@ -4401,6 +4402,7 @@ function exportarDatos(){
     return (s.includes(',') || s.includes('"')) ? '"' + s.replace(/"/g,'""') + '"' : s;
   };
   const fila = arr => arr.map(esc).join(',');
+  const joinArr = v => Array.isArray(v) ? v.join(' | ') : (v || '');
 
   // ── Hoja 1: Pacientes ──
   const encPac = ['Apellido','Nombre','DNI','Edad','Genero','Peso kg','Talla cm','IMC',
@@ -4451,15 +4453,15 @@ function exportarDatos(){
       e.ph||'', e.pco2||'', e.po2||'', e.spo2||'', e.pafi||'',
       e.fc||'', e.tas||'', e.tad||'', e.tam||'', e.spo2Mon||'', e.frMon||'', e.pic||'', e.etco2||'',
       e.rass||'', e.cpot||'', e.camicu||'', e.dolorAuto||'', e.dolorEscala||'',
-      (e.sedacion||[]).join(' | '), (e.analgesia||[]).join(' | '),
-      (e.bnm||[]).join(' | '), (e.vasoact||[]).join(' | '), e.otrosFarmacos||'',
+      joinArr(e.sedacion), joinArr(e.analgesia),
+      joinArr(e.bnm), joinArr(e.vasoact), e.otrosFarmacos||'',
       e.akm1||'', e.mrc||'', e.pve||'', e.pveTipo||'', e.pveMin||'', e.pveResult||'',
       e.extubacion||'', e.nPVE||'',
       e.cuffM||'', e.cuffT||'', e.cuffN||'',
       e.tipoCan||'', e.secTrqCant||'', e.secTrqCal||'', e.lof||'', e.deglusion||'',
       e.fac||'', e.frecuencia||'',
-      (e.logros||[]).join(' | '),
-      (e.tecnicas||[]).join(' | '),
+      joinArr(e.logros),
+      joinArr(e.tecnicas),
       e.obs||'',
     ]);
   });
@@ -4480,6 +4482,10 @@ function exportarDatos(){
   a.click();
   addLog('export','Exportacion Excel (' + patients.length + ' pacientes, ' + evoluciones.length + ' evoluciones)');
   showToast('Exportado: ' + patients.length + ' pacientes, ' + evoluciones.length + ' evoluciones', 'success');
+  } catch(err){
+    console.error('Error exportando:', err);
+    showToast('Error al exportar: ' + (err.message||'desconocido').slice(0,80), 'error');
+  }
 }
 
 
