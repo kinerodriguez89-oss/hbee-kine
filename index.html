@@ -325,7 +325,24 @@ tr:hover td{ background:var(--blue-50); }
 .day-counter .dc-val{ font-size:22px;font-weight:700;color:var(--blue-700);line-height:1; }
 .day-counter .dc-label{ font-size:9px;text-transform:uppercase;letter-spacing:.5px;color:var(--blue-500);margin-top:2px; }
 
-/* ── EGRESO MODAL ── */
+/* ── MULTISELECT DESPLEGABLE ── */
+.multisel{ position:relative;border:1px solid var(--border);border-radius:var(--radius);
+  padding:8px 10px;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:space-between;
+  font-size:13px;color:var(--text); }
+.multisel:hover{ border-color:var(--blue-300); }
+.multisel .multisel-label{ flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-muted); }
+.multisel.has-value .multisel-label{ color:var(--text);font-weight:500; }
+.multisel i{ font-size:14px;color:var(--gray-400);flex-shrink:0;margin-left:6px; }
+.multisel-panel{ display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:50;
+  background:#fff;border:1px solid var(--border);border-radius:var(--radius);box-shadow:0 8px 24px rgba(0,0,0,.12);
+  padding:6px;max-height:220px;overflow-y:auto; }
+.multisel.open .multisel-panel{ display:block; }
+.multisel-opt{ display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:6px;font-size:13px;
+  font-weight:400;cursor:pointer; }
+.multisel-opt:hover{ background:var(--blue-50); }
+.multisel-opt input{ width:15px;height:15px;cursor:pointer;flex-shrink:0; }
+
+
 .egreso-option{ display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:var(--radius);
   border:2px solid var(--border);cursor:pointer;transition:all .15s;background:#fff; }
 .egreso-option:hover{ border-color:var(--blue-300);background:var(--blue-50); }
@@ -900,13 +917,11 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
     <!-- Datos básicos de la guardia -->
     <div class="form-section">
       <div class="form-section-title"><i class="ti ti-calendar"></i> Guardia</div>
-      <div class="form-row three">
+      <div class="form-row">
         <div class="form-group"><label>Fecha</label><input type="date" id="eDate"></div>
-        <div class="form-group"><label>Turno</label>
-          <select id="eTurno"><option>Mañana</option><option>Tarde</option><option>Noche</option></select>
-        </div>
         <div class="form-group"><label>Kinesiólogo</label><input type="text" id="eKine" readonly style="background:var(--gray-50)"></div>
       </div>
+      <input type="hidden" id="eTurno">
       <!-- Contador de días automáticos -->
       <div id="evoDayCounters" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:.8rem"></div>
       <div class="form-row three">
@@ -1032,7 +1047,7 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
           </select>
         </div>
         <div class="form-group"><label>VT (ml)</label><input type="number" id="eVT" inputmode="decimal" placeholder="ml"></div>
-        <div class="form-group"><label>VT ml/kg PCI</label><input type="number" id="eVTkg" inputmode="decimal" placeholder="ml/kg" step="0.1"></div>
+        <div class="form-group"><label>VT ml/kg PCP</label><input type="text" id="eVTkg" readonly style="background:var(--gray-50);color:var(--blue-800);font-weight:600"><div class="form-hint">VT / PCP del paciente</div></div>
       </div>
       <div class="form-row four">
         <div class="form-group"><label>FR (rpm)</label><input type="number" id="eFR" inputmode="numeric"></div>
@@ -1052,12 +1067,12 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
         <div class="form-group"><label>Rinsp (cmH₂O/L/s)</label><input type="number" id="eRinsp" inputmode="decimal"></div>
         <div class="form-group"><label>Flujo pico (L/min)</label><input type="number" id="eFlujo" inputmode="decimal"></div>
       </div>
-      <div class="form-row four">
+      <div class="form-row three">
         <div class="form-group"><label>Mec. Power (J/min)</label><input type="number" id="eMP" inputmode="decimal"><div class="form-hint">Potencia mecánica</div></div>
         <div class="form-group"><label>Elastic Ratio</label><input type="number" id="eER" inputmode="decimal" step="0.1"><div class="form-hint">(4×DP) + FR</div></div>
         <div class="form-group"><label>Cte. tiempo (seg)</label><input type="number" id="eCT" inputmode="decimal" step="0.01"><div class="form-hint">Crs × Rinsp / 1000</div></div>
-        <div class="form-group"><label>Stress Index</label><input type="number" id="eSI" inputmode="decimal" step="0.01"></div>
       </div>
+      <div id="ctMultiplesBox" style="display:none;gap:8px;margin-top:8px;flex-wrap:wrap"></div>
     </div>
 
     <hr class="sep">
@@ -1102,6 +1117,7 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
           <select id="eCPOT">
             <option value="">-</option><option>0 Sin dolor</option><option>1</option><option>2</option>
             <option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8 Dolor máximo</option>
+            <option>No evaluable</option>
           </select>
         </div>
         <div class="form-group"><label>CAM-ICU</label>
@@ -1115,11 +1131,85 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
           </select>
         </div>
       </div>
-      <div class="form-row four">
-        <div class="form-group"><label>Sedación</label><input type="text" id="eSedacion" placeholder="Midazolam, propofol…"></div>
-        <div class="form-group"><label>Analgesia</label><input type="text" id="eAnalgesia" placeholder="Fentanilo, morfina…"></div>
-        <div class="form-group"><label>BNM</label><input type="text" id="eBNM" placeholder="Vecuronio, cisatracurio…"></div>
-        <div class="form-group"><label>Vasoactivos</label><input type="text" id="eVasoact" placeholder="Noradrenalina, ADH…"></div>
+
+      <!-- Dolor autopercibido -->
+      <div class="form-row">
+        <div class="form-group"><label>Dolor autopercibido</label>
+          <select id="eDolorAuto" onchange="toggleDolorEscala()">
+            <option value="">-</option><option>No</option><option>Sí</option>
+          </select>
+        </div>
+        <div class="form-group" id="eDolorEscalaRow" style="display:none">
+          <label>Escala de dolor (1–10)</label>
+          <select id="eDolorEscala">
+            <option value="">-</option>
+            <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
+            <option>6</option><option>7</option><option>8</option><option>9</option><option>10 — Peor dolor imaginable</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Sedación, Analgesia, BNM, Vasoactivos — multi-select -->
+      <div class="form-row four" style="margin-top:6px">
+        <div class="form-group">
+          <label>Sedación</label>
+          <div class="multisel" id="msSedacion" onclick="toggleMultiselect('msSedacion')">
+            <span class="multisel-label">Seleccionar…</span>
+            <i class="ti ti-chevron-down"></i>
+            <div class="multisel-panel">
+              <label class="multisel-opt"><input type="checkbox" value="Midazolam">Midazolam</label>
+              <label class="multisel-opt"><input type="checkbox" value="Propofol">Propofol</label>
+              <label class="multisel-opt"><input type="checkbox" value="Lorazepam">Lorazepam</label>
+              <label class="multisel-opt"><input type="checkbox" value="Quetamina">Quetamina</label>
+            </div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Analgesia</label>
+          <div class="multisel" id="msAnalgesia" onclick="toggleMultiselect('msAnalgesia')">
+            <span class="multisel-label">Seleccionar…</span>
+            <i class="ti ti-chevron-down"></i>
+            <div class="multisel-panel">
+              <label class="multisel-opt"><input type="checkbox" value="Fentanilo">Fentanilo</label>
+              <label class="multisel-opt"><input type="checkbox" value="Morfina">Morfina</label>
+              <label class="multisel-opt"><input type="checkbox" value="Remifentanilo">Remifentanilo</label>
+              <label class="multisel-opt"><input type="checkbox" value="Dexmedetomidina">Dexmedetomidina</label>
+            </div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>BNM</label>
+          <div class="multisel" id="msBNM" onclick="toggleMultiselect('msBNM')">
+            <span class="multisel-label">Seleccionar…</span>
+            <i class="ti ti-chevron-down"></i>
+            <div class="multisel-panel">
+              <label class="multisel-opt"><input type="checkbox" value="Atracurio">Atracurio</label>
+              <label class="multisel-opt"><input type="checkbox" value="Vecuronio">Vecuronio</label>
+              <label class="multisel-opt"><input type="checkbox" value="Rocuronio">Rocuronio</label>
+            </div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Vasoactivos</label>
+          <div class="multisel" id="msVasoact" onclick="toggleMultiselect('msVasoact')">
+            <span class="multisel-label">Seleccionar…</span>
+            <i class="ti ti-chevron-down"></i>
+            <div class="multisel-panel">
+              <label class="multisel-opt"><input type="checkbox" value="Noradrenalina">Noradrenalina</label>
+              <label class="multisel-opt"><input type="checkbox" value="Adrenalina">Adrenalina</label>
+              <label class="multisel-opt"><input type="checkbox" value="Vasopresina">Vasopresina</label>
+              <label class="multisel-opt"><input type="checkbox" value="Dobutamina">Dobutamina</label>
+              <label class="multisel-opt"><input type="checkbox" value="Milrinona">Milrinona</label>
+              <label class="multisel-opt"><input type="checkbox" value="Nitroprusiato">Nitroprusiato</label>
+              <label class="multisel-opt"><input type="checkbox" value="Nitroglicerina">Nitroglicerina</label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Otros fármacos -->
+      <div class="form-row" style="margin-top:6px">
+        <div class="form-group"><label>Otros fármacos</label><input type="text" id="eOtrosFarmacos" placeholder="Texto libre — fármacos no listados arriba"></div>
       </div>
     </div>
 
@@ -1132,30 +1222,18 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
     </div>
     <div class="accordion-body open" id="accAKM">
       <div class="form-row" style="margin-top:8px">
-        <div class="form-group"><label>Nivel AKM — Mañana</label>
+        <div class="form-group"><label>Nivel AKM</label>
           <select id="eAKM1">
             <option value="">-</option>
-            <option>0 — Sin movilización</option><option>1 — Movilización pasiva en cama</option>
-            <option>2 — Actividad activa-asistida en cama</option><option>3 — Actividad activa en cama</option>
-            <option>4 — Sedestación al borde de cama</option><option>5 — Bipedestación</option>
-            <option>6 — Marcha asistida</option><option>7 — Marcha independiente</option>
-          </select>
-        </div>
-        <div class="form-group"><label>Nivel AKM — Tarde/Noche</label>
-          <select id="eAKM2">
-            <option value="">-</option>
-            <option>0 — Sin movilización</option><option>1 — Movilización pasiva en cama</option>
-            <option>2 — Actividad activa-asistida en cama</option><option>3 — Actividad activa en cama</option>
-            <option>4 — Sedestación al borde de cama</option><option>5 — Bipedestación</option>
-            <option>6 — Marcha asistida</option><option>7 — Marcha independiente</option>
+            <option>Nivel 1 — Inconsciente. Se sugiere movilidad pasiva y rotaciones</option>
+            <option>Nivel 2 — Consciente. Puede vencer gravedad con MS. Se sugiere movilidad pasiva, movilidad activo-asistida y movilidad activa</option>
+            <option>Nivel 3 — Consciente. Puede mover MI contra la gravedad. Se sugiere movilidad pasiva, movilidad activa contra resistencia y sedestación al borde de la cama</option>
+            <option>Nivel 4 — Consciente. Puede acceder a la bipedestación con asistencia. Se sugiere bipedestación y sedestación en silla</option>
           </select>
         </div>
       </div>
       <div class="form-group"><label>MRC Score (fuerza muscular)</label>
-        <select id="eMRC"><option value="">-</option>
-          <option>0/60 — Sin contracción</option><option>10/60</option><option>20/60</option>
-          <option>30/60</option><option>40/60</option><option>50/60</option><option>60/60 — Fuerza normal</option>
-        </select>
+        <select id="eMRC"><option value="">-</option></select>
       </div>
     </div>
 
@@ -1172,9 +1250,24 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
           <select id="ePVE"><option value="">-</option><option>Sí</option><option>No</option></select>
         </div>
         <div class="form-group"><label>Tipo de PVE</label>
-          <select id="ePVETipo"><option value="">-</option><option>PS mínima (5/5)</option><option>T-piece</option><option>CPAP</option></select>
+          <select id="ePVETipo">
+            <option value="">-</option>
+            <option>Tubo en T</option>
+            <option>Tubo en T electrónico (PS 0 - PEEP 0)</option>
+            <option>CPAP 5</option>
+            <option>PS 7 - PEEP 0</option>
+            <option>PS 7 - PEEP 5</option>
+          </select>
         </div>
-        <div class="form-group"><label>Tiempo (min)</label><input type="number" id="ePVEtmin" inputmode="numeric"></div>
+        <div class="form-group"><label>Tiempo</label>
+          <select id="ePVEtmin">
+            <option value="">-</option>
+            <option value="30">30 min</option>
+            <option value="60">60 min</option>
+            <option value="90">90 min</option>
+            <option value="120">120 min</option>
+          </select>
+        </div>
         <div class="form-group"><label>Resultado</label>
           <select id="ePVEresult"><option value="">-</option><option>Exitosa</option><option>Fallida</option></select>
         </div>
@@ -1186,7 +1279,7 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
         <div class="form-group"><label>Interfaz post-extubación</label>
           <select id="eInterfazPE"><option value="">-</option><option>CAFO</option><option>VMNI</option><option>Cánula nasal</option><option>Máscara Venturi</option><option>Aire ambiente</option></select>
         </div>
-        <div class="form-group"><label>Nro. PVE acumuladas</label><input type="number" id="eNPVE" inputmode="numeric"></div>
+        <div class="form-group"><label>N° PVEs acumuladas</label><input type="text" id="eNPVEDisplay" readonly style="background:var(--gray-50);color:var(--blue-800);font-weight:600"><div class="form-hint">Calculado automáticamente</div></div>
       </div>
     </div>
 
@@ -1268,37 +1361,51 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
       <div class="form-section-title"><i class="ti ti-list-check"></i> Técnicas kinesiológicas realizadas</div>
       <div class="form-group" style="margin-bottom:6px"><label style="margin-bottom:6px;">Respiratorias</label>
         <div class="tag-group" id="tagsResp">
-          <span class="tag" onclick="toggleTag(this)">Aspiración de secreciones</span>
-          <span class="tag" onclick="toggleTag(this)">Higiene bronquial</span>
-          <span class="tag" onclick="toggleTag(this)">Vibración / percusión</span>
-          <span class="tag" onclick="toggleTag(this)">Reeducación respiratoria</span>
-          <span class="tag" onclick="toggleTag(this)">Expansión pulmonar</span>
-          <span class="tag" onclick="toggleTag(this)">Insuflación manual (ambú)</span>
-          <span class="tag" onclick="toggleTag(this)">Posición prono</span>
+          <span class="tag" onclick="toggleTag(this)">Aspiración del LOF</span>
+          <span class="tag" onclick="toggleTag(this)">Aspiración de VAA</span>
+          <span class="tag" onclick="toggleTag(this)">Vibromovilización</span>
+          <span class="tag" onclick="toggleTag(this)">Aceleración del flujo espiratorio</span>
+          <span class="tag" onclick="toggleTag(this)">Tos asistida</span>
+          <span class="tag" onclick="toggleTag(this)">Tos dirigida</span>
+          <span class="tag" onclick="toggleTag(this)">PPI (Presión positiva intermitente)</span>
+          <span class="tag" onclick="toggleTag(this)">Higiene de la cavidad oral</span>
+          <span class="tag" onclick="toggleTag(this)">Control del balón de neumotaponamiento</span>
           <span class="tag" onclick="toggleTag(this)">Cambios posturales</span>
+          <span class="tag" onclick="toggleTag(this)">Aerosolterapia</span>
         </div>
       </div>
-      <div class="form-group" style="margin-bottom:6px"><label style="margin-bottom:6px;">Movilización / funcional</label>
+      <div class="form-group" style="margin-bottom:6px"><label style="margin-bottom:6px;">Movilización</label>
         <div class="tag-group" id="tagsMovil">
           <span class="tag" onclick="toggleTag(this)">Movilización pasiva MMSS</span>
           <span class="tag" onclick="toggleTag(this)">Movilización pasiva MMII</span>
+          <span class="tag" onclick="toggleTag(this)">Movilización activo asistida MMSS</span>
+          <span class="tag" onclick="toggleTag(this)">Movilización activo asistida MMII</span>
           <span class="tag" onclick="toggleTag(this)">Movilización activa MMSS</span>
           <span class="tag" onclick="toggleTag(this)">Movilización activa MMII</span>
-          <span class="tag" onclick="toggleTag(this)">Sedestación al borde de cama</span>
-          <span class="tag" onclick="toggleTag(this)">Transferencia sillón</span>
+          <span class="tag" onclick="toggleTag(this)">Sedestación al borde de la cama</span>
           <span class="tag" onclick="toggleTag(this)">Bipedestación</span>
-          <span class="tag" onclick="toggleTag(this)">Marcha asistida</span>
-          <span class="tag" onclick="toggleTag(this)">Estimulación neurosensorial</span>
+          <span class="tag" onclick="toggleTag(this)">Ejercicios de pre-marcha</span>
+          <span class="tag" onclick="toggleTag(this)">Equilibrio en sedestación</span>
+          <span class="tag" onclick="toggleTag(this)">Equilibrio en bipedestación</span>
+          <span class="tag" onclick="toggleTag(this)">Marcha en habitación</span>
+          <span class="tag" onclick="toggleTag(this)">Sedestación en silla</span>
         </div>
       </div>
-      <div class="form-group" style="margin-bottom:6px"><label style="margin-bottom:6px;">Destete / procedimientos</label>
+      <div class="form-group" style="margin-bottom:6px"><label style="margin-bottom:6px;">Prestaciones específicas</label>
         <div class="tag-group" id="tagsDest">
-          <span class="tag" onclick="toggleTag(this)">Prueba de ventilación espontánea</span>
-          <span class="tag" onclick="toggleTag(this)">Extubación programada</span>
-          <span class="tag" onclick="toggleTag(this)">Decanulación</span>
-          <span class="tag" onclick="toggleTag(this)">Control de cuff</span>
+          <span class="tag" onclick="toggleTag(this)">Traslado a TAC</span>
+          <span class="tag" onclick="toggleTag(this)">Traslado a QX</span>
+          <span class="tag" onclick="toggleTag(this)">Traslado a otro sector</span>
           <span class="tag" onclick="toggleTag(this)">Evaluación de deglución</span>
-          <span class="tag" onclick="toggleTag(this)">Nebulización / aerosolterapia</span>
+          <span class="tag" onclick="toggleTag(this)">Toma de aspirado traqueal</span>
+          <span class="tag" onclick="toggleTag(this)">Toma de minibal</span>
+          <span class="tag" onclick="toggleTag(this)">Esputo</span>
+          <span class="tag" onclick="toggleTag(this)">Asistencia IOT</span>
+          <span class="tag" onclick="toggleTag(this)">Asistencia TQT percutánea</span>
+          <span class="tag" onclick="toggleTag(this)">Asistencia BAL</span>
+          <span class="tag" onclick="toggleTag(this)">Asistencia decúbito prono</span>
+          <span class="tag" onclick="toggleTag(this)">Asistencia decúbito supino</span>
+          <span class="tag" onclick="toggleTag(this)">Cambio de cánula de TQT</span>
         </div>
       </div>
     </div>
@@ -1306,17 +1413,12 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
     <!-- Secreciones -->
     <div class="form-section">
       <div class="form-section-title"><i class="ti ti-droplets"></i> Secreciones</div>
-      <div class="form-row three">
+      <div class="form-row">
         <div class="form-group"><label>Cantidad</label>
           <select id="eSecCant"><option value="">-</option><option>Escasas</option><option>Moderadas</option><option>Abundantes</option></select>
         </div>
         <div class="form-group"><label>Características</label>
           <select id="eSecChar"><option value="">-</option><option>Fluidas / claras</option><option>Mucosas</option><option>Mucopurulentas</option><option>Purulentas</option><option>Hemáticas</option></select>
-        </div>
-        <div class="form-group"><label>Tolerancia al tratamiento</label>
-          <select id="eTolerancia">
-            <option value="">-</option><option>Buena</option><option>Regular</option><option>Mala — suspendido</option>
-          </select>
         </div>
       </div>
     </div>
@@ -2339,9 +2441,10 @@ async function handleOCRImage(event){
     const prompt = `Sos un sistema de lectura de pantallas de respiradores mecánicos en UCI.
 Analizá esta imagen e identificá todos los parámetros visibles.
 Devolvé SOLO un objeto JSON válido, sin texto extra ni backticks, con estos campos (null si no se ve):
-{"modo":null,"vt":null,"fr":null,"peep":null,"fio2":null,"ppico":null,"pplat":null,"peept":null,"dp":null,"crs":null,"rinsp":null,"flujo":null,"mp":null,"ti":null,"pc":null,"si":null}
+{"modo":null,"vt":null,"fr":null,"peep":null,"fio2":null,"ppico":null,"pplat":null,"peept":null,"dp":null,"crs":null,"rinsp":null,"flujo":null,"mp":null,"ti":null,"pc":null}
 
 REGLAS IMPORTANTES:
+- vt: este es el campo más importante y donde más errores se cometen. Los respiradores muestran TANTO el VT SETEADO (programado, el objetivo que el operador configuró) COMO el VT EXHALADO/MEDIDO (el valor real medido en cada respiración, que fluctúa y tiene decimales). DEVOLVÉ SIEMPRE EL VT SETEADO, NUNCA EL EXHALADO. Pistas para diferenciarlos: el VT seteado suele ser un número redondo (ej: 400, 450, 500, 480), suele estar en la zona de "configuración" o "settings" de la pantalla (a veces con fondo distinto, etiqueta "Set" o "VT control"), y NO cambia respiración a respiración. El VT exhalado suele tener decimales o no ser redondo (ej: 437, 462), está etiquetado como "exh", "esp", "medido", "monitor" o aparece en la zona de "monitoreo" de la pantalla, y puede fluctuar levemente. Si tenés dudas entre dos valores de VT visibles, elegí el más redondo y el que esté en la zona de configuración/seteo.
 - vt: SIEMPRE devolvé en mililitros (ml). Si la pantalla muestra el VT en litros (ej: 0.45 L o 0.45), multiplicá por 1000 y devolvé 450. Si dice "ml" dejalo como está. Si la unidad no está clara y el valor es menor a 5, asumir que está en litros y convertir.
 - modo: traducí al nombre estándar según esta tabla:
     VCV, V-CV, VC, Vol Control → "VC-CMV"
@@ -2390,7 +2493,7 @@ REGLAS IMPORTANTES:
     const fieldMap = {
       modo:'eModo', vt:'eVT', fr:'eFR', peep:'ePEEP', fio2:'eFiO2', ti:'eTi', pc:'ePC',
       ppico:'ePpico', pplat:'ePplat', peept:'ePEEPt', dp:'eDP', crs:'eCrs',
-      rinsp:'eRinsp', flujo:'eFlujo', mp:'eMP', si:'eSI'
+      rinsp:'eRinsp', flujo:'eFlujo', mp:'eMP'
     };
     const filled = [];
     for(const [k, fid] of Object.entries(fieldMap)){
@@ -2571,11 +2674,32 @@ function autoCalculate(){
     setF('eRinsp', ((ppico - pplat) / flujoLseg).toFixed(2));
   }
 
+  // ── VT ml/kg PCP ─────────────────────────────────────
+  const p = patients.find(x=>x.id===currentEvoPacId);
+  const pcpVal = p ? (p.pcp || calcPCP(p.talla, p.genero)) : null;
+  if(vt !== null && pcpVal){
+    setF('eVTkg', (vt / pcpVal).toFixed(1));
+  }
+
   // ── Cte. tiempo = Crs × Rinsp / 1000 ────────────────
   const crs   = get('eCrs');
   const rinsp = get('eRinsp');
   if(crs !== null && rinsp !== null){
-    setF('eCT', (crs * rinsp / 1000).toFixed(3));
+    const ct = crs * rinsp / 1000;
+    setF('eCT', ct.toFixed(3));
+    // 3, 4 y 5 constantes de tiempo (segundos)
+    const ctBox = document.getElementById('ctMultiplesBox');
+    if(ctBox){
+      ctBox.innerHTML = `
+        <div class="pcp-card"><div class="pv">${(ct*3).toFixed(2)}s</div><div class="pl">3 Cte. tiempo</div></div>
+        <div class="pcp-card"><div class="pv">${(ct*4).toFixed(2)}s</div><div class="pl">4 Cte. tiempo</div></div>
+        <div class="pcp-card"><div class="pv">${(ct*5).toFixed(2)}s</div><div class="pl">5 Cte. tiempo</div></div>
+      `;
+      ctBox.style.display = 'flex';
+    }
+  } else {
+    const ctBox = document.getElementById('ctMultiplesBox');
+    if(ctBox){ ctBox.style.display = 'none'; ctBox.innerHTML=''; }
   }
 
   // ── Elastic Ratio = (4 × DP) + FR ──────────────────
@@ -3700,6 +3824,89 @@ function updateTAM(){
 //  EVOLUCIÓN
 // ════════════════════════════════════════════════════════
 function toggleTag(el){ el.classList.toggle('active'); }
+
+// Poblar select de MRC Score (0 a 60, de a 1)
+(function populateMRCSelect(){
+  const sel = document.getElementById('eMRC');
+  if(!sel) return;
+  for(let i=0;i<=60;i++){
+    const opt = document.createElement('option');
+    opt.textContent = `${i}/60${i===0?' — Sin contracción':i===60?' — Fuerza normal':''}`;
+    sel.appendChild(opt);
+  }
+})();
+
+// ════════════════════════════════════════════════════════
+//  MULTISELECT DESPLEGABLE (Sedación, Analgesia, BNM, Vasoactivos)
+// ════════════════════════════════════════════════════════
+function toggleMultiselect(id){
+  const el = document.getElementById(id);
+  const wasOpen = el.classList.contains('open');
+  // Cerrar todos los demás multiselects abiertos
+  document.querySelectorAll('.multisel.open').forEach(m=>{ if(m.id!==id) m.classList.remove('open'); });
+  el.classList.toggle('open', !wasOpen);
+}
+
+// Evitar que el clic en un checkbox cierre el panel, y actualizar el label al cambiar
+document.addEventListener('click', e=>{
+  const panel = e.target.closest('.multisel-panel');
+  if(panel){
+    e.stopPropagation();
+    if(e.target.tagName === 'INPUT'){
+      const multisel = panel.closest('.multisel');
+      updateMultiselectLabel(multisel);
+    }
+  } else if(!e.target.closest('.multisel')){
+    document.querySelectorAll('.multisel.open').forEach(m=>m.classList.remove('open'));
+  }
+});
+
+function updateMultiselectLabel(multisel){
+  const checked = [...multisel.querySelectorAll('input:checked')].map(c=>c.value);
+  const label = multisel.querySelector('.multisel-label');
+  if(checked.length){
+    label.textContent = checked.join(', ');
+    multisel.classList.add('has-value');
+  } else {
+    label.textContent = 'Seleccionar…';
+    multisel.classList.remove('has-value');
+  }
+}
+
+function getMultiselectValues(id){
+  const el = document.getElementById(id);
+  if(!el) return [];
+  return [...el.querySelectorAll('input:checked')].map(c=>c.value);
+}
+
+function setMultiselectValues(id, values){
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.querySelectorAll('input').forEach(c=>{ c.checked = (values||[]).includes(c.value); });
+  updateMultiselectLabel(el);
+}
+
+function resetMultiselect(id){
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.querySelectorAll('input').forEach(c=>c.checked=false);
+  updateMultiselectLabel(el);
+}
+
+function toggleDolorEscala(){
+  const v = document.getElementById('eDolorAuto').value;
+  document.getElementById('eDolorEscalaRow').style.display = v==='Sí' ? 'block' : 'none';
+  if(v!=='Sí') document.getElementById('eDolorEscala').value = '';
+}
+
+document.getElementById('ePVE')?.addEventListener('change', function(){
+  const npveDisp = document.getElementById('eNPVEDisplay');
+  if(!npveDisp || !currentEvoPacId) return;
+  let pvePrevias = evoluciones.filter(e => e.patientId===currentEvoPacId && e.pve && e.pve!=='' && e.pve!=='No').length;
+  if(this.value === 'Sí') pvePrevias += 1;
+  npveDisp.value = pvePrevias>0 ? pvePrevias : '0';
+});
+
 function toggleAccordion(id){
   const body = document.getElementById(id);
   const arrId = 'arr' + id.replace('acc','');
@@ -3723,16 +3930,19 @@ function openEvolucion(patientId){
   document.getElementById('eTurno').value = currentShift();
   document.getElementById('eKine').value = currentUser.name;
   const nFields = ['eModo','eVT','eVTkg','eFR','ePEEP','eFiO2','eTi','ePC',
-    'ePpico','ePplat','ePEEPt','eDP','eCrs','eRinsp','eFlujo','eMP','eER','eCT','eSI',
+    'ePpico','ePplat','ePEEPt','eDP','eCrs','eRinsp','eFlujo','eMP','eER','eCT',
     'ePH','ePCO2','ePO2','eHCO3','eSpO2','ePAFI','eInterfaz',
     'eFC','eTAS','eTAD','eTAM','eSpO2Mon','eFRMon','ePIC','eEtCO2',
-    'eRASS','eCPOT','eCAMICU','eVentSed','eSedacion','eAnalgesia','eBNM','eVasoact',
-    'eAKM1','eAKM2','eMRC',
-    'ePVE','ePVETipo','ePVEtmin','ePVEresult','eExtubacion','eInterfazPE','eNPVE',
+    'eRASS','eCPOT','eCAMICU','eVentSed','eDolorAuto','eDolorEscala','eOtrosFarmacos',
+    'eAKM1','eMRC',
+    'ePVE','ePVETipo','ePVEtmin','ePVEresult','eExtubacion','eInterfazPE',
     'eCuffM','eCuffT','eCuffN','eOclusionCanula','eDeglusion',
-    'eSecCant','eSecChar','eTolerancia','eObs','eInterfazPrincipal'];
+    'eSecCant','eSecChar','eObs','eInterfazPrincipal'];
   nFields.forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   document.querySelectorAll('.tag.active').forEach(t=>t.classList.remove('active'));
+  ['msSedacion','msAnalgesia','msBNM','msVasoact'].forEach(resetMultiselect);
+  document.getElementById('eDolorEscalaRow').style.display = 'none';
+  { const ctBox=document.getElementById('ctMultiplesBox'); if(ctBox){ ctBox.style.display='none'; ctBox.innerHTML=''; } }
 
   // Reset OCR signos vitales
   { const pv=document.getElementById('ocrPreviewVS'); if(pv){pv.style.display='none';pv.src='';} }
@@ -3799,6 +4009,11 @@ function openEvolucion(patientId){
   const chps = document.getElementById('ocrChips');
   if(chps) chps.innerHTML='';
 
+  // N° de PVEs acumuladas previas (informativo, se recalcula al guardar)
+  const pvePrevias = evoluciones.filter(e => e.patientId===patientId && e.pve && e.pve!=='' && e.pve!=='No').length;
+  const npveDisp = document.getElementById('eNPVEDisplay');
+  if(npveDisp) npveDisp.value = pvePrevias>0 ? pvePrevias : '0';
+
   renderTimeline(patientId);
   openModal('modalEvo');
 }
@@ -3841,6 +4056,12 @@ async function guardarEvolucion(){
   const G = id => document.getElementById(id)?.value?.trim() || '';
   const GN = id => { const v=parseFloat(G(id)); return isNaN(v)?'':v; };
   const tecnicas = [...document.querySelectorAll('.tag.active')].map(t=>t.textContent.trim());
+
+  // N° de PVEs acumuladas: cuenta evoluciones previas de este paciente con PVE registrado, + esta si aplica
+  const pveActual = G('ePVE');
+  let nPVE = evoluciones.filter(e => e.patientId===currentEvoPacId && e.pve && e.pve!=='' && e.pve!=='No').length;
+  if(pveActual && pveActual!=='No') nPVE += 1;
+
   const evo = {
     id: Date.now(), patientId: currentEvoPacId, date, turno:G('eTurno'), kine:G('eKine'),
     armDia:GN('eARM'), utiDia:GN('eUTI'),
@@ -3849,20 +4070,23 @@ async function guardarEvolucion(){
     fio2:GN('eFiO2'), ti:GN('eTi'), pc:GN('ePC'),
     ppico:GN('ePpico'), pplat:GN('ePplat'), peept:GN('ePEEPt'),
     dp:GN('eDP'), crs:GN('eCrs'), rinsp:GN('eRinsp'), flujo:GN('eFlujo'),
-    mp:GN('eMP'), er:GN('eER'), ct:GN('eCT'), si:GN('eSI'),
+    mp:GN('eMP'), er:GN('eER'), ct:GN('eCT'),
     ph:GN('ePH'), pco2:GN('ePCO2'), po2:GN('ePO2'), hco3:GN('eHCO3'),
     spo2:GN('eSpO2'), pafi:GN('ePAFI'), interfaz:G('eInterfazPrincipal') || G('eInterfaz'), diasHosp:GN('eDiasHosp'),
     rass:G('eRASS'), cpot:G('eCPOT'), camicu:G('eCAMICU'), ventSed:G('eVentSed'),
-    sedacion:G('eSedacion'), analgesia:G('eAnalgesia'), bnm:G('eBNM'), vasoact:G('eVasoact'),
-    akm1:G('eAKM1'), akm2:G('eAKM2'), mrc:G('eMRC'),
+    dolorAuto:G('eDolorAuto'), dolorEscala:G('eDolorEscala'),
+    sedacion:getMultiselectValues('msSedacion'), analgesia:getMultiselectValues('msAnalgesia'),
+    bnm:getMultiselectValues('msBNM'), vasoact:getMultiselectValues('msVasoact'),
+    otrosFarmacos:G('eOtrosFarmacos'),
+    akm1:G('eAKM1'), mrc:G('eMRC'),
     pve:G('ePVE'), pveTipo:G('ePVETipo'), pveMin:GN('ePVEtmin'), pveResult:G('ePVEresult'),
-    extubacion:G('eExtubacion'), interfazPE:G('eInterfazPE'), nPVE:GN('eNPVE'),
+    extubacion:G('eExtubacion'), interfazPE:G('eInterfazPE'), nPVE: nPVE>0 ? nPVE : '',
     cuffM:GN('eCuffM'), cuffT:GN('eCuffT'), cuffN:GN('eCuffN'),
     oclusionCanula:G('eOclusionCanula'), deglusion:G('eDeglusion'),
     tipoCan:G('eTipoCan'), canDI:G('eCanDI'), canDE:G('eCanDE'), estadoBajon:G('eEstadoBajon'),
     ostoma:G('eOstoma'), secTrqCant:G('eSecTrqCant'), secTrqCal:G('eSecTrqCal'), lof:G('eLOF'),
     tecnicas, secCant:G('eSecCant'), secChar:G('eSecChar'),
-    tolerancia:G('eTolerancia'), obs:G('eObs'),
+    obs:G('eObs'),
   };
   evoluciones.unshift(evo);
   await persistAll();
@@ -3871,12 +4095,15 @@ async function guardarEvolucion(){
   showToast('Evolución guardada','success');
   // Reset
   const nFields = ['eVT','eVTkg','eFR','ePEEP','eFiO2','eTi','ePC','ePpico','ePplat','ePEEPt','eDP','eCrs','eRinsp','eFlujo',
-    'eMP','eER','eCT','eSI','ePH','ePCO2','ePO2','eHCO3','eSpO2','ePAFI',
-    'eSedacion','eAnalgesia','eBNM','eVasoact','ePVEtmin','eNPVE','eCuffM','eCuffT','eCuffN','eCanDI','eCanDE','eObs'];
+    'eMP','eER','eCT','ePH','ePCO2','ePO2','eHCO3','eSpO2','ePAFI',
+    'eOtrosFarmacos','ePVEtmin','eCuffM','eCuffT','eCuffN','eCanDI','eCanDE','eObs',
+    'eFC','eTAS','eTAD','eTAM','eSpO2Mon','eFRMon','ePIC','eEtCO2','eDolorEscala'];
   nFields.forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
-  ['eModo','eInterfaz','eRASS','eCPOT','eCAMICU','eVentSed','eAKM1','eAKM2','eMRC',
+  ['eModo','eInterfaz','eRASS','eCPOT','eCAMICU','eVentSed','eDolorAuto','eAKM1','eMRC',
    'ePVE','ePVETipo','ePVEresult','eExtubacion','eInterfazPE','eOclusionCanula','eDeglusion','eTipoCan','eEstadoBajon','eOstoma','eSecTrqCant','eSecTrqCal','eLOF',
-   'eSecCant','eSecChar','eTolerancia'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+   'eSecCant','eSecChar'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  ['msSedacion','msAnalgesia','msBNM','msVasoact'].forEach(resetMultiselect);
+  document.getElementById('eDolorEscalaRow').style.display = 'none';
   document.querySelectorAll('.tag.active').forEach(t=>t.classList.remove('active'));
   // Reset OCR
   const prev = document.getElementById('ocrPreview');
@@ -3923,7 +4150,7 @@ function renderTimeline(patientId){
     const tags = e.tecnicas?.length ? e.tecnicas.map(t=>`<span class="badge badge-blue" style="font-size:9px;margin-right:2px;margin-bottom:2px">${t}</span>`).join('') : '';
     const VM = [[e.modo,'Modo'],[e.vt,'VT (ml)'],[e.vtkg,'ml/kg'],[e.fr,'FR'],[e.peep,'PEEP'],[e.fio2,'FiO₂%'],[e.ppico,'Ppico'],[e.pplat,'Pplat'],[e.dp,'DP'],[e.crs,'Crs']].filter(([v])=>v!==''&&v!==undefined&&v!==null);
     const EAB = [[e.ph,'pH'],[e.pco2,'pCO₂'],[e.po2,'pO₂'],[e.spo2,'SpO₂%'],[e.pafi,'PAFI']].filter(([v])=>v!==''&&v!==undefined&&v!==null);
-    const NEURO = [[e.rass,'RASS'],[e.cpot,'CPOT'],[e.camicu,'CAM-ICU'],[e.akm1,'AKM M'],[e.akm2,'AKM T/N']].filter(([v])=>v!==''&&v!==undefined&&v!==null);
+    const NEURO = [[e.rass,'RASS'],[e.cpot,'CPOT'],[e.camicu,'CAM-ICU'],[e.akm1,'AKM']].filter(([v])=>v!==''&&v!==undefined&&v!==null);
     return `<div class="evo-entry ${i===0?'latest':''}">
       <div class="evo-card">
         <div class="evo-card-header">
@@ -4201,12 +4428,14 @@ function exportarDatos(){
   // ── Hoja 2: Evoluciones ──
   const encEvo = ['Apellido','Nombre','Sala','Cama','Fecha','Turno','Kinesiologo',
     'Tipo Evo','Dia Hosp','Dia Sector','Dia ARM',
-    'Interfaz','Modo','VT ml','FR','PEEP','FiO2','Ppico','Pplat','DP','Crs',
+    'Interfaz','Modo','VT ml','VT ml/kg PCP','FR','PEEP','FiO2','Ppico','Pplat','DP','Crs',
     'pH','pCO2','pO2','SpO2','PAFI',
-    'RASS','CAM-ICU','Sedacion','Analgesia','BNM',
-    'AKM','MRC','PVE','Result PVE','Extubacion',
+    'FC','TAS','TAD','TAM','SpO2 Monitor','FR Monitor','PIC','EtCO2',
+    'RASS','CPOT','CAM-ICU','Dolor Autopercibido','Escala Dolor',
+    'Sedacion','Analgesia','BNM','Vasoactivos','Otros Farmacos',
+    'AKM','MRC','PVE','Tipo PVE','Tiempo PVE','Result PVE','Extubacion','N PVEs Acum',
     'Cuff M','Cuff T','Cuff N','Tipo Canula','SecTrq Cant','SecTrq Cal','LOF','Deglucion',
-    'FAC','Tolerancia','Frecuencia','Logros','Tecnicas','Observaciones'];
+    'FAC','Frecuencia','Logros','Tecnicas','Observaciones'];
 
   const filasEvo = evoluciones.map(e => {
     const p = patients.find(x=>x.id===e.patientId)||{};
@@ -4217,14 +4446,18 @@ function exportarDatos(){
       e.tipo_evo==='minimos'?'Minimos':(e.tipo||'UTI/Emerg'),
       e.diasHosp||'', e.utiDia||'', e.armDia||'',
       e.interfaz||e.interfazO2||'', e.modo||'',
-      e.vt||'', e.fr||'', e.peep||'', e.fio2||'',
+      e.vt||'', e.vtkg||'', e.fr||'', e.peep||'', e.fio2||'',
       e.ppico||'', e.pplat||'', e.dp||'', e.crs||'',
       e.ph||'', e.pco2||'', e.po2||'', e.spo2||'', e.pafi||'',
-      e.rass||'', e.camicu||'', e.sedacion||'', e.analgesia||'', e.bnm||'',
-      e.akm1||'', e.mrc||'', e.pve||'', e.pveResult||'', e.extubacion||'',
+      e.fc||'', e.tas||'', e.tad||'', e.tam||'', e.spo2Mon||'', e.frMon||'', e.pic||'', e.etco2||'',
+      e.rass||'', e.cpot||'', e.camicu||'', e.dolorAuto||'', e.dolorEscala||'',
+      (e.sedacion||[]).join(' | '), (e.analgesia||[]).join(' | '),
+      (e.bnm||[]).join(' | '), (e.vasoact||[]).join(' | '), e.otrosFarmacos||'',
+      e.akm1||'', e.mrc||'', e.pve||'', e.pveTipo||'', e.pveMin||'', e.pveResult||'',
+      e.extubacion||'', e.nPVE||'',
       e.cuffM||'', e.cuffT||'', e.cuffN||'',
       e.tipoCan||'', e.secTrqCant||'', e.secTrqCal||'', e.lof||'', e.deglusion||'',
-      e.fac||'', e.tolerancia||'', e.frecuencia||'',
+      e.fac||'', e.frecuencia||'',
       (e.logros||[]).join(' | '),
       (e.tecnicas||[]).join(' | '),
       e.obs||'',
