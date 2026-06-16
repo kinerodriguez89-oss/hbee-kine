@@ -966,6 +966,39 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
       <div id="pcpContent" style="display:flex;flex-wrap:wrap;gap:10px"></div>
     </div>
 
+    <!-- Signos vitales — Monitor -->
+    <div class="form-section" id="vsBox">
+      <div class="form-section-title"><i class="ti ti-heartbeat"></i> Signos vitales (monitor)</div>
+      <!-- OCR ZONE — Monitor -->
+      <div class="ocr-zone">
+        <div class="ocr-zone-title"><i class="ti ti-camera" style="margin-right:5px"></i>Completar con foto del monitor</div>
+        <div class="ocr-zone-sub">Sacá una foto a la pantalla del monitor de signos vitales — la IA lee FC, TA, SpO₂, FR, PIC y EtCO₂ y completa los campos automáticamente</div>
+        <input type="file" id="ocrCameraVS" accept="image/*" capture="environment" style="display:none" onchange="handleOCRImageVS(event)">
+        <input type="file" id="ocrGalleryVS" accept="image/*" style="display:none" onchange="handleOCRImageVS(event)">
+        <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+          <button class="btn-ocr" id="btnOCRCamVS" onclick="document.getElementById('ocrCameraVS').click()"><i class="ti ti-camera"></i>Sacar foto</button>
+          <button class="btn-ocr" onclick="document.getElementById('ocrGalleryVS').click()" style="background:linear-gradient(135deg,var(--blue-600),var(--purple-400))"><i class="ti ti-photo"></i>Subir imagen</button>
+        </div>
+        <img id="ocrPreviewVS" class="ocr-preview">
+        <div class="ocr-status" id="ocrStatusVS"></div>
+        <div id="ocrChipsVS" style="margin-top:8px;display:flex;flex-wrap:wrap;justify-content:center"></div>
+      </div>
+      <div class="form-row four" style="margin-top:8px">
+        <div class="form-group"><label>FC (lpm)</label><input type="number" id="eFC" inputmode="numeric"></div>
+        <div class="form-group"><label>TA sistólica</label><input type="number" id="eTAS" inputmode="numeric" placeholder="120"></div>
+        <div class="form-group"><label>TA diastólica</label><input type="number" id="eTAD" inputmode="numeric" placeholder="80"></div>
+        <div class="form-group"><label>TAM (calculada)</label><input type="text" id="eTAM" readonly style="background:var(--blue-50);color:var(--blue-800);font-weight:600"></div>
+      </div>
+      <div class="form-row three">
+        <div class="form-group"><label>SpO₂ monitor (%)</label><input type="number" id="eSpO2Mon" inputmode="numeric" max="100"></div>
+        <div class="form-group"><label>FR monitor (rpm)</label><input type="number" id="eFRMon" inputmode="numeric"></div>
+        <div class="form-group"><label>PIC (mmHg)</label><input type="number" id="ePIC" inputmode="numeric" placeholder="Si tiene sensor"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>EtCO₂ (mmHg)</label><input type="number" id="eEtCO2" inputmode="numeric" placeholder="Si tiene capnografía"></div>
+      </div>
+    </div>
+
     <!-- Mecánica ventilatoria -->
     <div class="accordion-header" onclick="toggleAccordion('accVent')">
       <span><i class="ti ti-lungs" style="margin-right:6px;color:var(--blue-400)"></i>Mecánica ventilatoria</span>
@@ -2399,6 +2432,111 @@ function fileToBase64(file){
   });
 }
 
+// ════════════════════════════════════════════════════════
+//  OCR — MONITOR DE SIGNOS VITALES
+// ════════════════════════════════════════════════════════
+async function handleOCRImageVS(event){
+  const file = event.target.files[0];
+  if(!file) return;
+
+  const status = document.getElementById('ocrStatusVS');
+  const chips  = document.getElementById('ocrChipsVS');
+  const preview= document.getElementById('ocrPreviewVS');
+  const btnCam = document.getElementById('btnOCRCamVS');
+
+  const reader = new FileReader();
+  reader.onload = e => { preview.src = e.target.result; preview.style.display = 'block'; };
+  reader.readAsDataURL(file);
+
+  btnCam.disabled = true;
+  status.innerHTML = '<span class="ocr-spinner"></span> Analizando imagen con IA…';
+  status.classList.add('show');
+  chips.innerHTML = '';
+
+  try {
+    const base64 = await fileToBase64(file);
+    const mediaType = file.type || 'image/jpeg';
+
+    const prompt = `Sos un sistema de lectura de pantallas de monitores de signos vitales en UCI.
+Analizá esta imagen e identificá todos los parámetros visibles.
+Devolvé SOLO un objeto JSON válido, sin texto extra ni backticks, con estos campos (null si no se ve o no aplica):
+{"fc":null,"ta_sistolica":null,"ta_diastolica":null,"spo2":null,"fr":null,"pic":null,"etco2":null}
+
+REGLAS IMPORTANTES:
+- fc: frecuencia cardíaca en latidos por minuto (lpm), suele estar en verde o el número más grande.
+- ta_sistolica y ta_diastolica: tensión arterial, suele mostrarse como "120/80" — separá en dos números. Si es PAM (presión arterial media) sin sistólica/diastólica visible, dejalos null.
+- spo2: saturación de oxígeno en %, suele estar en celeste/azul con etiqueta SpO2 o SAT.
+- fr: frecuencia respiratoria en respiraciones por minuto, suele estar en amarillo con etiqueta RR o FR.
+- pic: presión intracraneana en mmHg, solo si el monitor tiene ese módulo (etiqueta ICP o PIC). Si no se ve, null.
+- etco2: CO2 espirado en mmHg, solo si el monitor tiene capnografía (etiqueta EtCO2 o CO2). Si no se ve, null.
+- Todos los valores numéricos, sin unidades ni texto.`;
+
+    const GEMINI_KEY = LS.get('hbee_gemini_key') || '';
+    if(!GEMINI_KEY){ showToast('Configurá tu API key de Gemini en Ajustes','error'); btnCam.disabled=false; return; }
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(GEMINI_KEY)}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [
+            { inline_data: { mime_type: mediaType, data: base64 } },
+            { text: prompt }
+          ]}]
+        })
+      }
+    );
+    const data = await response.json();
+    if(!response.ok){
+      const apiMsg = data?.error?.message || `HTTP ${response.status}`;
+      throw new Error(apiMsg);
+    }
+    const text = data.candidates?.[0]?.content?.parts?.map(p=>p.text||'').join('') || '';
+    if(!text){ throw new Error('Gemini no devolvió texto. Revisá la API key.'); }
+    const clean = text.replace(/```json|```/g,'').trim();
+    const j1 = clean.indexOf('{'), j2 = clean.lastIndexOf('}');
+    if(j1===-1 || j2===-1){ throw new Error('Respuesta sin JSON válido: ' + clean.slice(0,80)); }
+    const result = JSON.parse(clean.slice(j1, j2+1));
+
+    const filled = [];
+    const setVal = (id, val, label) => {
+      if(val !== null && val !== undefined && val !== ''){
+        const el = document.getElementById(id);
+        if(el){
+          el.value = val;
+          el.classList.add('field-ai');
+          setTimeout(()=>el.classList.remove('field-ai'), 5000);
+          filled.push(label);
+        }
+      }
+    };
+
+    setVal('eFC', result.fc, 'FC');
+    setVal('eTAS', result.ta_sistolica, 'TAS');
+    setVal('eTAD', result.ta_diastolica, 'TAD');
+    if(result.ta_sistolica !== null || result.ta_diastolica !== null) updateTAM();
+    setVal('eSpO2Mon', result.spo2, 'SpO₂');
+    setVal('eFRMon', result.fr, 'FR');
+    setVal('ePIC', result.pic, 'PIC');
+    setVal('eEtCO2', result.etco2, 'EtCO₂');
+
+    if(filled.length){
+      status.innerHTML = `<i class="ti ti-check" style="color:var(--teal-600)"></i> ${filled.length} campos completados`;
+      chips.innerHTML = filled.map(k=>`<span class="ocr-chip"><i class="ti ti-check" style="font-size:9px"></i>${k}</span>`).join('');
+      showToast(`OCR: ${filled.length} parámetros leídos ✓`, 'success');
+    } else {
+      status.innerHTML = '<i class="ti ti-alert-circle" style="color:var(--amber-600)"></i> No se reconocieron parámetros. Completá manualmente.';
+      showToast('No se reconocieron valores en la imagen','error');
+    }
+  } catch(e){
+    console.error('OCR VS error:', e);
+    status.innerHTML = `<i class="ti ti-x" style="color:var(--red-600)"></i> Error: ${e.message||'desconocido'}`;
+    showToast('Error OCR: ' + (e.message||'').slice(0,80), 'error');
+  }
+  btnCam.disabled = false;
+  event.target.value = '';
+}
+
 function autoCalculate(){
   const get = id => { const v=parseFloat(document.getElementById(id)?.value); return isNaN(v)?null:v; };
   // set solo si el campo está vacío (no pisa lo que el usuario ingresó a mano)
@@ -3541,6 +3679,23 @@ function updateIMCyPCP(){
   document.getElementById('fPCP').value = pcp!==null ? pcp.toFixed(1)+' kg' : '';
 }
 
+// TAM = TAD + (TAS - TAD) / 3
+function updateTAM(){
+  const tas = parseFloat(document.getElementById('eTAS')?.value);
+  const tad = parseFloat(document.getElementById('eTAD')?.value);
+  const tamEl = document.getElementById('eTAM');
+  if(!tamEl) return;
+  if(!isNaN(tas) && !isNaN(tad)){
+    const tam = tad + (tas - tad) / 3;
+    tamEl.value = tam.toFixed(0) + ' mmHg';
+  } else {
+    tamEl.value = '';
+  }
+}
+['eTAS','eTAD'].forEach(id=>{
+  document.getElementById(id)?.addEventListener('input', updateTAM);
+});
+
 // ════════════════════════════════════════════════════════
 //  EVOLUCIÓN
 // ════════════════════════════════════════════════════════
@@ -3570,6 +3725,7 @@ function openEvolucion(patientId){
   const nFields = ['eModo','eVT','eVTkg','eFR','ePEEP','eFiO2','eTi','ePC',
     'ePpico','ePplat','ePEEPt','eDP','eCrs','eRinsp','eFlujo','eMP','eER','eCT','eSI',
     'ePH','ePCO2','ePO2','eHCO3','eSpO2','ePAFI','eInterfaz',
+    'eFC','eTAS','eTAD','eTAM','eSpO2Mon','eFRMon','ePIC','eEtCO2',
     'eRASS','eCPOT','eCAMICU','eVentSed','eSedacion','eAnalgesia','eBNM','eVasoact',
     'eAKM1','eAKM2','eMRC',
     'ePVE','ePVETipo','ePVEtmin','ePVEresult','eExtubacion','eInterfazPE','eNPVE',
@@ -3577,6 +3733,11 @@ function openEvolucion(patientId){
     'eSecCant','eSecChar','eTolerancia','eObs','eInterfazPrincipal'];
   nFields.forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   document.querySelectorAll('.tag.active').forEach(t=>t.classList.remove('active'));
+
+  // Reset OCR signos vitales
+  { const pv=document.getElementById('ocrPreviewVS'); if(pv){pv.style.display='none';pv.src='';} }
+  { const sv=document.getElementById('ocrStatusVS'); if(sv){sv.classList.remove('show');sv.innerHTML='';} }
+  { const cv=document.getElementById('ocrChipsVS'); if(cv) cv.innerHTML=''; }
 
   // ── Calcular días automáticamente ──
   // Días de internación en hospital
@@ -3684,6 +3845,7 @@ async function guardarEvolucion(){
     id: Date.now(), patientId: currentEvoPacId, date, turno:G('eTurno'), kine:G('eKine'),
     armDia:GN('eARM'), utiDia:GN('eUTI'),
     modo:G('eModo'), vt:GN('eVT'), vtkg:GN('eVTkg'), fr:GN('eFR'), peep:GN('ePEEP'),
+    fc:GN('eFC'), tas:GN('eTAS'), tad:GN('eTAD'), tam:G('eTAM'), spo2Mon:GN('eSpO2Mon'), frMon:GN('eFRMon'), pic:GN('ePIC'), etco2:GN('eEtCO2'),
     fio2:GN('eFiO2'), ti:GN('eTi'), pc:GN('ePC'),
     ppico:GN('ePpico'), pplat:GN('ePplat'), peept:GN('ePEEPt'),
     dp:GN('eDP'), crs:GN('eCrs'), rinsp:GN('eRinsp'), flujo:GN('eFlujo'),
