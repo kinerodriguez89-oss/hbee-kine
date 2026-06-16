@@ -563,6 +563,10 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
 
     <span class="link-small" onclick="showSetup()">⚙ Configurar Google Drive</span>
     <span class="link-small" onclick="showGeminiSetup()" style="color:var(--teal-600)">🤖 Configurar OCR (Gemini API Key)</span>
+
+    <div style="text-align:center;margin-top:1.4rem;padding-top:.9rem;border-top:1px solid var(--border)">
+      <p style="font-size:10.5px;color:var(--text-light)">Desarrollado por <strong style="color:var(--text-muted)">Lic. Rodríguez Daniel</strong></p>
+    </div>
   </div>
 </div>
 
@@ -626,9 +630,9 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
       </div>
       <div class="stats-grid">
         <div class="stat-card stat-blue"><div class="stat-label">Pacientes activos</div><div class="stat-value" id="statActivos">0</div><div class="stat-sub">En UTI / Emergencia</div></div>
+        <div class="stat-card stat-amber"><div class="stat-label">Pacientes en ARM</div><div class="stat-value" id="statARM">0</div><div class="stat-sub">Asistencia respiratoria</div></div>
         <div class="stat-card stat-teal"><div class="stat-label">Evoluciones hoy</div><div class="stat-value" id="statHoy">0</div><div class="stat-sub">Cargadas en guardia</div></div>
-        <div class="stat-card stat-amber"><div class="stat-label">Con ARM</div><div class="stat-value" id="statARM">0</div><div class="stat-sub">Asistencia respiratoria</div></div>
-        <div class="stat-card stat-red"><div class="stat-label">Sin evolución hoy</div><div class="stat-value" id="statSinEvo">0</div><div class="stat-sub">Requieren atención</div></div>
+        <div class="stat-card stat-red"><div class="stat-label">Sin evoluciones hoy</div><div class="stat-value" id="statSinEvo">0</div><div class="stat-sub">Requieren atención</div></div>
       </div>
       <div class="card">
         <div class="card-header">
@@ -826,6 +830,36 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
             <option value="cada5">Cada 5 días</option>
             <option value="sincriterio">Sin criterio kinésico</option>
           </select>
+        </div>
+      </div>
+      <div class="form-row" id="fTQTMinRow" style="display:none">
+        <div class="form-group">
+          <label>¿Traqueostomizado?</label>
+          <select id="fTQTMin" onchange="toggleTQTMinDetalle()">
+            <option value="">-</option>
+            <option value="No">No</option>
+            <option value="Sí">Sí</option>
+          </select>
+        </div>
+      </div>
+      <div id="fTQTMinDetalle" style="display:none">
+        <div class="form-row three">
+          <div class="form-group"><label>Tipo de cánula</label>
+            <select id="fTQTMinTipo">
+              <option value="">-</option>
+              <option>Con balón</option>
+              <option>Con balón + puerto subglótico</option>
+              <option>Sin balón</option>
+            </select>
+          </div>
+          <div class="form-group"><label>ID cánula (mm)</label>
+            <select id="fTQTMinID">
+              <option value="">-</option>
+              <option>5.5</option><option>6</option><option>6.5</option><option>7</option>
+              <option>7.5</option><option>8</option><option>8.5</option><option>9</option>
+            </select>
+          </div>
+          <div class="form-group"><label>ED cánula (mm)</label><input type="text" id="fTQTMinED" placeholder="Manual — según marca"></div>
         </div>
       </div>
     </div>
@@ -1842,6 +1876,41 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
       </div>
     </div>
 
+    <!-- Sección TQT (solo si el paciente está traqueostomizado) -->
+    <div class="form-section" id="emSeccionTQT" style="display:none">
+      <div class="form-section-title"><i class="ti ti-stethoscope"></i> Traqueostomía</div>
+      <div class="form-row three">
+        <div class="form-group"><label>Tolera desinflado del balón</label>
+          <select id="emTolDesinf"><option value="">-</option><option>Sí</option><option>No</option><option>No aplica (sin balón)</option></select>
+        </div>
+        <div class="form-group"><label>Tolera oclusión de la cánula</label>
+          <select id="emTolOclusion"><option value="">-</option><option>Sí</option><option>No</option></select>
+        </div>
+        <div class="form-group"><label>Tolera válvula fonatoria</label>
+          <select id="emTolValvula"><option value="">-</option><option>Sí</option><option>No</option><option>No evaluada</option></select>
+        </div>
+      </div>
+      <div class="form-row three">
+        <div class="form-group"><label>Blue test</label>
+          <select id="emBlueTest"><option value="">-</option><option>Positivo</option><option>Negativo</option><option>No realizado</option></select>
+        </div>
+        <div class="form-group"><label>Calidad de la voz</label>
+          <select id="emCalidadVoz"><option value="">-</option><option>Húmeda</option><option>Clara</option><option>Afonía</option><option>No aplica</option></select>
+        </div>
+        <div class="form-group"><label>Tos</label>
+          <select id="emTosTQT"><option value="">-</option><option>Efectiva</option><option>Inefectiva</option></select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Cantidad de secreciones</label>
+          <select id="emSecTQTCant"><option value="">-</option><option>Escasas</option><option>Moderadas</option><option>Abundantes</option></select>
+        </div>
+        <div class="form-group"><label>Calidad de secreciones</label>
+          <select id="emSecTQTCal"><option value="">-</option><option>Mucosas</option><option>Mucopurulentas</option><option>Purulentas</option><option>Mucohemáticas</option><option>Hemáticas</option></select>
+        </div>
+      </div>
+    </div>
+
     <!-- Observación libre -->
     <div class="form-section">
       <div class="form-section-title"><i class="ti ti-notes"></i> Evolución / Observaciones</div>
@@ -2441,7 +2510,7 @@ async function handleOCRImage(event){
     const prompt = `Sos un sistema de lectura de pantallas de respiradores mecánicos en UCI.
 Analizá esta imagen e identificá todos los parámetros visibles.
 Devolvé SOLO un objeto JSON válido, sin texto extra ni backticks, con estos campos (null si no se ve):
-{"modo":null,"vt":null,"fr":null,"peep":null,"fio2":null,"ppico":null,"pplat":null,"peept":null,"dp":null,"crs":null,"rinsp":null,"flujo":null,"mp":null,"ti":null,"pc":null}
+{"modo":null,"vt":null,"fr":null,"peep":null,"fio2":null,"ppico":null,"pplat":null,"peept":null,"dp":null,"crs":null,"rinsp":null,"flujo":null,"mp":null,"ti":null,"pc":null,"modeloRespirador":null}
 
 REGLAS IMPORTANTES:
 - vt: este es el campo más importante y donde más errores se cometen. Los respiradores muestran TANTO el VT SETEADO (programado, el objetivo que el operador configuró) COMO el VT EXHALADO/MEDIDO (el valor real medido en cada respiración, que fluctúa y tiene decimales). DEVOLVÉ SIEMPRE EL VT SETEADO, NUNCA EL EXHALADO. Pistas para diferenciarlos: el VT seteado suele ser un número redondo (ej: 400, 450, 500, 480), suele estar en la zona de "configuración" o "settings" de la pantalla (a veces con fondo distinto, etiqueta "Set" o "VT control"), y NO cambia respiración a respiración. El VT exhalado suele tener decimales o no ser redondo (ej: 437, 462), está etiquetado como "exh", "esp", "medido", "monitor" o aparece en la zona de "monitoreo" de la pantalla, y puede fluctuar levemente. Si tenés dudas entre dos valores de VT visibles, elegí el más redondo y el que esté en la zona de configuración/seteo.
@@ -2457,6 +2526,7 @@ REGLAS IMPORTANTES:
     APRV, ATC → "APRV"
     Si el modo no está en la lista, escribilo tal cual aparece en pantalla.
 - flujo: si aparece como flujo pico inspiratorio en L/min, devolvé el número en L/min.
+- modeloRespirador: intentá identificar la marca y modelo del respirador si hay algún logo, texto de marca, o nombre de modelo visible en la pantalla, el chasis del equipo, o cualquier parte de la imagen (ejemplos comunes: "Puritan Bennett 840", "Puritan Bennett 980", "Servo-i", "Servo-u", "Servo-air", "Hamilton C6", "Hamilton G5", "Hamilton C3", "Dräger Evita V500", "Dräger Savina 300", "GE Engström Carestation", "Newport e360", "Maquet Servo"). Si reconocés solo la marca pero no el modelo exacto, devolvé la marca. Si no hay ningún indicio visible de marca o modelo, devolvé null — no inventes ni asumas un modelo si no hay evidencia visual clara.
 - Los demás campos: devolvé el número tal como aparece en pantalla.`;
 
     const GEMINI_KEY = LS.get('hbee_gemini_key') || '';
@@ -2509,12 +2579,18 @@ REGLAS IMPORTANTES:
     }
     autoCalculate();
 
+    let modeloHtml = '';
+    if(result.modeloRespirador){
+      modeloHtml = `<span class="ocr-chip" style="background:var(--purple-50);color:var(--purple-800);border-color:var(--purple-50)"><i class="ti ti-device-desktop" style="font-size:9px"></i> ${result.modeloRespirador}</span>`;
+    }
+
     if(filled.length){
       status.innerHTML = `<i class="ti ti-check" style="color:var(--teal-600)"></i> ${filled.length} campos completados`;
-      chips.innerHTML = filled.map(k=>`<span class="ocr-chip"><i class="ti ti-check" style="font-size:9px"></i>${k}</span>`).join('');
+      chips.innerHTML = modeloHtml + filled.map(k=>`<span class="ocr-chip"><i class="ti ti-check" style="font-size:9px"></i>${k}</span>`).join('');
       showToast(`OCR: ${filled.length} parámetros leídos ✓`, 'success');
     } else {
       status.innerHTML = '<i class="ti ti-alert-circle" style="color:var(--amber-600)"></i> No se reconocieron parámetros. Completá manualmente.';
+      chips.innerHTML = modeloHtml;
       showToast('No se reconocieron valores en la imagen','error');
     }
   } catch(e){
@@ -2787,12 +2863,19 @@ function actualizarFormularioPorSala(sala){
   // Mínimos: mostrar tipo kine, estado fx, frecuencia
   document.getElementById('fTipoKineRow').style.display = esMin ? 'block' : 'none';
   document.getElementById('fEstFxRow').style.display = esMin ? 'grid' : 'none';
+  document.getElementById('fTQTMinRow').style.display = esMin ? 'grid' : 'none';
   // Mínimos: ocultar scores de severidad y sección ARM
   document.getElementById('fSeccionScores').style.display = esMin ? 'none' : 'block';
   document.getElementById('fSeccionARM').style.display = esMin ? 'none' : 'block';
   // Cambiar label de fecha según sector
   const labelFI = document.getElementById('labelFIUTI');
   if(labelFI) labelFI.textContent = esMin ? 'Fecha ingreso al sector' : 'Fecha ingreso UTI/Emergencia';
+  if(!esMin) document.getElementById('fTQTMinDetalle').style.display = 'none';
+}
+
+function toggleTQTMinDetalle(){
+  const v = document.getElementById('fTQTMin').value;
+  document.getElementById('fTQTMinDetalle').style.display = v==='Sí' ? 'block' : 'none';
 }
 
 // Abrir evolución: detectar si es Mínimos o UTI/Emergencia
@@ -2825,7 +2908,8 @@ function openEvolucionMin(patientId){
   ['emTurno','emFrecuencia','emEVA','emConciencia','emOrientacion','emNoAtencion',
    'emInterfazO2','emAuscult','emTos','emFAC','emTolerancia',
    'emHemi','emControlTronco','emDeglusion','emCarga','emHerida',
-   'emNivelAmp','emMunon','emVendaje'].forEach(id=>{
+   'emNivelAmp','emMunon','emVendaje',
+   'emTolDesinf','emTolOclusion','emTolValvula','emBlueTest','emCalidadVoz','emTosTQT','emSecTQTCant','emSecTQTCal'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.value='';
   });
   document.querySelectorAll('#emLogrosContainer .tag.active').forEach(t=>t.classList.remove('active'));
@@ -2856,6 +2940,9 @@ function openEvolucionMin(patientId){
   document.getElementById('emSeccionQx').style.display = showQx ? 'block' : 'none';
   document.getElementById('emSeccionAmputado').style.display = showAmputado ? 'block' : 'none';
 
+  // Sección TQT: aplica a cualquier tipo de paciente de Mínimos, si está marcado como traqueostomizado
+  document.getElementById('emSeccionTQT').style.display = (p.tqtMin === 'Sí') ? 'block' : 'none';
+
   // Botón de ficha neurológica solo para neurológicos
   document.getElementById('btnAbrirFichaNeuro').style.display = tipo === 'neurologico' ? 'inline-flex' : 'none';
 
@@ -2884,6 +2971,9 @@ async function guardarEvoMin(){
     hemi:G('emHemi'), controlTronco:G('emControlTronco'), deglusion:G('emDeglusion'),
     diaPOP:GN('emDiaPOP'), carga:G('emCarga'), herida:G('emHerida'),
     nivelAmp:G('emNivelAmp'), munon:G('emMunon'), vendaje:G('emVendaje'),
+    tolDesinf:G('emTolDesinf'), tolOclusion:G('emTolOclusion'), tolValvula:G('emTolValvula'),
+    blueTest:G('emBlueTest'), calidadVoz:G('emCalidadVoz'), tosTQT:G('emTosTQT'),
+    secTQTCant:G('emSecTQTCant'), secTQTCal:G('emSecTQTCal'),
     obs:G('emObs'),
     tecnicas:[],
   };
@@ -3520,11 +3610,19 @@ function renderPatientRow(p, todayStr){
   const nEvo = evoluciones.filter(e=>e.patientId===p.id).length;
   const tieneHoy = evoluciones.some(e=>e.patientId===p.id && e.date===todayStr);
   const diasUTI = daysBetween(p.fIUTI, todayStr);
+  const esTQT = (p.tqt && p.tqt !== 'No' && p.tqt !== '') || p.tqtMin === 'Sí';
+  const enARM = p.inicioARM && !p.finARM;
+  const tqtBadge = esTQT
+    ? (enARM
+        ? '<span class="badge badge-red" style="font-size:9px" title="Traqueostomizado + ARM"><i class="ti ti-lungs"></i> TQT+ARM</span>'
+        : '<span class="badge badge-blue" style="font-size:9px" title="Traqueostomizado, ventilación espontánea"><i class="ti ti-circle-dot"></i> TQT espontáneo</span>')
+    : '';
   return `<div class="patient-row" data-id="${p.id}">
     <div style="flex:1;min-width:0">
       <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">
         ${currentSector?'':salaChip(p.sala)}
         <span style="font-size:10px;font-weight:600;color:var(--text-muted)">Cama ${p.cama||'—'}</span>
+        ${tqtBadge}
         ${!tieneHoy ? '<span class="badge badge-red" style="font-size:9px;"><i class="ti ti-alert-circle"></i> Sin evo. hoy</span>' : ''}
       </div>
       <div class="p-name" style="margin-top:4px">${p.apellido}, ${p.nombre}</div>
@@ -3602,9 +3700,15 @@ function renderTabla(){
   tbody.innerHTML = lista.map(p=>{
     const nEvo = evoluciones.filter(e=>e.patientId===p.id).length;
     const conARM = p.inicioARM && !p.finARM;
+    const esTQT = (p.tqt && p.tqt !== 'No' && p.tqt !== '') || p.tqtMin === 'Sí';
+    const tqtBadge = esTQT
+      ? (conARM
+          ? '<span class="badge badge-red" style="font-size:9px" title="Traqueostomizado + ARM">TQT+ARM</span>'
+          : '<span class="badge badge-blue" style="font-size:9px" title="Traqueostomizado, ventilación espontánea">TQT esp.</span>')
+      : '';
     return `<tr>
       <td>${salaChip(p.sala)} <small style="color:var(--text-muted);font-size:10px">C.${p.cama||'?'}</small></td>
-      <td><div style="font-weight:600;color:var(--blue-900)">${p.apellido}, ${p.nombre}</div><div style="font-size:10px;color:var(--text-muted)">DNI ${p.dni||'—'} · ${p.edad||'?'} años</div></td>
+      <td><div style="font-weight:600;color:var(--blue-900)">${p.apellido}, ${p.nombre} ${tqtBadge}</div><div style="font-size:10px;color:var(--text-muted)">DNI ${p.dni||'—'} · ${p.edad||'?'} años</div></td>
       <td style="max-width:180px;white-space:normal">${p.diagnostico||'—'}</td>
       <td class="hide-mobile">${fmtDate(p.fIUTI)||'—'}</td>
       <td>${conARM?'<span class="badge badge-red">ARM</span>':'<span class="badge badge-gray">No</span>'}</td>
@@ -3633,11 +3737,19 @@ function filterDash(q){
     const nEvo = evoluciones.filter(e=>e.patientId===p.id).length;
     const tieneHoy = evoluciones.some(e=>e.patientId===p.id && e.date===todayStr);
     const diasUTI = daysBetween(p.fIUTI, todayStr);
+    const esTQT = (p.tqt && p.tqt !== 'No' && p.tqt !== '') || p.tqtMin === 'Sí';
+    const enARM = p.inicioARM && !p.finARM;
+    const tqtBadge = esTQT
+      ? (enARM
+          ? '<span class="badge badge-red" style="font-size:9px" title="Traqueostomizado + ARM"><i class="ti ti-lungs"></i> TQT+ARM</span>'
+          : '<span class="badge badge-blue" style="font-size:9px" title="Traqueostomizado, ventilación espontánea"><i class="ti ti-circle-dot"></i> TQT espontáneo</span>')
+      : '';
     return `<div class="patient-row">
       <div style="flex:1;min-width:0">
         <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">
           ${salaChip(p.sala)}
           <span style="font-size:10px;font-weight:600;color:var(--text-muted)">Cama ${p.cama||'—'}</span>
+          ${tqtBadge}
           ${!tieneHoy?'<span class="badge badge-red" style="font-size:9px;"><i class="ti ti-alert-circle"></i> Sin evo. hoy</span>':''}
         </div>
         <div class="p-name" style="margin-top:4px">${p.apellido}, ${p.nombre}</div>
@@ -3698,6 +3810,11 @@ function openNuevoPaciente(){
   document.getElementById('fTipoKine').value = '';
   document.getElementById('fEstFx').value = '';
   document.getElementById('fFrecuencia').value = '';
+  document.getElementById('fTQTMin').value = '';
+  document.getElementById('fTQTMinTipo').value = '';
+  document.getElementById('fTQTMinID').value = '';
+  document.getElementById('fTQTMinED').value = '';
+  document.getElementById('fTQTMinDetalle').style.display = 'none';
   // Si hay sector preseleccionado, aplicar lógica de formulario
   const salaActual = document.getElementById('fSala').value;
   actualizarFormularioPorSala(salaActual);
@@ -3719,7 +3836,9 @@ function openEditPaciente(id){
   M('fFIHosp',p.fIHosp); M('fFIUTI',p.fIUTI); M('fTipoIngreso',p.tipoIngreso);
   M('fDiag',p.diagnostico); M('fMotivo',p.motivo);
   M('fTipoKine',p.tipoKine); M('fEstFx',p.estFx); M('fFrecuencia',p.frecuencia);
+  M('fTQTMin',p.tqtMin); M('fTQTMinTipo',p.tqtMinTipo); M('fTQTMinID',p.tqtMinID); M('fTQTMinED',p.tqtMinED);
   actualizarFormularioPorSala(p.sala);
+  toggleTQTMinDetalle();
   M('fApache',p.apache); M('fSaps',p.saps); M('fCharlson',p.charlson); M('fSofa',p.sofa);
   M('fHTA',p.hta); M('fDBT',p.dbt); M('fObesidad',p.obesidad); M('fTBQ',p.tbq);
   M('fRespi',p.respi); M('fCardio',p.cardio); M('fOtrosAnt',p.otrosAnt);
@@ -3743,6 +3862,7 @@ async function guardarPaciente(){
     peso, talla, imc, pcp: pcp!==null ? +pcp.toFixed(1) : null,
     sala:G('fSala'), cama:G('fCama'), kine:G('fKine'),
     tipoKine:G('fTipoKine'), estFx:G('fEstFx'), frecuencia:G('fFrecuencia'),
+    tqtMin:G('fTQTMin'), tqtMinTipo:G('fTQTMinTipo'), tqtMinID:G('fTQTMinID'), tqtMinED:G('fTQTMinED'),
     fIHosp:G('fFIHosp'), fIUTI:G('fFIUTI'), tipoIngreso:G('fTipoIngreso'),
     diagnostico:G('fDiag'), motivo:G('fMotivo'),
     apache:parseInt(G('fApache'))||null, saps:parseInt(G('fSaps'))||null,
@@ -4410,6 +4530,7 @@ function exportarDatos(){
     'Diagnostico','Motivo','HTA','DBT','Obesidad','TBQ','Patol.Resp','Patol.CV','Otros Atc',
     'APACHE II','SAPS II','Charlson','SOFA','Causa VM','Fecha IOT','Inicio ARM','Fin ARM',
     'Reintubado','TQT','Prono sesiones','Tipo Kine','Est.Funcional Previo','Frecuencia',
+    'TQT Minimos','Tipo Canula Min','ID Canula Min','ED Canula Min',
     'FEgreso UTI','FAlta Kine'];
 
   const filasPac = patients.map(p => fila([
@@ -4424,6 +4545,7 @@ function exportarDatos(){
     p.causaVM||'', fmtDate(p.fIOT), fmtDate(p.inicioARM), fmtDate(p.finARM),
     p.reintubado||'', p.tqt||'', p.prono||'',
     TIPO_KINE_LABEL[p.tipoKine]||p.tipoKine||'', p.estFx||'', p.frecuencia||'',
+    p.tqtMin||'', p.tqtMinTipo||'', p.tqtMinID||'', p.tqtMinED||'',
     fmtDate(p.fEUTI), fmtDate(p.fEK),
   ]));
 
@@ -4437,6 +4559,7 @@ function exportarDatos(){
     'Sedacion','Analgesia','BNM','Vasoactivos','Otros Farmacos',
     'AKM','MRC','PVE','Tipo PVE','Tiempo PVE','Result PVE','Extubacion','N PVEs Acum',
     'Cuff M','Cuff T','Cuff N','Tipo Canula','SecTrq Cant','SecTrq Cal','LOF','Deglucion',
+    'Tolera Desinflado Balon','Tolera Oclusion Canula','Tolera Valvula Fonatoria','Blue Test','Calidad Voz','Tos TQT','SecTQT Cant','SecTQT Cal',
     'FAC','Frecuencia','Logros','Tecnicas','Observaciones'];
 
   const filasEvo = evoluciones.map(e => {
@@ -4459,6 +4582,7 @@ function exportarDatos(){
       e.extubacion||'', e.nPVE||'',
       e.cuffM||'', e.cuffT||'', e.cuffN||'',
       e.tipoCan||'', e.secTrqCant||'', e.secTrqCal||'', e.lof||'', e.deglusion||'',
+      e.tolDesinf||'', e.tolOclusion||'', e.tolValvula||'', e.blueTest||'', e.calidadVoz||'', e.tosTQT||'', e.secTQTCant||'', e.secTQTCal||'',
       e.fac||'', e.frecuencia||'',
       joinArr(e.logros),
       joinArr(e.tecnicas),
