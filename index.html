@@ -2983,19 +2983,27 @@ ${evosTexto}`;
 }
 
 function descargarInformeWord(p, textoInforme, diasARM, diasTQT){
+  // Evita que símbolos clínicos (<, >, &) en el texto generado por la IA
+  // rompan la estructura del HTML que Word interpreta como .doc
+  const escHtml = s => String(s==null?'':s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  // Quita tildes/diacríticos para comparar títulos sin depender de coincidencia exacta
+  const sinTildes = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+
   // Convertir el texto plano del informe (con títulos en mayúsculas) a HTML con párrafos
   const lineas = textoInforme.split('\n').filter(l => l.trim());
-  const TITULOS = ['MOTIVO DE INGRESO Y DIAGNÓSTICO','RESUMEN EVOLUTIVO RESPIRATORIO','RESUMEN EVOLUTIVO NEUROMUSCULAR Y FUNCIONAL','ESTADO ACTUAL / AL ALTA','TÉCNICAS KINÉSICAS REALIZADAS','RECOMENDACIONES DE SEGUIMIENTO'];
+  const TITULOS = ['MOTIVO DE INGRESO Y DIAGNÓSTICO','RESUMEN EVOLUTIVO RESPIRATORIO','RESUMEN EVOLUTIVO NEUROMUSCULAR Y FUNCIONAL','ESTADO ACTUAL / AL ALTA','TÉCNICAS KINÉSICAS REALIZADAS','RECOMENDACIONES DE SEGUIMIENTO'].map(sinTildes);
   const cuerpoHtml = lineas.map(linea => {
     const limpia = linea.replace(/^[*#]+\s*/, '').trim();
-    const esTitulo = TITULOS.some(t => limpia.toUpperCase().startsWith(t));
+    const limpiaComp = sinTildes(limpia.toUpperCase());
+    const esTitulo = TITULOS.some(t => limpiaComp.startsWith(t));
     if(esTitulo){
       const idx = limpia.indexOf(':');
       const titulo = idx>-1 ? limpia.slice(0,idx) : limpia;
       const resto = idx>-1 ? limpia.slice(idx+1).trim() : '';
-      return `<p style="margin-top:14px;margin-bottom:4px"><strong style="color:#185FA5;font-size:12.5px;letter-spacing:.3px">${titulo}</strong></p><p style="margin:0 0 8px;font-size:11.5px;line-height:1.6">${resto}</p>`;
+      return `<p style="margin-top:14px;margin-bottom:4px"><strong style="color:#185FA5;font-size:12.5px;letter-spacing:.3px">${escHtml(titulo)}</strong></p><p style="margin:0 0 8px;font-size:11.5px;line-height:1.6">${escHtml(resto)}</p>`;
     }
-    return `<p style="margin:0 0 8px;font-size:11.5px;line-height:1.6">${limpia}</p>`;
+    return `<p style="margin:0 0 8px;font-size:11.5px;line-height:1.6">${escHtml(limpia)}</p>`;
   }).join('');
 
   const tipoLabel = TIPO_KINE_LABEL[p.tipoKine] || '';
@@ -3004,15 +3012,17 @@ function descargarInformeWord(p, textoInforme, diasARM, diasTQT){
   const html = `<!DOCTYPE html>
 <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
 <head><meta charset="UTF-8">
-<title>Informe Kinésico — ${p.apellido}, ${p.nombre}</title>
+<title>Informe Kinésico — ${escHtml(p.apellido)}, ${escHtml(p.nombre)}</title>
 <!--[if gte mso 9]>
 <xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom></w:WordDocument></xml>
 <![endif]-->
 <style>
   body { font-family: Calibri, Arial, sans-serif; color:#222; }
-  .membrete-img { width:100%; max-width:480px; display:block; margin-bottom:6px; }
   .header { border-bottom:3px solid #185FA5; padding-bottom:10px; margin-bottom:16px; }
-  .header h2 { font-size:14px; color:#185FA5; font-weight:700; margin-top:8px; }
+  .brand-bar { height:8px; background:linear-gradient(90deg,#042C53,#185FA5,#0F6E56); margin-bottom:10px; }
+  .brand-name { font-size:12.5px; font-weight:700; color:#0C447C; letter-spacing:.3px; line-height:1.3; }
+  .brand-sub { font-size:10.5px; color:#0F6E56; font-weight:600; margin-top:2px; }
+  .header h2 { font-size:14px; color:#185FA5; font-weight:700; margin-top:10px; }
   .header p { font-size:10px; color:#666; margin:2px 0; }
   .patient-bar { background:#E6F1FB; padding:10px 14px; margin-bottom:16px; }
   .patient-bar span { font-size:11px; margin-right:18px; }
@@ -3029,18 +3039,20 @@ function descargarInformeWord(p, textoInforme, diasARM, diasTQT){
 <body>
 
 <div class="header">
-  <img src="${MEMBRETE_HBEE}" class="membrete-img">
+  <div class="brand-bar"></div>
+  <div class="brand-name">HOSPITAL DE ALTA COMPLEJIDAD DEL BICENTENARIO ESTEBAN ECHEVERRÍA</div>
+  <div class="brand-sub">Servicio de Kinesiología</div>
   <h2>INFORME KINÉSICO</h2>
   <p>Fecha de emisión: ${fechaHoy}</p>
 </div>
 
 <div class="patient-bar">
-  <span><strong>Paciente:</strong> ${p.apellido}, ${p.nombre}</span>
-  <span><strong>DNI:</strong> ${p.dni||'—'}</span>
+  <span><strong>Paciente:</strong> ${escHtml(p.apellido)}, ${escHtml(p.nombre)}</span>
+  <span><strong>DNI:</strong> ${escHtml(p.dni)||'—'}</span>
   <span><strong>Edad:</strong> ${p.edad||'—'} años</span>
-  <span><strong>Sala:</strong> ${SALA_LABEL[p.sala]||p.sala} — Cama ${p.cama||'—'}</span>
+  <span><strong>Sala:</strong> ${SALA_LABEL[p.sala]||p.sala} — Cama ${escHtml(p.cama)||'—'}</span>
   ${p.tipoKine ? `<span><strong>Tipo:</strong> ${tipoLabel}</span>` : ''}
-  <br><span><strong>Diagnóstico:</strong> ${p.diagnostico||'—'}</span>
+  <br><span><strong>Diagnóstico:</strong> ${escHtml(p.diagnostico)||'—'}</span>
   <span><strong>FI Hospital:</strong> ${fmtDate(p.fIHosp)||'—'}</span>
 </div>
 
