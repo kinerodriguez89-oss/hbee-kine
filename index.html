@@ -342,6 +342,13 @@ tr:hover td{ background:var(--blue-50); }
 .multisel-opt:hover{ background:var(--blue-50); }
 .multisel-opt input{ width:15px;height:15px;cursor:pointer;flex-shrink:0; }
 
+.ant-grid{ display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:8px; }
+.ant-chip{ display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--border);
+  border-radius:8px;font-size:12.5px;font-weight:500;cursor:pointer;background:var(--surface);transition:.15s; }
+.ant-chip:hover{ background:var(--blue-50); }
+.ant-chip input{ width:15px;height:15px;cursor:pointer;flex-shrink:0;accent-color:var(--blue-600); }
+.ant-chip.is-checked{ border-color:var(--blue-200);background:var(--blue-50);color:var(--blue-800); }
+
 
 .egreso-option{ display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:var(--radius);
   border:2px solid var(--border);cursor:pointer;transition:all .15s;background:#fff; }
@@ -668,7 +675,7 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
             <thead><tr>
               <th>Sala/Cama</th><th>Paciente</th><th>Diagnóstico</th>
               <th class="hide-mobile">Ingreso</th><th>ARM</th><th>Estado</th>
-              <th>Kinesiólogo</th><th>Acciones</th>
+              <th>Acciones</th>
             </tr></thead>
             <tbody id="tbodyPacientes"></tbody>
           </table>
@@ -752,9 +759,9 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
     <!-- Ubicación -->
     <div class="form-section">
       <div class="form-section-title"><i class="ti ti-bed"></i> Ubicación e ingreso</div>
-      <div class="form-row three">
+      <div class="form-row">
         <div class="form-group"><label>Sala</label>
-          <select id="fSala" onchange="updateCamaHint()">
+          <select id="fSala" onchange="onSalaChange(this.value)">
             <option value="">-</option>
             <option value="UTI-A">UTI A</option>
             <option value="UTI-B">UTI B</option>
@@ -766,37 +773,16 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
         </div>
         <div class="form-group">
           <label>Cama</label>
-          <input type="text" id="fCama" placeholder="Ej: 5, 102A">
-          <div class="form-hint" id="fCamaHint" style="color:var(--blue-600)"></div>
+          <select id="fCama"><option value="">Elegí primero la sala</option></select>
         </div>
-        <div class="form-group"><label>Kinesiólogo asignado</label><input type="text" id="fKine" placeholder="Apellido Inicial"></div>
       </div>
-      <div class="form-row three">
+      <div class="form-row">
         <div class="form-group"><label>Fecha ingreso hospital</label><input type="date" id="fFIHosp"></div>
-        <div class="form-group">
-          <label id="labelFIUTI">Fecha ingreso al sector</label>
-          <input type="date" id="fFIUTI">
-        </div>
-        <div class="form-group"><label>Origen del ingreso</label>
-          <select id="fTipoIngreso">
-            <option value="">-</option>
-            <option>Demanda espontánea</option>
-            <option>Urgencia</option>
-            <option>Programado / Electivo</option>
-            <option>Traslado desde UTI A</option>
-            <option>Traslado desde UTI B</option>
-            <option>Traslado desde UTI C</option>
-            <option>Traslado desde Emergencias</option>
-            <option>Traslado desde Cuidados Mínimos B</option>
-            <option>Traslado desde Cuidados Mínimos C</option>
-            <option>Derivación externa</option>
-          </select>
-        </div>
+        <div class="form-group"><label>Fecha de ingreso al sector</label><input type="date" id="fFIUTI"></div>
       </div>
       <div class="form-group"><label>Diagnóstico principal</label><input type="text" id="fDiag"></div>
-      <div class="form-group"><label>Motivo de ingreso</label><textarea id="fMotivo" rows="2"></textarea></div>
-      <div class="form-group" id="fTipoKineRow" style="display:none">
-        <label>Tipo kinesiológico <span style="font-size:9px;color:var(--teal-600);font-weight:700">(Cuidados Mínimos)</span></label>
+      <div class="form-group" id="fTipoKineRow">
+        <label>Tipo kinesiológico</label>
         <select id="fTipoKine">
           <option value="">Seleccioná el tipo...</option>
           <option value="respiratorio">🫁 Respiratorio</option>
@@ -809,7 +795,7 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
           <option value="otro">📋 Otro</option>
         </select>
       </div>
-      <div class="form-row" id="fEstFxRow" style="display:none">
+      <div class="form-row" id="fEstFxRow">
         <div class="form-group">
           <label>Estado funcional previo</label>
           <select id="fEstFx">
@@ -832,7 +818,7 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
           </select>
         </div>
       </div>
-      <div class="form-row" id="fTQTMinRow" style="display:none">
+      <div class="form-row" id="fTQTMinRow">
         <div class="form-group">
           <label>¿Traqueostomizado?</label>
           <select id="fTQTMin" onchange="toggleTQTMinDetalle()">
@@ -864,36 +850,38 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
       </div>
     </div>
 
-    <!-- Scores de gravedad -->
-    <div class="form-section" id="fSeccionScores">
-      <div class="form-section-title"><i class="ti ti-trending-up"></i> Scores de gravedad al ingreso</div>
-      <div class="form-row four">
-        <div class="form-group"><label>APACHE II</label><input type="number" id="fApache" inputmode="numeric" placeholder="0–71"></div>
-        <div class="form-group"><label>SAPS II</label><input type="number" id="fSaps" inputmode="numeric" placeholder="0–163"></div>
-        <div class="form-group"><label>Charlson</label><input type="number" id="fCharlson" inputmode="numeric" placeholder="0–37"></div>
-        <div class="form-group"><label>SOFA inicial</label><input type="number" id="fSofa" inputmode="numeric" placeholder="0–24"></div>
-      </div>
-    </div>
 
     <!-- Antecedentes -->
     <div class="form-section">
       <div class="form-section-title"><i class="ti ti-notes"></i> Antecedentes</div>
-      <div class="form-row four">
-        <div class="form-group"><label>HTA</label><select id="fHTA"><option value="">-</option><option value="Sí">Sí</option><option value="No">No</option></select></div>
-        <div class="form-group"><label>DBT</label><select id="fDBT"><option value="">-</option><option value="Sí">Sí</option><option value="No">No</option></select></div>
-        <div class="form-group"><label>Obesidad</label><select id="fObesidad"><option value="">-</option><option value="Sí">Sí</option><option value="No">No</option></select></div>
-        <div class="form-group"><label>TBQ/ExTBQ</label><select id="fTBQ"><option value="">-</option><option value="Sí">Sí</option><option value="No">No</option></select></div>
+      <div class="ant-grid" id="antGrid">
+        <label class="ant-chip"><input type="checkbox" id="fAnt_hta" value="hta">HTA</label>
+        <label class="ant-chip"><input type="checkbox" id="fAnt_dbt" value="dbt">DBT</label>
+        <label class="ant-chip"><input type="checkbox" id="fAnt_tbq" value="tbq">TBQ/Ex TBQ</label>
+        <label class="ant-chip"><input type="checkbox" id="fAnt_epoc" value="epoc">EPOC</label>
+        <label class="ant-chip"><input type="checkbox" id="fAnt_icc" value="icc">Insuficiencia cardíaca</label>
+        <label class="ant-chip"><input type="checkbox" id="fAnt_irc" value="irc">Insuficiencia renal</label>
+        <label class="ant-chip"><input type="checkbox" id="fAnt_fa" value="fa">FA crónica</label>
+        <label class="ant-chip"><input type="checkbox" id="fAnt_neuromuscular" value="neuromuscular">Patología neuromuscular</label>
+        <label class="ant-chip"><input type="checkbox" id="fAnt_oncologico" value="oncologico">Oncológico</label>
+        <label class="ant-chip"><input type="checkbox" id="fAnt_acv" value="acv">ACV</label>
+        <label class="ant-chip"><input type="checkbox" id="fAnt_amputado" value="amputado">Amputado</label>
+        <label class="ant-chip"><input type="checkbox" id="fAnt_enolismo" value="enolismo">Enolista</label>
+        <label class="ant-chip"><input type="checkbox" id="fAnt_sustancias" value="sustancias">Consumo de sustancias</label>
       </div>
-      <div class="form-row">
-        <div class="form-group"><label>Patología respiratoria</label><input type="text" id="fRespi" placeholder="EPOC, asma, etc."></div>
-        <div class="form-group"><label>Patología cardiovascular</label><input type="text" id="fCardio" placeholder="ICC, FA, etc."></div>
+      <div class="form-row" style="margin-top:10px">
+        <div class="form-group">
+          <label>Obesidad (según IMC)</label>
+          <input type="text" id="fObesidadCalc" readonly placeholder="—" style="background:var(--gray-50);color:var(--text-muted)">
+        </div>
+        <div class="form-group"><label>Otros antecedentes</label><input type="text" id="fOtrosAnt" placeholder="Cualquier otro antecedente relevante"></div>
       </div>
-      <div class="form-group"><label>Otros antecedentes</label><input type="text" id="fOtrosAnt" placeholder="Insuf. renal, oncológico, neurológico, etc."></div>
     </div>
 
     <!-- ARM / Ventilación -->
     <div class="form-section" id="fSeccionARM">
       <div class="form-section-title"><i class="ti ti-lungs"></i> ARM / Ventilación</div>
+      <div class="form-hint" style="margin-bottom:10px">Esta sección se completa una vez que el paciente ya está cargado, editando su ficha.</div>
       <div class="form-row three">
         <div class="form-group"><label>Causa de VM</label><input type="text" id="fCausaVM" placeholder="IRA, post-op, etc."></div>
         <div class="form-group"><label>Fecha IOT</label><input type="date" id="fFIOT"></div>
@@ -907,26 +895,6 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
       <div class="form-row">
         <div class="form-group"><label>Fecha fin ARM / extubación</label><input type="date" id="fFinARM"></div>
         <div class="form-group"><label>Reintubado</label><select id="fReintubado"><option value="">-</option><option value="No">No</option><option value="Sí">Sí</option></select></div>
-      </div>
-    </div>
-
-    <!-- Egreso -->
-    <div class="form-section">
-      <div class="form-section-title"><i class="ti ti-arrow-up-right"></i> Egreso</div>
-      <div class="form-row three">
-        <div class="form-group"><label>Estado actual</label>
-          <select id="fEstado">
-            <option value="Activo">Activo (internado)</option>
-            <option value="Alta K">Alta kinesiológica</option>
-            <option value="Piso">Derivación a piso</option>
-            <option value="UTI">Pase a UTI</option>
-            <option value="Derivación">Derivación externa</option>
-            <option value="Domicilio">Alta a domicilio</option>
-            <option value="Óbito">Óbito</option>
-          </select>
-        </div>
-        <div class="form-group"><label>Fecha egreso UTI</label><input type="date" id="fFEUTI"></div>
-        <div class="form-group"><label>Fecha alta kinesiológica</label><input type="date" id="fFEK"></div>
       </div>
     </div>
 
@@ -2233,16 +2201,16 @@ const USERS = [
 ];
 
 let patients = LS.get('hbee_patients') || [
-  { id:1, apellido:'Ramírez', nombre:'Carlos', dni:'25488761', edad:67, genero:'Masculino', peso:78, talla:172,
-    sala:'UTI-A', cama:'3', kine:'García L.', fIHosp:'2025-05-28', fIUTI:'2025-05-29', tipoIngreso:'Urgencia',
-    diagnostico:'SDRA por neumonía bilateral', motivo:'Insuficiencia respiratoria aguda', apache:22, saps:38, charlson:4, sofa:8,
-    hta:'Sí', dbt:'Sí', obesidad:'No', tbq:'Ex-TBQ', respi:'EPOC leve', cardio:'', otrosAnt:'',
+  { id:1, apellido:'Ramírez', nombre:'Carlos', dni:'25488761', edad:67, genero:'Masculino', peso:78, talla:172, imc:26.4, pcp:67.8,
+    sala:'UTI-A', cama:'3', fIHosp:'2025-05-28', fIUTI:'2025-05-29',
+    diagnostico:'SDRA por neumonía bilateral',
+    antecedentes:['hta','dbt','tbq','epoc'], otrosAnt:'',
     causaVM:'IRA', fIOT:'2025-05-29', inicioARM:'2025-05-29', vmni:'No', prono:2, tqt:'No', finARM:'', reintubado:'No',
     estado:'Activo', fEUTI:'', fEK:'' },
-  { id:2, apellido:'Fernández', nombre:'María Elena', dni:'18772340', edad:54, genero:'Femenino', peso:65, talla:160,
-    sala:'UTI-B', cama:'7', kine:'Rodríguez M.', fIHosp:'2025-06-01', fIUTI:'2025-06-02', tipoIngreso:'Urgencia',
-    diagnostico:'Shock séptico de foco abdominal', motivo:'Post-operatorio laparotomía exploradora', apache:18, saps:32, charlson:2, sofa:10,
-    hta:'Sí', dbt:'No', obesidad:'Sí', tbq:'No', respi:'', cardio:'', otrosAnt:'',
+  { id:2, apellido:'Fernández', nombre:'María Elena', dni:'18772340', edad:54, genero:'Femenino', peso:65, talla:160, imc:25.4, pcp:52.4,
+    sala:'UTI-B', cama:'7', fIHosp:'2025-06-01', fIUTI:'2025-06-02',
+    diagnostico:'Shock séptico de foco abdominal',
+    antecedentes:['hta'], otrosAnt:'',
     causaVM:'Post-op', fIOT:'2025-06-02', inicioARM:'2025-06-02', vmni:'', prono:0, tqt:'No', finARM:'', reintubado:'No',
     estado:'Activo', fEUTI:'', fEK:'' },
 ];
@@ -2714,19 +2682,19 @@ async function generarResumenIA(){
 
   // Armar texto de datos de ingreso
   const tipoLabel = TIPO_KINE_LABEL[p.tipoKine] || '';
+  const antTxt = antecedentesTexto(p);
+  const obGrado = gradoObesidad(p.imc);
   const datosIngreso = [
     `Apellido y nombre: ${p.apellido}, ${p.nombre}`,
     `Edad: ${p.edad||'—'} años, sexo: ${p.genero||'—'}`,
     `Sala: ${SALA_LABEL[p.sala]||p.sala}, cama ${p.cama||'—'}`,
     p.tipoKine ? `Tipo kinesiológico: ${tipoLabel}` : '',
     `Diagnóstico principal: ${p.diagnostico||'—'}`,
-    `Motivo de ingreso: ${p.motivo||'—'}`,
     `Fecha ingreso hospital: ${fmtDate(p.fIHosp)||'—'}`,
     `Fecha ingreso al sector: ${fmtDate(p.fIUTI)||'—'}`,
-    `Origen del ingreso: ${p.tipoIngreso||'—'}`,
-    p.apache ? `APACHE II: ${p.apache}` : '',
-    p.saps ? `SAPS: ${p.saps}` : '',
-    [p.hta==='Sí'?'HTA':'', p.dbt==='Sí'?'DBT':'', p.obesidad==='Sí'?'Obesidad':'', p.tbq==='Sí'?'Tabaquista':''].filter(Boolean).join(', ') ? `Antecedentes: ${[p.hta==='Sí'?'HTA':'', p.dbt==='Sí'?'DBT':'', p.obesidad==='Sí'?'Obesidad':'', p.tbq==='Sí'?'Tabaquista':''].filter(Boolean).join(', ')}` : '',
+    antTxt ? `Antecedentes: ${antTxt}` : '',
+    obGrado ? `Estado nutricional: ${obGrado} (IMC ${p.imc})` : '',
+    p.otrosAnt ? `Otros antecedentes: ${p.otrosAnt}` : '',
     p.causaVM ? `Causa de VM: ${p.causaVM}` : '',
     p.fIOT ? `Fecha IOT: ${fmtDate(p.fIOT)}` : '',
     p.tqt ? `TQT: ${p.tqt}` : '',
@@ -2857,6 +2825,8 @@ async function generarInformeAlta(patientId){
   }
 
   const tipoLabel = TIPO_KINE_LABEL[p.tipoKine] || '';
+  const antTxt2 = antecedentesTexto(p);
+  const obGrado2 = gradoObesidad(p.imc);
   const datosIngreso = [
     `Apellido y nombre: ${p.apellido}, ${p.nombre}`,
     `DNI: ${p.dni||'—'}`,
@@ -2864,16 +2834,11 @@ async function generarInformeAlta(patientId){
     `Sala: ${SALA_LABEL[p.sala]||p.sala}, cama ${p.cama||'—'}`,
     p.tipoKine ? `Tipo kinesiológico: ${tipoLabel}` : '',
     `Diagnóstico principal: ${p.diagnostico||'—'}`,
-    `Motivo de ingreso: ${p.motivo||'—'}`,
     `Fecha ingreso hospital: ${fmtDate(p.fIHosp)||'—'}`,
     `Fecha ingreso al sector: ${fmtDate(p.fIUTI)||'—'}`,
-    `Origen del ingreso: ${p.tipoIngreso||'—'}`,
-    p.apache ? `APACHE II: ${p.apache}` : '',
-    p.saps ? `SAPS: ${p.saps}` : '',
-    p.charlson ? `Charlson: ${p.charlson}` : '',
-    [p.hta==='Sí'?'HTA':'', p.dbt==='Sí'?'DBT':'', p.obesidad==='Sí'?'Obesidad':'', p.tbq==='Sí'?'Tabaquista':''].filter(Boolean).join(', ') ? `Antecedentes: ${[p.hta==='Sí'?'HTA':'', p.dbt==='Sí'?'DBT':'', p.obesidad==='Sí'?'Obesidad':'', p.tbq==='Sí'?'Tabaquista':''].filter(Boolean).join(', ')}` : '',
-    p.respi ? `Patología respiratoria previa: ${p.respi}` : '',
-    p.cardio ? `Patología cardiovascular previa: ${p.cardio}` : '',
+    antTxt2 ? `Antecedentes: ${antTxt2}` : '',
+    obGrado2 ? `Estado nutricional: ${obGrado2} (IMC ${p.imc})` : '',
+    p.otrosAnt ? `Otros antecedentes: ${p.otrosAnt}` : '',
     p.causaVM ? `Causa de VM: ${p.causaVM}` : '',
     p.fIOT ? `Fecha IOT: ${fmtDate(p.fIOT)}` : '',
     p.inicioARM ? `Inicio ARM: ${fmtDate(p.inicioARM)}` : '',
@@ -3323,26 +3288,70 @@ let currentEvoMinPacId = null;
 let currentNeuroData = {}; // fichas neurológicas por paciente
 let neuroEditPacId = null;
 
-// Mostrar/ocultar campos según sala seleccionada
-document.getElementById('fSala')?.addEventListener('change', function(){
-  const sala = this.value;
-  actualizarFormularioPorSala(sala);
-  updateCamaHint();
+// ── Antecedentes (checkboxes) ──────────────────────────
+const ANTECEDENTES_LIST = [
+  {key:'hta', label:'HTA'},
+  {key:'dbt', label:'DBT'},
+  {key:'tbq', label:'TBQ/Ex TBQ'},
+  {key:'epoc', label:'EPOC'},
+  {key:'icc', label:'Insuficiencia cardíaca'},
+  {key:'irc', label:'Insuficiencia renal'},
+  {key:'fa', label:'FA crónica'},
+  {key:'neuromuscular', label:'Patología neuromuscular'},
+  {key:'oncologico', label:'Oncológico'},
+  {key:'acv', label:'ACV'},
+  {key:'amputado', label:'Amputado'},
+  {key:'enolismo', label:'Enolista'},
+  {key:'sustancias', label:'Consumo de sustancias'},
+];
+
+function antecedentesTexto(p){
+  const keys = Array.isArray(p?.antecedentes) ? p.antecedentes : [];
+  return ANTECEDENTES_LIST.filter(a => keys.includes(a.key)).map(a => a.label).join(', ');
+}
+
+// Marcar visualmente el chip cuando se tilda/destilda el checkbox
+document.addEventListener('change', function(ev){
+  if(ev.target?.matches?.('.ant-chip input[type="checkbox"]')){
+    ev.target.closest('.ant-chip').classList.toggle('is-checked', ev.target.checked);
+  }
 });
 
-function actualizarFormularioPorSala(sala){
-  const esMin = ES_MINIMOS(sala);
-  // Mínimos: mostrar tipo kine, estado fx, frecuencia
-  document.getElementById('fTipoKineRow').style.display = esMin ? 'block' : 'none';
-  document.getElementById('fEstFxRow').style.display = esMin ? 'grid' : 'none';
-  document.getElementById('fTQTMinRow').style.display = esMin ? 'grid' : 'none';
-  // Mínimos: ocultar scores de severidad y sección ARM
-  document.getElementById('fSeccionScores').style.display = esMin ? 'none' : 'block';
-  document.getElementById('fSeccionARM').style.display = esMin ? 'none' : 'block';
-  // Cambiar label de fecha según sector
-  const labelFI = document.getElementById('labelFIUTI');
-  if(labelFI) labelFI.textContent = esMin ? 'Fecha ingreso al sector' : 'Fecha ingreso UTI/Emergencia';
-  if(!esMin) document.getElementById('fTQTMinDetalle').style.display = 'none';
+// ── Obesidad según IMC ──────────────────────────────────
+function gradoObesidad(imc){
+  const v = parseFloat(imc);
+  if(!v || isNaN(v) || v < 25) return null;
+  if(v < 30) return 'Sobrepeso';
+  if(v < 35) return 'Obesidad grado I (moderada)';
+  if(v < 40) return 'Obesidad grado II (severa)';
+  if(v < 50) return 'Obesidad grado III (mórbida)';
+  if(v < 60) return 'Obesidad grado IV (Super obesidad)';
+  return 'Obesidad grado V (Super-super obesidad)';
+}
+
+// ── Camas por sala (select dinámico) ────────────────────
+function generarOpcionesCama(sala){
+  const opts = [];
+  if(sala === 'UTI-A'){ for(let i=1;i<=8;i++) opts.push(String(i)); }
+  else if(sala === 'UTI-B'){ for(let i=9;i<=20;i++) opts.push(String(i)); }
+  else if(sala === 'UTI-C'){ for(let i=21;i<=27;i++) opts.push(String(i)); }
+  else if(sala === 'EMERG'){ for(let i=1;i<=12;i++) opts.push(String(i)); }
+  else if(sala === 'MIN-B'){ for(let i=100;i<=131;i++){ opts.push(i+'A'); opts.push(i+'B'); } }
+  else if(sala === 'MIN-C'){ for(let i=132;i<=163;i++){ opts.push(i+'A'); opts.push(i+'B'); } }
+  return opts;
+}
+
+function populateCama(sala, selected){
+  const sel = document.getElementById('fCama');
+  if(!sel) return;
+  const opts = generarOpcionesCama(sala);
+  const placeholder = sala ? '-' : 'Elegí primero la sala';
+  sel.innerHTML = `<option value="">${placeholder}</option>` +
+    opts.map(c => `<option value="${c}"${c===selected?' selected':''}>${c}</option>`).join('');
+}
+
+function onSalaChange(sala){
+  populateCama(sala);
 }
 
 function toggleTQTMinDetalle(){
@@ -3558,7 +3567,7 @@ function openFichaNeuro(patientId){
   } else {
     // Prellenar con datos del paciente
     document.getElementById('neuroDx').value = p.diagnostico||'';
-    document.getElementById('neuroAtc').value = [p.hta==='Sí'?'HTA':'', p.dbt==='Sí'?'DBT':'', p.respi||'', p.cardio||'', p.otrosAnt||''].filter(Boolean).join(', ');
+    document.getElementById('neuroAtc').value = [antecedentesTexto(p), p.otrosAnt||''].filter(Boolean).join(', ');
     // Limpiar resto
     ['neuroHC','neuroExFisica','neuroObjetivos','neuroHerramientas','neuroConclusiones','neuroDeglObs'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
     ['neuroHemi','neuroMotor','neuroTono','neuroConciencia','neuroLenguaje','neuroAtencion','neuroMemoria','neuroPraxias','neuroGnosias','neuroPfeiffer','neuroDelirium','neuroDisfagia','neuroTipo'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
@@ -4157,7 +4166,7 @@ function renderTabla(){
   const SALA_ORDER = {'UTI-A':1,'UTI-B':2,'UTI-C':3,'EMERG':4,'MIN-B':5,'MIN-C':6};
   lista.sort((a,b)=>{ const so=(SALA_ORDER[a.sala]||9)-(SALA_ORDER[b.sala]||9); return so||((parseInt(a.cama)||0)-(parseInt(b.cama)||0)); });
   if(!lista.length){
-    tbody.innerHTML='<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text-muted)">Sin resultados</td></tr>';
+    tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-muted)">Sin resultados</td></tr>';
     return;
   }
   const todayStr = today();
@@ -4177,7 +4186,6 @@ function renderTabla(){
       <td class="hide-mobile">${fmtDate(p.fIUTI)||'—'}</td>
       <td>${conARM?'<span class="badge badge-red">ARM</span>':'<span class="badge badge-gray">No</span>'}</td>
       <td>${estadoBadge(p.estado)}</td>
-      <td>${p.kine||'—'}</td>
       <td>
         <div style="display:flex;gap:5px">
           <button class="btn-evolve" onclick="openEvolucion(${p.id})"><i class="ti ti-stethoscope"></i> <span class="evo-count">${nEvo}</span></button>
@@ -4246,7 +4254,6 @@ function filterPacientes(q){
       <td class="hide-mobile">${fmtDate(p.fIUTI)||'—'}</td>
       <td>${conARM?'<span class="badge badge-red">ARM</span>':'<span class="badge badge-gray">No</span>'}</td>
       <td>${estadoBadge(p.estado)}</td>
-      <td>${p.kine||'—'}</td>
       <td>
         <div style="display:flex;gap:5px">
           <button class="btn-evolve" onclick="openEvolucion(${p.id})"><i class="ti ti-stethoscope"></i> <span class="evo-count">${nEvo}</span></button>
@@ -4255,7 +4262,7 @@ function filterPacientes(q){
         </div>
       </td>
     </tr>`;
-  }).join('') || '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text-muted)">Sin resultados</td></tr>';
+  }).join('') || '<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-muted)">Sin resultados</td></tr>';
 }
 
 // ════════════════════════════════════════════════════════
@@ -4264,15 +4271,10 @@ function filterPacientes(q){
 function openNuevoPaciente(){
   editPacId = null;
   document.getElementById('modalPacTitulo').textContent = 'Nuevo paciente';
-  const campos = ['fApellido','fNombre','fDNI','fEdad','fGenero','fPeso','fTalla','fIMC',
-    'fSala','fCama','fKine','fFIHosp','fFIUTI','fTipoIngreso','fDiag','fMotivo',
-    'fApache','fSaps','fCharlson','fSofa',
-    'fHTA','fDBT','fObesidad','fTBQ','fRespi','fCardio','fOtrosAnt',
-    'fCausaVM','fFIOT','fInicioARM','fVMNI','fProno','fTQT','fFinARM','fReintubado',
-    'fEstado','fFEUTI','fFEK'];
+  const campos = ['fApellido','fNombre','fDNI','fEdad','fGenero','fPeso','fTalla','fIMC','fPCP',
+    'fFIHosp','fFIUTI','fDiag','fOtrosAnt','fObesidadCalc',
+    'fCausaVM','fFIOT','fInicioARM','fVMNI','fProno','fTQT','fFinARM','fReintubado'];
   campos.forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
-  document.getElementById('fEstado').value = 'Activo';
-  document.getElementById('fKine').value = currentUser.name;
   document.getElementById('fTipoKine').value = '';
   document.getElementById('fEstFx').value = '';
   document.getElementById('fFrecuencia').value = '';
@@ -4281,11 +4283,18 @@ function openNuevoPaciente(){
   document.getElementById('fTQTMinID').value = '';
   document.getElementById('fTQTMinED').value = '';
   document.getElementById('fTQTMinDetalle').style.display = 'none';
-  // Si hay sector preseleccionado, aplicar lógica de formulario
-  const salaActual = document.getElementById('fSala').value;
-  actualizarFormularioPorSala(salaActual);
+  // Antecedentes: destildar todo
+  ANTECEDENTES_LIST.forEach(a=>{
+    const chk = document.getElementById('fAnt_'+a.key);
+    if(chk){ chk.checked = false; chk.closest('.ant-chip')?.classList.remove('is-checked'); }
+  });
+  // ARM/Ventilación se completa después, editando al paciente ya creado
+  document.getElementById('fSeccionARM').style.display = 'none';
+  // Sector y cama: preseleccionar sector actual si corresponde
+  const salaInicial = currentSector || '';
+  document.getElementById('fSala').value = salaInicial;
+  populateCama(salaInicial);
   document.getElementById('fFIUTI').value = today();
-  if(currentSector){ document.getElementById('fSala').value = currentSector; actualizarFormularioPorSala(currentSector); }
   openModal('modalPaciente');
 }
 
@@ -4298,19 +4307,25 @@ function openEditPaciente(id){
   M('fApellido',p.apellido); M('fNombre',p.nombre); M('fDNI',p.dni); M('fEdad',p.edad); M('fGenero',p.genero);
   M('fPeso',p.peso); M('fTalla',p.talla); M('fIMC', (p.peso&&p.talla)?(p.peso/Math.pow(p.talla/100,2)).toFixed(1):'');
   { const pcpEdit = calcPCP(p.talla, p.genero); M('fPCP', pcpEdit!==null ? pcpEdit.toFixed(1)+' kg' : ''); }
-  M('fSala',p.sala); M('fCama',p.cama); M('fKine',p.kine);
-  M('fFIHosp',p.fIHosp); M('fFIUTI',p.fIUTI); M('fTipoIngreso',p.tipoIngreso);
-  M('fDiag',p.diagnostico); M('fMotivo',p.motivo);
+  M('fSala',p.sala);
+  populateCama(p.sala, p.cama);
+  M('fFIHosp',p.fIHosp); M('fFIUTI',p.fIUTI);
+  M('fDiag',p.diagnostico);
   M('fTipoKine',p.tipoKine); M('fEstFx',p.estFx); M('fFrecuencia',p.frecuencia);
   M('fTQTMin',p.tqtMin); M('fTQTMinTipo',p.tqtMinTipo); M('fTQTMinID',p.tqtMinID); M('fTQTMinED',p.tqtMinED);
-  actualizarFormularioPorSala(p.sala);
   toggleTQTMinDetalle();
-  M('fApache',p.apache); M('fSaps',p.saps); M('fCharlson',p.charlson); M('fSofa',p.sofa);
-  M('fHTA',p.hta); M('fDBT',p.dbt); M('fObesidad',p.obesidad); M('fTBQ',p.tbq);
-  M('fRespi',p.respi); M('fCardio',p.cardio); M('fOtrosAnt',p.otrosAnt);
+  // Antecedentes
+  const antActuales = Array.isArray(p.antecedentes) ? p.antecedentes : [];
+  ANTECEDENTES_LIST.forEach(a=>{
+    const chk = document.getElementById('fAnt_'+a.key);
+    if(chk){ chk.checked = antActuales.includes(a.key); chk.closest('.ant-chip')?.classList.toggle('is-checked', chk.checked); }
+  });
+  M('fOtrosAnt',p.otrosAnt);
+  document.getElementById('fObesidadCalc').value = gradoObesidad(p.imc) || 'Sin sobrepeso';
+  // ARM/Ventilación: visible para poder completarlo o actualizarlo
+  document.getElementById('fSeccionARM').style.display = 'block';
   M('fCausaVM',p.causaVM); M('fFIOT',p.fIOT); M('fInicioARM',p.inicioARM); M('fVMNI',p.vmni);
   M('fProno',p.prono); M('fTQT',p.tqt); M('fFinARM',p.finARM); M('fReintubado',p.reintubado);
-  M('fEstado',p.estado); M('fFEUTI',p.fEUTI); M('fFEK',p.fEK);
   openModal('modalPaciente');
 }
 
@@ -4323,21 +4338,20 @@ async function guardarPaciente(){
   const imc = (peso && talla) ? +(peso/Math.pow(talla/100,2)).toFixed(1) : null;
   const genero = G('fGenero');
   const pcp = calcPCP(talla, genero);
+  const antecedentes = ANTECEDENTES_LIST
+    .filter(a => document.getElementById('fAnt_'+a.key)?.checked)
+    .map(a => a.key);
   const data = {
     apellido, nombre:G('fNombre'), dni:G('fDNI'), edad:parseInt(G('fEdad'))||null, genero,
     peso, talla, imc, pcp: pcp!==null ? +pcp.toFixed(1) : null,
-    sala:G('fSala'), cama:G('fCama'), kine:G('fKine'),
+    sala:G('fSala'), cama:G('fCama'),
     tipoKine:G('fTipoKine'), estFx:G('fEstFx'), frecuencia:G('fFrecuencia'),
     tqtMin:G('fTQTMin'), tqtMinTipo:G('fTQTMinTipo'), tqtMinID:G('fTQTMinID'), tqtMinED:G('fTQTMinED'),
-    fIHosp:G('fFIHosp'), fIUTI:G('fFIUTI'), tipoIngreso:G('fTipoIngreso'),
-    diagnostico:G('fDiag'), motivo:G('fMotivo'),
-    apache:parseInt(G('fApache'))||null, saps:parseInt(G('fSaps'))||null,
-    charlson:parseInt(G('fCharlson'))||null, sofa:parseInt(G('fSofa'))||null,
-    hta:G('fHTA'), dbt:G('fDBT'), obesidad:G('fObesidad'), tbq:G('fTBQ'),
-    respi:G('fRespi'), cardio:G('fCardio'), otrosAnt:G('fOtrosAnt'),
+    fIHosp:G('fFIHosp'), fIUTI:G('fFIUTI'),
+    diagnostico:G('fDiag'),
+    antecedentes, otrosAnt:G('fOtrosAnt'),
     causaVM:G('fCausaVM'), fIOT:G('fFIOT'), inicioARM:G('fInicioARM'), vmni:G('fVMNI'),
     prono:parseInt(G('fProno'))||0, tqt:G('fTQT'), finARM:G('fFinARM'), reintubado:G('fReintubado'),
-    estado:G('fEstado'), fEUTI:G('fFEUTI'), fEK:G('fFEK'),
   };
   if(editPacId){
     const idx = patients.findIndex(x=>x.id===editPacId);
@@ -4345,6 +4359,10 @@ async function guardarPaciente(){
     addLog('edit', `Editó paciente: ${apellido}, ${data.nombre}`);
   } else {
     data.id = Date.now();
+    // Un paciente recién cargado siempre arranca Activo; el egreso se gestiona aparte
+    data.estado = 'Activo';
+    data.fEUTI = '';
+    data.fEK = '';
     patients.unshift(data);
     addLog('create', `Nuevo paciente: ${apellido}, ${data.nombre}`);
   }
@@ -4374,7 +4392,7 @@ function calcPCP(tallaCm, genero){
   return base + 50; // Masculino u Otro -> fórmula masculina por defecto
 }
 
-// IMC + PCP auto
+// IMC + PCP + Obesidad auto
 ['fPeso','fTalla','fGenero'].forEach(id=>{
   document.getElementById(id)?.addEventListener('input',()=>{ updateIMCyPCP(); });
   document.getElementById(id)?.addEventListener('change',()=>{ updateIMCyPCP(); });
@@ -4384,9 +4402,12 @@ function updateIMCyPCP(){
   const p = parseFloat(document.getElementById('fPeso').value);
   const t = parseFloat(document.getElementById('fTalla').value);
   const g = document.getElementById('fGenero').value;
-  document.getElementById('fIMC').value = (p&&t) ? (p/Math.pow(t/100,2)).toFixed(1) : '';
+  const imc = (p && t) ? (p/Math.pow(t/100,2)) : null;
+  document.getElementById('fIMC').value = imc!==null ? imc.toFixed(1) : '';
   const pcp = calcPCP(t, g);
   document.getElementById('fPCP').value = pcp!==null ? pcp.toFixed(1)+' kg' : '';
+  const obEl = document.getElementById('fObesidadCalc');
+  if(obEl) obEl.value = imc!==null ? (gradoObesidad(imc) || 'Sin sobrepeso') : '';
 }
 
 // TAM = TAD + (TAS - TAD) / 3
@@ -4788,8 +4809,7 @@ function buscarHistorial(){
       <div class="historial-data">
         <div class="hd-item"><div class="k">Diagnóstico</div><div class="v">${p.diagnostico||'—'}</div></div>
         <div class="hd-item"><div class="k">Ingreso UTI</div><div class="v">${fmtDate(p.fIUTI)||'—'}</div></div>
-        <div class="hd-item"><div class="k">Kinesiólogo</div><div class="v">${p.kine||'—'}</div></div>
-        <div class="hd-item"><div class="k">APACHE II</div><div class="v">${p.apache||'—'}</div></div>
+        <div class="hd-item"><div class="k">Antecedentes</div><div class="v">${antecedentesTexto(p)||'—'}</div></div>
         <div class="hd-item"><div class="k">Días ARM</div><div class="v">${diasARM!=null?diasARM:'—'}</div></div>
         <div class="hd-item"><div class="k">TQT</div><div class="v">${p.tqt||'—'}</div></div>
         <div class="hd-item"><div class="k">Evoluciones</div><div class="v">${evos.length}</div></div>
@@ -4991,23 +5011,20 @@ function exportarDatos(){
   const joinArr = v => Array.isArray(v) ? v.join(' | ') : (v || '');
 
   // ── Hoja 1: Pacientes ──
-  const encPac = ['Apellido','Nombre','DNI','Edad','Genero','Peso kg','Talla cm','IMC',
-    'Sala','Cama','Kinesiologo','Estado','FI Hospital','FI Sector','Origen ingreso',
-    'Diagnostico','Motivo','HTA','DBT','Obesidad','TBQ','Patol.Resp','Patol.CV','Otros Atc',
-    'APACHE II','SAPS II','Charlson','SOFA','Causa VM','Fecha IOT','Inicio ARM','Fin ARM',
+  const encPac = ['Apellido','Nombre','DNI','Edad','Genero','Peso kg','Talla cm','IMC','Grado Obesidad',
+    'Sala','Cama','Estado','FI Hospital','FI Sector',
+    'Diagnostico','Antecedentes','Otros Atc',
+    'Causa VM','Fecha IOT','Inicio ARM','Fin ARM',
     'Reintubado','TQT','Prono sesiones','Tipo Kine','Est.Funcional Previo','Frecuencia',
     'TQT Minimos','Tipo Canula Min','ID Canula Min','ED Canula Min',
     'FEgreso UTI','FAlta Kine'];
 
   const filasPac = patients.map(p => fila([
     p.apellido||'', p.nombre||'', p.dni||'', p.edad||'', p.genero||'',
-    p.peso||'', p.talla||'', p.imc||'',
-    SALA_LABEL[p.sala]||p.sala||'', p.cama||'', p.kine||'', p.estado||'',
-    fmtDate(p.fIHosp), fmtDate(p.fIUTI), p.tipoIngreso||'',
-    p.diagnostico||'', p.motivo||'',
-    p.hta||'', p.dbt||'', p.obesidad||'', p.tbq||'',
-    p.respi||'', p.cardio||'', p.otrosAnt||'',
-    p.apache||'', p.saps||'', p.charlson||'', p.sofa||'',
+    p.peso||'', p.talla||'', p.imc||'', gradoObesidad(p.imc)||'',
+    SALA_LABEL[p.sala]||p.sala||'', p.cama||'', p.estado||'',
+    fmtDate(p.fIHosp), fmtDate(p.fIUTI),
+    p.diagnostico||'', antecedentesTexto(p), p.otrosAnt||'',
     p.causaVM||'', fmtDate(p.fIOT), fmtDate(p.inicioARM), fmtDate(p.finARM),
     p.reintubado||'', p.tqt||'', p.prono||'',
     TIPO_KINE_LABEL[p.tipoKine]||p.tipoKine||'', p.estFx||'', p.frecuencia||'',
@@ -5078,13 +5095,6 @@ function exportarDatos(){
   }
 }
 
-
-function initFormPaciente(){
-  document.getElementById('fSeccionScores').style.display = 'block';
-  document.getElementById('fSeccionARM').style.display = 'block';
-  document.getElementById('fTipoKineRow').style.display = 'none';
-  document.getElementById('fEstFxRow').style.display = 'none';
-}
 
 // Mostrar estado Drive en login si ya está configurado
 if(GDRIVE_CONFIG?.clientId){
