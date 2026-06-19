@@ -782,9 +782,9 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
       </div>
       <div class="form-group"><label>Diagnóstico principal</label><input type="text" id="fDiag"></div>
       <div class="form-group" id="fTipoKineRow">
-        <label>Tipo kinesiológico</label>
+        <label>Grupo</label>
         <select id="fTipoKine">
-          <option value="">Seleccioná el tipo...</option>
+          <option value="">Seleccioná el grupo...</option>
           <option value="respiratorio">🫁 Respiratorio</option>
           <option value="neurologico">🧠 Neurológico</option>
           <option value="pre_qx">🔪 Pre-quirúrgico</option>
@@ -795,28 +795,16 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
           <option value="otro">📋 Otro</option>
         </select>
       </div>
-      <div class="form-row" id="fEstFxRow">
-        <div class="form-group">
-          <label>Estado funcional previo</label>
-          <select id="fEstFx">
-            <option value="">-</option>
-            <option>Independiente sin ayuda</option>
-            <option>Independiente con ayuda técnica (bastón/andador)</option>
-            <option>Necesita ayuda de 1 persona</option>
-            <option>Necesita ayuda de 2 personas</option>
-            <option>Postrado / dependiente total</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Frecuencia de atención</label>
-          <select id="fFrecuencia">
-            <option value="">-</option>
-            <option value="diaria">Diaria</option>
-            <option value="cada3">Cada 3 días</option>
-            <option value="cada5">Cada 5 días</option>
-            <option value="sincriterio">Sin criterio kinésico</option>
-          </select>
-        </div>
+      <div class="form-group" id="fEstFxRow">
+        <label>Estado funcional previo</label>
+        <select id="fEstFx">
+          <option value="">-</option>
+          <option>Independiente sin ayuda</option>
+          <option>Independiente con ayuda técnica (bastón/andador)</option>
+          <option>Necesita ayuda de 1 persona</option>
+          <option>Necesita ayuda de 2 personas</option>
+          <option>Postrado / dependiente total</option>
+        </select>
       </div>
       <div class="form-row" id="fTQTMinRow">
         <div class="form-group">
@@ -2688,7 +2676,7 @@ async function generarResumenIA(){
     `Apellido y nombre: ${p.apellido}, ${p.nombre}`,
     `Edad: ${p.edad||'—'} años, sexo: ${p.genero||'—'}`,
     `Sala: ${SALA_LABEL[p.sala]||p.sala}, cama ${p.cama||'—'}`,
-    p.tipoKine ? `Tipo kinesiológico: ${tipoLabel}` : '',
+    p.tipoKine ? `Grupo: ${tipoLabel}` : '',
     `Diagnóstico principal: ${p.diagnostico||'—'}`,
     `Fecha ingreso hospital: ${fmtDate(p.fIHosp)||'—'}`,
     `Fecha ingreso al sector: ${fmtDate(p.fIUTI)||'—'}`,
@@ -2832,7 +2820,7 @@ async function generarInformeAlta(patientId){
     `DNI: ${p.dni||'—'}`,
     `Edad: ${p.edad||'—'} años, sexo: ${p.genero||'—'}`,
     `Sala: ${SALA_LABEL[p.sala]||p.sala}, cama ${p.cama||'—'}`,
-    p.tipoKine ? `Tipo kinesiológico: ${tipoLabel}` : '',
+    p.tipoKine ? `Grupo: ${tipoLabel}` : '',
     `Diagnóstico principal: ${p.diagnostico||'—'}`,
     `Fecha ingreso hospital: ${fmtDate(p.fIHosp)||'—'}`,
     `Fecha ingreso al sector: ${fmtDate(p.fIUTI)||'—'}`,
