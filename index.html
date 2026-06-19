@@ -320,6 +320,19 @@ tr:hover td{ background:var(--blue-50); }
 .interfaz-btn.selected-spe i,.interfaz-btn.selected-spe span{ color:var(--teal-600); }
 .interfaz-btn.selected-sup{ border-color:var(--blue-400);background:var(--blue-50); }
 .interfaz-btn.selected-sup i,.interfaz-btn.selected-sup span{ color:var(--blue-600); }
+
+/* Árbol de decisión ventilatorio */
+.dec-row{ display:flex;flex-wrap:wrap;gap:8px;margin-top:6px; }
+.dec-btn{ display:flex;align-items:center;gap:7px;padding:9px 16px;border:1.5px solid var(--border);
+  border-radius:8px;font-size:13px;font-weight:600;background:var(--surface);cursor:pointer;
+  transition:.15s;font-family:var(--font); }
+.dec-btn:hover{ background:var(--blue-50);border-color:var(--blue-300); }
+.dec-btn.dec-arm-si{ border-color:var(--red-400);background:var(--red-50);color:var(--red-800); }
+.dec-btn.dec-arm-no{ border-color:var(--teal-400);background:var(--teal-50);color:var(--teal-800); }
+.dec-btn.dec-sel{ border-color:var(--blue-400);background:var(--blue-50);color:var(--blue-800); }
+.dec-btn.dec-sel-tqt{ border-color:var(--amber-400);background:var(--amber-50);color:var(--amber-800); }
+.dec-label{ font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--text-muted);margin-bottom:4px;margin-top:10px; }
+.dec-sublevel{ margin-left:16px;padding-left:12px;border-left:2px solid var(--border);margin-top:8px; }
 .day-counter{ display:flex;flex-direction:column;align-items:center;padding:8px 16px;
   border-radius:var(--radius);background:var(--blue-50);border:1px solid var(--blue-100); }
 .day-counter .dc-val{ font-size:22px;font-weight:700;color:var(--blue-700);line-height:1; }
@@ -909,6 +922,7 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
       <div class="form-section-title"><i class="ti ti-calendar"></i> Guardia</div>
       <div class="form-row">
         <div class="form-group"><label>Fecha</label><input type="date" id="eDate"></div>
+        <div class="form-group"><label>Hora</label><input type="time" id="eHora" style="background:var(--gray-50);color:var(--blue-800);font-weight:600"></div>
         <div class="form-group"><label>Kinesiólogo</label><input type="text" id="eKine" readonly style="background:var(--gray-50)"></div>
       </div>
       <input type="hidden" id="eTurno">
@@ -933,75 +947,94 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
       </div>
     </div>
 
-    <!-- Interfaz ventilatoria — PRIMERO -->
+    <!-- ══ Ventilación — árbol de decisión ══ -->
     <div class="form-section">
-      <div class="form-section-title"><i class="ti ti-lungs"></i> Interfaz ventilatoria</div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px">
-        <button type="button" class="interfaz-btn" id="ibTET" onclick="selectInterfaz('TET')">
-          <i class="ti ti-plug-connected"></i><span>TET</span><small>Tubo endotraqueal</small>
+      <div class="form-section-title"><i class="ti ti-lungs"></i> Ventilación</div>
+
+      <!-- Nivel 1: ¿En ARM? -->
+      <div class="dec-label">¿El paciente está en ARM?</div>
+      <div class="dec-row">
+        <button type="button" class="dec-btn" id="eBtnArmSi" onclick="setARMStatus(true)">
+          <i class="ti ti-plug-connected"></i> Sí — en ARM
         </button>
-        <button type="button" class="interfaz-btn" id="ibTQT" onclick="selectInterfaz('TQT')">
-          <i class="ti ti-plug-connected"></i><span>TQT</span><small>Traqueostomía</small>
-        </button>
-        <button type="button" class="interfaz-btn" id="ibVMNI" onclick="selectInterfaz('VMNI')">
-          <i class="ti ti-mask"></i><span>VMNI</span><small>Ventilación no invasiva</small>
-        </button>
-        <button type="button" class="interfaz-btn" id="ibCNAF" onclick="selectInterfaz('CNAF')">
-          <i class="ti ti-wind"></i><span>CNAF</span><small>Cánula nasal alto flujo</small>
-        </button>
-        <button type="button" class="interfaz-btn" id="ibCN" onclick="selectInterfaz('Cánula nasal')">
-          <i class="ti ti-air"></i><span>Cánula nasal</span><small>O₂ convencional</small>
-        </button>
-        <button type="button" class="interfaz-btn" id="ibMV" onclick="selectInterfaz('Máscara Venturi')">
-          <i class="ti ti-circle-dashed"></i><span>Máscara Venturi</span><small></small>
-        </button>
-        <button type="button" class="interfaz-btn" id="ibMR" onclick="selectInterfaz('Máscara reservorio')">
-          <i class="ti ti-circle-dashed"></i><span>M. reservorio</span><small></small>
-        </button>
-        <button type="button" class="interfaz-btn" id="ibAA" onclick="selectInterfaz('Aire ambiente')">
-          <i class="ti ti-plant"></i><span>Aire ambiente</span><small>Respiración espontánea</small>
+        <button type="button" class="dec-btn" id="eBtnArmNo" onclick="setARMStatus(false)">
+          <i class="ti ti-plug-x"></i> No — ventilación espontánea
         </button>
       </div>
+
+      <!-- Si ARM: TET o TQT -->
+      <div id="eSubArmSi" style="display:none" class="dec-sublevel">
+        <div class="dec-label">Interfaz</div>
+        <div class="dec-row">
+          <button type="button" class="interfaz-btn" id="ibTET" onclick="selectInterfaz('TET')">
+            <i class="ti ti-plug-connected"></i><span>TET</span><small>Tubo endotraqueal</small>
+          </button>
+          <button type="button" class="interfaz-btn" id="ibTQT" onclick="selectInterfaz('TQT')">
+            <i class="ti ti-plug-connected"></i><span>TQT</span><small>Traqueostomía</small>
+          </button>
+        </div>
+      </div>
+
+      <!-- Si no ARM: opciones de interfaz espontánea -->
+      <div id="eSubArmNo" style="display:none" class="dec-sublevel">
+        <div class="dec-label">¿Cómo ventila?</div>
+        <div class="dec-row">
+          <button type="button" class="dec-btn" id="eBtnVAN_AA" onclick="setInterfazEsp('VAN_AA')">
+            <i class="ti ti-plant"></i> VAN — Aire ambiente
+          </button>
+          <button type="button" class="dec-btn" id="eBtnVAN_O2" onclick="setInterfazEsp('VAN_O2')">
+            <i class="ti ti-air"></i> VAN con O₂
+          </button>
+          <button type="button" class="dec-btn" id="eBtnCNAF" onclick="setInterfazEsp('CNAF')">
+            <i class="ti ti-wind"></i> CNAF
+          </button>
+          <button type="button" class="dec-btn" id="eBtnVNI" onclick="setInterfazEsp('VNI')">
+            <i class="ti ti-mask"></i> VNI
+          </button>
+          <button type="button" class="dec-btn" id="eBtnTQT_O2" onclick="setInterfazEsp('TQT_O2')">
+            <i class="ti ti-stethoscope"></i> TQT — Con O₂
+          </button>
+          <button type="button" class="dec-btn" id="eBtnTQT_AA" onclick="setInterfazEsp('TQT_AA')">
+            <i class="ti ti-stethoscope"></i> TQT — Sin O₂
+          </button>
+        </div>
+
+        <!-- Sub: VAN con O2 -->
+        <div id="eSubVANO2" style="display:none" class="dec-sublevel">
+          <div class="dec-label">Dispositivo</div>
+          <div class="dec-row">
+            <button type="button" class="dec-btn" id="eBtnCN" onclick="setVANO2tipo('CN')">
+              <i class="ti ti-air"></i> Cánula nasal
+            </button>
+            <button type="button" class="dec-btn" id="eBtnMV" onclick="setVANO2tipo('MV')">
+              <i class="ti ti-circle-dashed"></i> Máscara Venturi
+            </button>
+            <button type="button" class="dec-btn" id="eBtnMR" onclick="setVANO2tipo('MR')">
+              <i class="ti ti-circle-dashed"></i> Máscara reservorio
+            </button>
+          </div>
+        </div>
+
+        <!-- Sub: CNAF -->
+        <div id="eSubCNAF" style="display:none" class="dec-sublevel">
+          <div class="form-row">
+            <div class="form-group"><label>Flujo (L/min)</label><input type="number" id="eCNAFflujo" inputmode="decimal" placeholder="20–60"></div>
+            <div class="form-group"><label>FiO₂ (%)</label><input type="number" id="eCNAFfio2" inputmode="decimal" placeholder="21–100"></div>
+          </div>
+        </div>
+      </div>
+
       <input type="hidden" id="eInterfazPrincipal">
+      <input type="hidden" id="eInterfazEsp">
     </div>
+
+    <!-- ══ Bloques solo cuando está en ARM ══ -->
+    <div id="armOnlyBlock" style="display:none">
 
     <!-- Peso Corporal Predicho — destacado -->
     <div class="form-section" id="pcpBox" style="display:none">
       <div class="form-section-title"><i class="ti ti-ruler-2"></i> Peso corporal predicho (ventilación protectora)</div>
       <div id="pcpContent" style="display:flex;flex-wrap:wrap;gap:10px"></div>
-    </div>
-
-    <!-- Signos vitales — Monitor -->
-    <div class="form-section" id="vsBox">
-      <div class="form-section-title"><i class="ti ti-heartbeat"></i> Signos vitales (monitor)</div>
-      <!-- OCR ZONE — Monitor -->
-      <div class="ocr-zone">
-        <div class="ocr-zone-title"><i class="ti ti-camera" style="margin-right:5px"></i>Completar con foto del monitor</div>
-        <div class="ocr-zone-sub">Sacá una foto a la pantalla del monitor de signos vitales — la IA lee FC, TA, SpO₂, FR, PIC y EtCO₂ y completa los campos automáticamente</div>
-        <input type="file" id="ocrCameraVS" accept="image/*" capture="environment" style="display:none" onchange="handleOCRImageVS(event)">
-        <input type="file" id="ocrGalleryVS" accept="image/*" style="display:none" onchange="handleOCRImageVS(event)">
-        <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
-          <button class="btn-ocr" id="btnOCRCamVS" onclick="document.getElementById('ocrCameraVS').click()"><i class="ti ti-camera"></i>Sacar foto</button>
-          <button class="btn-ocr" onclick="document.getElementById('ocrGalleryVS').click()" style="background:linear-gradient(135deg,var(--blue-600),var(--purple-400))"><i class="ti ti-photo"></i>Subir imagen</button>
-        </div>
-        <img id="ocrPreviewVS" class="ocr-preview">
-        <div class="ocr-status" id="ocrStatusVS"></div>
-        <div id="ocrChipsVS" style="margin-top:8px;display:flex;flex-wrap:wrap;justify-content:center"></div>
-      </div>
-      <div class="form-row four" style="margin-top:8px">
-        <div class="form-group"><label>FC (lpm)</label><input type="number" id="eFC" inputmode="numeric"></div>
-        <div class="form-group"><label>TA sistólica</label><input type="number" id="eTAS" inputmode="numeric" placeholder="120"></div>
-        <div class="form-group"><label>TA diastólica</label><input type="number" id="eTAD" inputmode="numeric" placeholder="80"></div>
-        <div class="form-group"><label>TAM (calculada)</label><input type="text" id="eTAM" readonly style="background:var(--blue-50);color:var(--blue-800);font-weight:600"></div>
-      </div>
-      <div class="form-row three">
-        <div class="form-group"><label>SpO₂ monitor (%)</label><input type="number" id="eSpO2Mon" inputmode="numeric" max="100"></div>
-        <div class="form-group"><label>FR monitor (rpm)</label><input type="number" id="eFRMon" inputmode="numeric"></div>
-        <div class="form-group"><label>PIC (mmHg)</label><input type="number" id="ePIC" inputmode="numeric" placeholder="Si tiene sensor"></div>
-      </div>
-      <div class="form-row">
-        <div class="form-group"><label>EtCO₂ (mmHg)</label><input type="number" id="eEtCO2" inputmode="numeric" placeholder="Si tiene capnografía"></div>
-      </div>
     </div>
 
     <!-- Mecánica ventilatoria -->
@@ -1031,9 +1064,6 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
             <option>VC-CMV</option><option>PC-CMV</option><option>SIMV-VC</option><option>SIMV-PC</option>
             <option>PS/CPAP</option><option>BIPAP</option><option>APRV</option>
             <option>VMNI — BIPAP</option><option>VMNI — CPAP</option>
-            <option>CAFO</option><option>Cánula nasal</option><option>Máscara simple</option>
-            <option>Máscara Venturi</option><option>Máscara reservorio</option>
-            <option>Respiración espontánea</option>
           </select>
         </div>
         <div class="form-group"><label>VT (ml)</label><input type="number" id="eVT" inputmode="decimal" placeholder="ml"></div>
@@ -1086,6 +1116,72 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
     </div>
 
     <hr class="sep">
+
+    <!-- PVE -->
+    <div class="accordion-header" onclick="toggleAccordion('accPVE')">
+      <span><i class="ti ti-activity" style="margin-right:6px;color:var(--teal-600)"></i>Prueba de ventilación espontánea (PVE)</span>
+      <i class="ti ti-chevron-down accordion-arrow" id="arrPVE"></i>
+    </div>
+    <div class="accordion-body" id="accPVE">
+      <div class="form-row three" style="margin-top:8px">
+        <div class="form-group"><label>¿Se realizó PVE?</label>
+          <select id="ePVE"><option value="">-</option><option>No</option><option>Sí — CPAP</option><option>Sí — T-pieza</option><option>Sí — PS mínima</option></select>
+        </div>
+        <div class="form-group"><label>Duración (min)</label><input type="number" id="ePVEtmin" inputmode="numeric" placeholder="30, 60, 120…"></div>
+        <div class="form-group"><label>Resultado</label>
+          <select id="ePVEresult"><option value="">-</option><option>Exitosa</option><option>Fallida — fatigó</option><option>Fallida — desaturó</option><option>Fallida — hemodinámico</option><option>Fallida — otra causa</option></select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Tipo de PVE</label>
+          <select id="ePVETipo"><option value="">-</option><option>Primera PVE</option><option>PVE de rutina</option><option>PVE pre-extubación</option></select>
+        </div>
+        <div class="form-group"><label>¿Extubación?</label>
+          <select id="eExtubacion"><option value="">-</option><option>No</option><option>Sí — planificada</option><option>Sí — no planificada</option><option>Sí — fallida (reintubación)</option></select>
+        </div>
+        <div class="form-group"><label>Interfaz post-extubación</label>
+          <select id="eInterfazPE"><option value="">-</option><option>CAFO</option><option>VMNI</option><option>Cánula nasal</option><option>Máscara Venturi</option><option>Aire ambiente</option></select>
+        </div>
+        <div class="form-group"><label>N° PVEs acumuladas</label><input type="text" id="eNPVEDisplay" readonly style="background:var(--gray-50);color:var(--blue-800);font-weight:600"><div class="form-hint">Calculado automáticamente</div></div>
+      </div>
+    </div>
+
+    <hr class="sep">
+
+    </div><!-- fin armOnlyBlock -->
+
+    <!-- ══ Signos vitales (siempre visible) ══ -->
+    <div class="form-section" id="vsBox">
+      <div class="form-section-title"><i class="ti ti-heartbeat"></i> Signos vitales (monitor)</div>
+      <!-- OCR ZONE — Monitor -->
+      <div class="ocr-zone">
+        <div class="ocr-zone-title"><i class="ti ti-camera" style="margin-right:5px"></i>Completar con foto del monitor</div>
+        <div class="ocr-zone-sub">Sacá una foto a la pantalla del monitor de signos vitales — la IA lee FC, TA, SpO₂, FR, PIC y EtCO₂ y completa los campos automáticamente</div>
+        <input type="file" id="ocrCameraVS" accept="image/*" capture="environment" style="display:none" onchange="handleOCRImageVS(event)">
+        <input type="file" id="ocrGalleryVS" accept="image/*" style="display:none" onchange="handleOCRImageVS(event)">
+        <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+          <button class="btn-ocr" id="btnOCRCamVS" onclick="document.getElementById('ocrCameraVS').click()"><i class="ti ti-camera"></i>Sacar foto</button>
+          <button class="btn-ocr" onclick="document.getElementById('ocrGalleryVS').click()" style="background:linear-gradient(135deg,var(--blue-600),var(--purple-400))"><i class="ti ti-photo"></i>Subir imagen</button>
+        </div>
+        <img id="ocrPreviewVS" class="ocr-preview">
+        <div class="ocr-status" id="ocrStatusVS"></div>
+        <div id="ocrChipsVS" style="margin-top:8px;display:flex;flex-wrap:wrap;justify-content:center"></div>
+      </div>
+      <div class="form-row four" style="margin-top:8px">
+        <div class="form-group"><label>FC (lpm)</label><input type="number" id="eFC" inputmode="numeric"></div>
+        <div class="form-group"><label>TA sistólica</label><input type="number" id="eTAS" inputmode="numeric" placeholder="120"></div>
+        <div class="form-group"><label>TA diastólica</label><input type="number" id="eTAD" inputmode="numeric" placeholder="80"></div>
+        <div class="form-group"><label>TAM (calculada)</label><input type="text" id="eTAM" readonly style="background:var(--blue-50);color:var(--blue-800);font-weight:600"></div>
+      </div>
+      <div class="form-row three">
+        <div class="form-group"><label>SpO₂ monitor (%)</label><input type="number" id="eSpO2Mon" inputmode="numeric" max="100"></div>
+        <div class="form-group"><label>FR monitor (rpm)</label><input type="number" id="eFRMon" inputmode="numeric"></div>
+        <div class="form-group"><label>PIC (mmHg)</label><input type="number" id="ePIC" inputmode="numeric" placeholder="Si tiene sensor"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>EtCO₂ (mmHg)</label><input type="number" id="eEtCO2" inputmode="numeric" placeholder="Si tiene capnografía"></div>
+      </div>
+    </div>
 
     <!-- Sedación / Neurológico -->
     <div class="accordion-header" onclick="toggleAccordion('accSed')">
@@ -1227,101 +1323,55 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
       </div>
     </div>
 
-    <hr class="sep">
-
-    <!-- PVE -->
-    <div class="accordion-header" onclick="toggleAccordion('accPVE')">
-      <span><i class="ti ti-wind" style="margin-right:6px;color:var(--blue-400)"></i>Prueba de ventilación espontánea (PVE)</span>
-      <i class="ti ti-chevron-down accordion-arrow" id="arrPVE"></i>
-    </div>
-    <div class="accordion-body" id="accPVE">
-      <div class="form-row four" style="margin-top:8px">
-        <div class="form-group"><label>¿Se realizó PVE?</label>
-          <select id="ePVE"><option value="">-</option><option>Sí</option><option>No</option></select>
-        </div>
-        <div class="form-group"><label>Tipo de PVE</label>
-          <select id="ePVETipo">
-            <option value="">-</option>
-            <option>Tubo en T</option>
-            <option>Tubo en T electrónico (PS 0 - PEEP 0)</option>
-            <option>CPAP 5</option>
-            <option>PS 7 - PEEP 0</option>
-            <option>PS 7 - PEEP 5</option>
-          </select>
-        </div>
-        <div class="form-group"><label>Tiempo</label>
-          <select id="ePVEtmin">
-            <option value="">-</option>
-            <option value="30">30 min</option>
-            <option value="60">60 min</option>
-            <option value="90">90 min</option>
-            <option value="120">120 min</option>
-          </select>
-        </div>
-        <div class="form-group"><label>Resultado</label>
-          <select id="ePVEresult"><option value="">-</option><option>Exitosa</option><option>Fallida</option></select>
-        </div>
-      </div>
-      <div class="form-row three">
-        <div class="form-group"><label>Extubación</label>
-          <select id="eExtubacion"><option value="">-</option><option>Sí — programada</option><option>Sí — no programada</option><option>No</option></select>
-        </div>
-        <div class="form-group"><label>Interfaz post-extubación</label>
-          <select id="eInterfazPE"><option value="">-</option><option>CAFO</option><option>VMNI</option><option>Cánula nasal</option><option>Máscara Venturi</option><option>Aire ambiente</option></select>
-        </div>
-        <div class="form-group"><label>N° PVEs acumuladas</label><input type="text" id="eNPVEDisplay" readonly style="background:var(--gray-50);color:var(--blue-800);font-weight:600"><div class="form-hint">Calculado automáticamente</div></div>
-      </div>
-    </div>
-
-    <hr class="sep">
-
-    <!-- TQT / Cuff -->
+    <!-- ══ TQT: visible cuando hay TQT (ARM o espontáneo) ══ -->
+    <div id="tqtBlock" style="display:none">
     <div class="accordion-header" onclick="toggleAccordion('accTQT')">
       <span><i class="ti ti-stethoscope" style="margin-right:6px;color:var(--amber-400)"></i>Vía aérea / Presión de cuff</span>
       <i class="ti ti-chevron-down accordion-arrow" id="arrTQT"></i>
     </div>
     <div class="accordion-body" id="accTQT">
-      <!-- Presión de cuff — aplica a TET y TQT -->
       <div class="form-section-title" style="margin-top:8px"><i class="ti ti-gauge"></i> Presión de cuff (TET o TQT)</div>
       <div class="form-row three">
         <div class="form-group"><label>P. cuff — Mañana (cmH₂O)</label><input type="number" id="eCuffM" inputmode="numeric"></div>
         <div class="form-group"><label>P. cuff — Tarde (cmH₂O)</label><input type="number" id="eCuffT" inputmode="numeric"></div>
         <div class="form-group"><label>P. cuff — Noche (cmH₂O)</label><input type="number" id="eCuffN" inputmode="numeric"></div>
       </div>
-
-      <!-- Datos de cánula TQT (solo si tiene TQT) -->
       <div class="form-section-title"><i class="ti ti-cut"></i> Cánula de traqueostomía</div>
       <div class="form-row four">
         <div class="form-group"><label>Tipo de cánula</label>
-          <select id="eTipoCan">
-            <option value="">-</option>
-            <option>Con balón</option>
-            <option>Con balón + puerto subglótico</option>
-            <option>Sin balón</option>
-            <option>Fenestrada</option>
-          </select>
+          <select id="eTipoCan"><option value="">-</option><option>Con balón</option><option>Con balón + puerto subglótico</option><option>Sin balón</option><option>Fenestrada</option></select>
         </div>
-        <div class="form-group"><label>Ø interno (mm)</label><input type="number" id="eCanDI" inputmode="decimal" step="0.5" placeholder="ej: 7.5"></div>
-        <div class="form-group"><label>Ø externo (mm)</label><input type="number" id="eCanDE" inputmode="decimal" step="0.5" placeholder="ej: 10.5"></div>
+        <div class="form-group"><label>Ø interno (mm)</label><input type="number" id="eCanDI" inputmode="decimal" step="0.5"></div>
+        <div class="form-group"><label>Ø externo (mm)</label><input type="number" id="eCanDE" inputmode="decimal" step="0.5"></div>
         <div class="form-group"><label>Estado del balón</label>
-          <select id="eEstadoBajon">
-            <option value="">-</option>
-            <option>Inflado</option>
-            <option>Desinflado</option>
-            <option>No aplica (sin balón)</option>
-          </select>
+          <select id="eEstadoBajon"><option value="">-</option><option>Inflado</option><option>Desinflado</option><option>No aplica (sin balón)</option></select>
         </div>
       </div>
       <div class="form-row">
         <div class="form-group"><label>Oclusión de cánula</label>
           <select id="eOclusionCanula"><option value="">-</option><option>Sí — tolerada</option><option>Sí — no tolerada</option><option>No</option></select>
         </div>
+        <div class="form-group"><label>Tolera desinflado del balón</label>
+          <select id="eTolDesinf"><option value="">-</option><option>Sí</option><option>No</option><option>No aplica (sin balón)</option></select>
+        </div>
+        <div class="form-group"><label>Tolera oclusión</label>
+          <select id="eTolOclusion"><option value="">-</option><option>Sí</option><option>No</option></select>
+        </div>
+        <div class="form-group"><label>Tolera válvula fonatoria</label>
+          <select id="eTolValvula"><option value="">-</option><option>Sí</option><option>No</option><option>No evaluada</option></select>
+        </div>
+      </div>
+      <div class="form-row three">
+        <div class="form-group"><label>Blue test</label>
+          <select id="eBlueTest"><option value="">-</option><option>Positivo</option><option>Negativo</option><option>No realizado</option></select>
+        </div>
+        <div class="form-group"><label>Calidad de la voz</label>
+          <select id="eCalidadVoz"><option value="">-</option><option>Húmeda</option><option>Clara</option><option>Afonía</option><option>No aplica</option></select>
+        </div>
         <div class="form-group"><label>Ostoma / estoma</label>
           <select id="eOstoma"><option value="">-</option><option>Sin particularidades</option><option>Tejido de granulación</option><option>Signos de infección</option><option>Secreción periostoma</option></select>
         </div>
       </div>
-
-      <!-- Secreciones traqueales -->
       <div class="form-section-title"><i class="ti ti-droplets"></i> Secreciones traqueales</div>
       <div class="form-row">
         <div class="form-group"><label>Cantidad</label>
@@ -1331,8 +1381,6 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
           <select id="eSecTrqCal"><option value="">-</option><option>Mucosas</option><option>Mucopurulentas</option><option>Purulentas</option><option>Mucohemáticas</option><option>Hemáticas</option></select>
         </div>
       </div>
-
-      <!-- Lago orofaríngeo -->
       <div class="form-section-title"><i class="ti ti-mouth"></i> Lago orofaríngeo (LOF)</div>
       <div class="form-row">
         <div class="form-group"><label>Cantidad LOF</label>
@@ -1343,8 +1391,118 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
         </div>
       </div>
     </div>
-
     <hr class="sep">
+    </div><!-- fin tqtBlock -->
+
+    <!-- ══ Sección según Grupo ══ -->
+    <div id="eGrupoBlock" style="display:none">
+    <div class="accordion-header" onclick="toggleAccordion('accGrupo')">
+      <span id="accGrupoTitle"><i class="ti ti-stethoscope" style="margin-right:6px;color:var(--purple-400)"></i>Evaluación específica</span>
+      <i class="ti ti-chevron-down accordion-arrow open" id="arrGrupo"></i>
+    </div>
+    <div class="accordion-body open" id="accGrupo">
+      <!-- Respiratorio / Post UTI / Quemado / Post Qx -->
+      <div id="eGrupoResp" style="display:none">
+        <div class="form-row four" style="margin-top:8px">
+          <div class="form-group"><label>Auscultación</label>
+            <select id="eAuscult">
+              <option value="">-</option><option>BEAB sin ruidos agregados</option>
+              <option>MV disminuido generalizado</option><option>MV disminuido en base derecha</option>
+              <option>MV disminuido en base izquierda</option><option>MV disminuido en ambas bases</option>
+              <option>Crepitantes bibasales</option><option>Crepitantes base derecha</option>
+              <option>Crepitantes base izquierda</option><option>Roncus bilaterales</option>
+              <option>Sibilancias</option><option>No evaluada</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Tos</label>
+            <select id="eTos">
+              <option value="">-</option><option>Efectiva y productiva</option><option>Efectiva seca</option>
+              <option>Parcialmente efectiva</option><option>No efectiva</option><option>No evaluada</option>
+            </select>
+          </div>
+          <div class="form-group"><label>SpO₂ en reposo (%)</label><input type="number" id="eSpO2Reposo" inputmode="numeric" max="100"></div>
+          <div class="form-group"><label>FR (rpm)</label><input type="number" id="eFRResp" inputmode="numeric"></div>
+        </div>
+      </div>
+      <!-- Neurológico -->
+      <div id="eGrupoNeuro" style="display:none">
+        <div class="form-row three" style="margin-top:8px">
+          <div class="form-group"><label>Conciencia / Colaboración</label>
+            <select id="eNeuroConciencia">
+              <option value="">-</option><option>Vigil y lúcido/a — colaborador/a</option>
+              <option>Vigil — parcialmente colaborador/a</option><option>Vigil — no colaborador/a</option>
+              <option>Vigil — excitación psicomotriz</option><option>Somnoliento/a — responde al llamado</option>
+              <option>Somnoliento/a — no responde</option><option>Estuporoso/a</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Hemicuerpo afectado</label>
+            <select id="eNeuroHemi"><option value="">-</option><option>Derecho</option><option>Izquierdo</option><option>Bilateral</option><option>No aplica</option></select>
+          </div>
+          <div class="form-group"><label>Control de tronco</label>
+            <select id="eNeuroTronco"><option value="">-</option><option>Independiente</option><option>Con mín. asistencia</option><option>Con moder. asistencia</option><option>Con máx. asistencia</option><option>Sin control</option></select>
+          </div>
+        </div>
+        <div class="form-row three">
+          <div class="form-group"><label>Deglución</label>
+            <select id="eNeuroDeglusion"><option value="">-</option><option>Apta toda consistencia</option><option>Apta SS y líquidos</option><option>Apta semisólidos</option><option>Disfagia severa — enteral</option><option>No evaluada</option></select>
+          </div>
+          <div class="form-group"><label>FAC (marcha)</label>
+            <select id="eNeuroFAC"><option value="">-</option><option>0 — No deambula</option><option>1 — Asistencia de 2 personas</option><option>2 — Asistencia continua de 1</option><option>3 — Supervisión</option><option>4 — Independiente superficie plana</option><option>5 — Independiente todo terreno</option></select>
+          </div>
+          <div class="form-group" style="display:flex;align-items:flex-end">
+            <button type="button" class="btn" style="background:var(--purple-50);color:var(--purple-800);border:1px solid var(--purple-400);width:100%" onclick="openFichaNeuroFromEvo()">
+              <i class="ti ti-brain"></i> Abrir ficha neurológica completa
+            </button>
+          </div>
+        </div>
+      </div>
+      <!-- Pre/Post quirúrgico -->
+      <div id="eGrupoQx" style="display:none">
+        <div class="form-row three" style="margin-top:8px">
+          <div class="form-group"><label>Día POP</label><input type="number" id="eQxDiaPOP" inputmode="numeric"></div>
+          <div class="form-group"><label>Autorización de carga</label>
+            <select id="eQxCarga"><option value="">-</option><option>Sin autorización</option><option>Carga parcial autorizada</option><option>Carga total autorizada</option></select>
+          </div>
+          <div class="form-group"><label>Herida / drenajes</label>
+            <select id="eQxHerida"><option value="">-</option><option>Sin particularidades</option><option>Con drenaje activo</option><option>Débito hemático</option><option>Débito serohemático</option><option>Signos de infección</option></select>
+          </div>
+        </div>
+      </div>
+      <!-- Amputado -->
+      <div id="eGrupoAmputado" style="display:none">
+        <div class="form-row three" style="margin-top:8px">
+          <div class="form-group"><label>Nivel de amputación</label>
+            <select id="eAmpNivel"><option value="">-</option><option>Transtibial</option><option>Transfemoral</option><option>Transmetatarsiana</option><option>Desarticulación de cadera</option><option>MMSS — especificar en obs.</option></select>
+          </div>
+          <div class="form-group"><label>Estado del muñón</label>
+            <select id="eAmpMunon"><option value="">-</option><option>Sin particularidades</option><option>Dolor en muñón</option><option>Dolor miembro fantasma</option><option>Edema</option><option>Infección / secreción</option></select>
+          </div>
+          <div class="form-group"><label>Vendaje de muñón</label>
+            <select id="eAmpVendaje"><option value="">-</option><option>Sí realizado</option><option>No — motivo en obs.</option></select>
+          </div>
+        </div>
+      </div>
+      <!-- Quemado -->
+      <div id="eGrupoQuemado" style="display:none">
+        <div class="form-row three" style="margin-top:8px">
+          <div class="form-group"><label>% SC afectada</label><input type="number" id="eQemSCQ" inputmode="decimal" placeholder="0–100%"></div>
+          <div class="form-group"><label>Zona / región</label><input type="text" id="eQemZona" placeholder="Ej: cara, tórax anterior, MMSS"></div>
+          <div class="form-group"><label>Estado de las lesiones</label>
+            <select id="eQemEstado"><option value="">-</option><option>Cobertura provisoria</option><option>Injertado — sin complicaciones</option><option>Injertado — con complicaciones</option><option>Escaras resueltas</option><option>Cicatrización activa</option></select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Contracturas / retracción</label>
+            <select id="eQemContractura"><option value="">-</option><option>Sin contracturas</option><option>Leve — no limita función</option><option>Moderada — limita función parcialmente</option><option>Severa — limita función significativamente</option></select>
+          </div>
+          <div class="form-group"><label>Posicionamiento</label>
+            <select id="eQemPosicion"><option value="">-</option><option>Adecuado</option><option>Necesita refuerzo</option><option>No realizado — motivo en obs.</option></select>
+          </div>
+        </div>
+      </div>
+    </div><!-- fin accGrupo body -->
+    <hr class="sep">
+    </div><!-- fin eGrupoBlock -->
 
     <!-- Técnicas kinesiológicas -->
     <div class="form-section">
@@ -3349,16 +3507,90 @@ function toggleTQTMinDetalle(){
 
 // Abrir evolución: detectar si es Mínimos o UTI/Emergencia
 function openEvolucionAdaptado(patientId){
-  const p = patients.find(x=>x.id===patientId);
-  if(!p) return;
-  if(ES_MINIMOS(p.sala)){
-    openEvolucionMin(patientId);
+  // Un único modal para todos los sectores y grupos
+  openEvolucion(patientId);
+}
+
+// ── Árbol de decisión ventilatorio ──────────────────────
+function setARMStatus(enARM){
+  document.getElementById('eBtnArmSi').className = 'dec-btn' + (enARM ? ' dec-arm-si' : '');
+  document.getElementById('eBtnArmNo').className = 'dec-btn' + (!enARM ? ' dec-arm-no' : '');
+  document.getElementById('eSubArmSi').style.display = enARM ? 'block' : 'none';
+  document.getElementById('eSubArmNo').style.display = !enARM ? 'block' : 'none';
+  document.getElementById('armOnlyBlock').style.display = enARM ? 'block' : 'none';
+  // Si pasa a no ARM, resetear los botones de interfaz ARM
+  if(!enARM){
+    document.querySelectorAll('#eSubArmSi .interfaz-btn').forEach(b=>b.className='interfaz-btn');
+    document.getElementById('eInterfazPrincipal').value = '';
   } else {
-    openEvolucion(patientId);
+    // Ocultar sub-bloques de no-ARM
+    document.getElementById('eSubVANO2').style.display = 'none';
+    document.getElementById('eSubCNAF').style.display = 'none';
+    // Resetear botones de no-ARM
+    document.querySelectorAll('#eSubArmNo .dec-btn').forEach(b=>{ b.classList.remove('dec-sel','dec-sel-tqt'); });
+    document.getElementById('eInterfazEsp').value = '';
+    // Mostrar TQT block si la interfaz ARM ya tiene TQT seleccionado
+    const iface = document.getElementById('eInterfazPrincipal').value;
+    document.getElementById('tqtBlock').style.display = iface === 'TQT' ? 'block' : 'none';
+  }
+  if(!enARM){
+    // Esconder TQT block hasta que elija interfaz con TQT
+    document.getElementById('tqtBlock').style.display = 'none';
   }
 }
 
-// ── Evolución Mínimos ──────────────────────────────────
+function setInterfazEsp(tipo){
+  // Limpiar selección anterior
+  document.querySelectorAll('#eSubArmNo .dec-btn').forEach(b=>{ b.classList.remove('dec-sel','dec-sel-tqt'); });
+  const esTQT = tipo === 'TQT_O2' || tipo === 'TQT_AA';
+  const btnId = { VAN_AA:'eBtnVAN_AA', VAN_O2:'eBtnVAN_O2', CNAF:'eBtnCNAF', VNI:'eBtnVNI', TQT_O2:'eBtnTQT_O2', TQT_AA:'eBtnTQT_AA' }[tipo];
+  if(btnId){ document.getElementById(btnId).classList.add(esTQT ? 'dec-sel-tqt' : 'dec-sel'); }
+  document.getElementById('eSubVANO2').style.display = tipo === 'VAN_O2' ? 'block' : 'none';
+  document.getElementById('eSubCNAF').style.display = tipo === 'CNAF' ? 'block' : 'none';
+  document.getElementById('tqtBlock').style.display = esTQT ? 'block' : 'none';
+  document.getElementById('eInterfazEsp').value = tipo;
+  // Mapear a un valor de interfaz legible
+  const mapaInterfaz = { VAN_AA:'Aire ambiente', VAN_O2:'VAN con O₂', CNAF:'CNAF', VNI:'VNI', TQT_O2:'TQT espontáneo + O₂', TQT_AA:'TQT espontáneo' };
+  document.getElementById('eInterfazPrincipal').value = mapaInterfaz[tipo] || tipo;
+  if(!esTQT){
+    document.querySelectorAll('#eSubVANO2 .dec-btn').forEach(b=>b.classList.remove('dec-sel'));
+  }
+}
+
+function setVANO2tipo(tipo){
+  document.querySelectorAll('#eSubVANO2 .dec-btn').forEach(b=>b.classList.remove('dec-sel'));
+  const btnId = { CN:'eBtnCN', MV:'eBtnMV', MR:'eBtnMR' }[tipo];
+  if(btnId) document.getElementById(btnId).classList.add('dec-sel');
+  const mapaInterfaz = { CN:'Cánula nasal', MV:'Máscara Venturi', MR:'Máscara reservorio' };
+  document.getElementById('eInterfazPrincipal').value = mapaInterfaz[tipo] || tipo;
+}
+
+// ── Lógica de grupos ────────────────────────────────────
+function actualizarGrupoEvo(tipoKine){
+  const grupos = { respiratorio:'Resp.', neurologico:'Neuro', pre_qx:'Qx', post_qx:'Qx', post_uti:'Resp.', quemado:'Quemado', amputado:'Amputado', otro:'' };
+  const iconos = { respiratorio:'ti-lungs', neurologico:'ti-brain', pre_qx:'ti-cut', post_qx:'ti-cut', post_uti:'ti-lungs', quemado:'ti-flame', amputado:'ti-tools', otro:'ti-stethoscope' };
+  const labels = { respiratorio:'Respiratorio', neurologico:'Neurológico', pre_qx:'Pre-quirúrgico', post_qx:'Post-quirúrgico', post_uti:'Post UTI', quemado:'Quemado', amputado:'Amputado', otro:'Específico' };
+  const showResp = ['respiratorio','post_uti','quemado','post_qx'].includes(tipoKine);
+  const showNeuro = tipoKine === 'neurologico';
+  const showQx = tipoKine === 'pre_qx' || tipoKine === 'post_qx';
+  const showAmputado = tipoKine === 'amputado';
+  const showQuemado = tipoKine === 'quemado';
+  const showAny = showResp || showNeuro || showQx || showAmputado || showQuemado;
+  document.getElementById('eGrupoBlock').style.display = (showAny && tipoKine) ? 'block' : 'none';
+  document.getElementById('eGrupoResp').style.display = showResp ? 'block' : 'none';
+  document.getElementById('eGrupoNeuro').style.display = showNeuro ? 'block' : 'none';
+  document.getElementById('eGrupoQx').style.display = showQx ? 'block' : 'none';
+  document.getElementById('eGrupoAmputado').style.display = showAmputado ? 'block' : 'none';
+  document.getElementById('eGrupoQuemado').style.display = showQuemado ? 'block' : 'none';
+  if(tipoKine){
+    const icon = iconos[tipoKine] || 'ti-stethoscope';
+    const label = labels[tipoKine] || 'Evaluación específica';
+    document.getElementById('accGrupoTitle').innerHTML = `<i class="ti ${icon}" style="margin-right:6px;color:var(--purple-400)"></i>${label}`;
+  }
+}
+
+// Abrir evolución: detectar si es Mínimos o UTI/Emergencia (función legacy — ya no se usa)
+function openEvolucionAdaptado_OLD(patientId){ /* reemplazada por openEvolucionAdaptado */ }
 function openEvolucionMin(patientId){
   const p = patients.find(x=>x.id===patientId);
   if(!p) return;
@@ -4516,11 +4748,15 @@ function openEvolucion(patientId){
   const todayStr = today();
 
   // Header del modal
+  const tipoLabel = TIPO_KINE_LABEL[p.tipoKine] || '';
   document.getElementById('evoModalTitle').textContent = `${p.apellido}, ${p.nombre}`;
-  document.getElementById('evoModalSub').textContent = `${p.diagnostico||'—'} · ${SALA_LABEL[p.sala]||p.sala||'—'} cama ${p.cama||'—'}`;
+  document.getElementById('evoModalSub').textContent = `${tipoLabel ? tipoLabel+' · ' : ''}${p.diagnostico||'—'} · ${SALA_LABEL[p.sala]||p.sala||'—'} cama ${p.cama||'—'}`;
 
   // Reset form
   document.getElementById('eDate').value = todayStr;
+  // Hora automática
+  const ahora = new Date();
+  document.getElementById('eHora').value = ahora.getHours().toString().padStart(2,'0') + ':' + ahora.getMinutes().toString().padStart(2,'0');
   document.getElementById('eTurno').value = currentShift();
   document.getElementById('eKine').value = currentUser.name;
   const nFields = ['eModo','eVT','eVTkg','eFR','ePEEP','eFiO2','eTi','ePC',
@@ -4531,12 +4767,33 @@ function openEvolucion(patientId){
     'eAKM1','eMRC',
     'ePVE','ePVETipo','ePVEtmin','ePVEresult','eExtubacion','eInterfazPE',
     'eCuffM','eCuffT','eCuffN','eOclusionCanula','eDeglusion',
-    'eSecCant','eSecChar','eObs','eInterfazPrincipal'];
+    'eTipoCan','eCanDI','eCanDE','eEstadoBajon','eOstoma',
+    'eTolDesinf','eTolOclusion','eTolValvula','eBlueTest','eCalidadVoz',
+    'eSecTrqCant','eSecTrqCal','eLOF',
+    'eAuscult','eTos','eSpO2Reposo','eFRResp',
+    'eNeuroConciencia','eNeuroHemi','eNeuroTronco','eNeuroDeglusion','eNeuroFAC',
+    'eQxDiaPOP','eQxCarga','eQxHerida',
+    'eAmpNivel','eAmpMunon','eAmpVendaje',
+    'eQemZona','eQemEstado','eQemContractura','eQemPosicion',
+    'eCNAFflujo','eCNAFfio2',
+    'eSecCant','eSecChar','eObs','eInterfazPrincipal','eInterfazEsp'];
   nFields.forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   document.querySelectorAll('.tag.active').forEach(t=>t.classList.remove('active'));
   ['msSedacion','msAnalgesia','msBNM','msVasoact'].forEach(resetMultiselect);
   document.getElementById('eDolorEscalaRow').style.display = 'none';
   { const ctBox=document.getElementById('ctMultiplesBox'); if(ctBox){ ctBox.style.display='none'; ctBox.innerHTML=''; } }
+
+  // Reset árbol de decisión ventilatoria
+  document.getElementById('eBtnArmSi').className = 'dec-btn';
+  document.getElementById('eBtnArmNo').className = 'dec-btn';
+  document.getElementById('eSubArmSi').style.display = 'none';
+  document.getElementById('eSubArmNo').style.display = 'none';
+  document.getElementById('armOnlyBlock').style.display = 'none';
+  document.getElementById('tqtBlock').style.display = 'none';
+  document.getElementById('eSubVANO2').style.display = 'none';
+  document.getElementById('eSubCNAF').style.display = 'none';
+  document.querySelectorAll('#eSubArmNo .dec-btn').forEach(b=>b.classList.remove('dec-sel','dec-sel-tqt'));
+  document.querySelectorAll('#eSubArmSi .interfaz-btn').forEach(b=>b.className='interfaz-btn');
 
   // Reset OCR signos vitales
   { const pv=document.getElementById('ocrPreviewVS'); if(pv){pv.style.display='none';pv.src='';} }
@@ -4544,16 +4801,13 @@ function openEvolucion(patientId){
   { const cv=document.getElementById('ocrChipsVS'); if(cv) cv.innerHTML=''; }
 
   // ── Calcular días automáticamente ──
-  // Días de internación en hospital
   const diasHosp = p.fIHosp ? daysBetween(p.fIHosp, todayStr) : null;
   document.getElementById('eDiasHosp').value = diasHosp !== null ? diasHosp + 1 : '';
 
-  // Días en el sector actual (usa fISector si existe, sino fIUTI)
   const fSector = p.fISector || p.fIUTI;
   const diasSector = fSector ? daysBetween(fSector, todayStr) : null;
   document.getElementById('eUTI').value = diasSector !== null ? diasSector + 1 : '';
 
-  // Días de ARM (desde IOT, se frena si hay extubación registrada)
   let diasARM = 0;
   const yaExtubado = p.finARM || evoluciones.some(e => e.patientId === patientId && e.extubacion?.startsWith('Sí'));
   if(p.inicioARM && !yaExtubado){
@@ -4562,7 +4816,7 @@ function openEvolucion(patientId){
   }
   document.getElementById('eARM').value = diasARM || '';
 
-  // Mostrar contadores visuales
+  // Contadores visuales
   const counters = document.getElementById('evoDayCounters');
   counters.innerHTML = [
     diasHosp !== null ? `<div class="day-counter"><div class="dc-val">${diasHosp+1}</div><div class="dc-label">Día hosp.</div></div>` : '',
@@ -4571,11 +4825,25 @@ function openEvolucion(patientId){
     yaExtubado ? `<div class="day-counter" style="background:var(--green-50);border-color:#d1fae5"><div class="dc-val" style="color:var(--green-800)">✓</div><div class="dc-label" style="color:var(--green-400)">Extubado</div></div>` : '',
   ].filter(Boolean).join('');
 
-  // ── Peso Corporal Predicho (PCP) y volúmenes de ventilación protectora ──
+  // ── Pre-seleccionar estado ARM ──
+  const enARM = !!(p.inicioARM && !yaExtubado);
+  if(enARM){
+    setARMStatus(true);
+    // Pre-seleccionar TET o TQT según el paciente
+    if(p.tqt && p.tqt !== 'No') selectInterfaz('TQT', false);
+    else selectInterfaz('TET', false);
+  }
+  // TQT espontáneo: si el paciente tiene TQT pero no está en ARM
+  if(!enARM && ((p.tqt && p.tqt !== 'No') || p.tqtMin === 'Sí')){
+    setARMStatus(false);
+    setInterfazEsp('TQT_AA');
+  }
+
+  // ── PCP ──
   const pcpBox = document.getElementById('pcpBox');
   const pcpContent = document.getElementById('pcpContent');
   const pcpVal = p.pcp || calcPCP(p.talla, p.genero);
-  if(pcpVal && p.talla){
+  if(pcpVal && p.talla && enARM){
     pcpBox.style.display = 'block';
     const vol6 = pcpVal*6, vol7 = pcpVal*7, vol8 = pcpVal*8;
     pcpContent.innerHTML = `
@@ -4589,13 +4857,7 @@ function openEvolucion(patientId){
     pcpContent.innerHTML = '';
   }
 
-  // Reset botones de interfaz
-  document.querySelectorAll('.interfaz-btn').forEach(b=>b.className='interfaz-btn');
-
-  // Pre-seleccionar interfaz según TQT del paciente
-  if(p.tqt && p.tqt !== 'No') selectInterfaz('TQT', false);
-
-  // Reset OCR
+  // Reset OCR respirador
   const prev = document.getElementById('ocrPreview');
   if(prev){ prev.style.display='none'; prev.src=''; }
   const stat = document.getElementById('ocrStatus');
@@ -4603,10 +4865,13 @@ function openEvolucion(patientId){
   const chps = document.getElementById('ocrChips');
   if(chps) chps.innerHTML='';
 
-  // N° de PVEs acumuladas previas (informativo, se recalcula al guardar)
+  // N° de PVEs acumuladas previas
   const pvePrevias = evoluciones.filter(e => e.patientId===patientId && e.pve && e.pve!=='' && e.pve!=='No').length;
   const npveDisp = document.getElementById('eNPVEDisplay');
   if(npveDisp) npveDisp.value = pvePrevias>0 ? pvePrevias : '0';
+
+  // ── Sección por grupo ──
+  actualizarGrupoEvo(p.tipoKine || '');
 
   renderTimeline(patientId);
   openModal('modalEvo');
@@ -4657,8 +4922,11 @@ async function guardarEvolucion(){
   if(pveActual && pveActual!=='No') nPVE += 1;
 
   const evo = {
-    id: Date.now(), patientId: currentEvoPacId, date, turno:G('eTurno'), kine:G('eKine'),
+    id: Date.now(), patientId: currentEvoPacId, date, hora:G('eHora'), turno:G('eTurno'), kine:G('eKine'),
     armDia:GN('eARM'), utiDia:GN('eUTI'),
+    interfaz:G('eInterfazPrincipal') || G('eInterfaz'),
+    interfazEsp:G('eInterfazEsp'),
+    cnafFlujo:GN('eCNAFflujo'), cnafFio2:GN('eCNAFfio2'),
     modo:G('eModo'), vt:GN('eVT'), vtkg:GN('eVTkg'), fr:GN('eFR'), peep:GN('ePEEP'),
     fc:GN('eFC'), tas:GN('eTAS'), tad:GN('eTAD'), tam:G('eTAM'), spo2Mon:GN('eSpO2Mon'), frMon:GN('eFRMon'), pic:GN('ePIC'), etco2:GN('eEtCO2'),
     fio2:GN('eFiO2'), ti:GN('eTi'), pc:GN('ePC'),
@@ -4666,7 +4934,7 @@ async function guardarEvolucion(){
     dp:GN('eDP'), crs:GN('eCrs'), rinsp:GN('eRinsp'), flujo:GN('eFlujo'),
     mp:GN('eMP'), er:GN('eER'), ct:GN('eCT'),
     ph:GN('ePH'), pco2:GN('ePCO2'), po2:GN('ePO2'), hco3:GN('eHCO3'),
-    spo2:GN('eSpO2'), pafi:GN('ePAFI'), interfaz:G('eInterfazPrincipal') || G('eInterfaz'), diasHosp:GN('eDiasHosp'),
+    spo2:GN('eSpO2'), pafi:GN('ePAFI'), diasHosp:GN('eDiasHosp'),
     rass:G('eRASS'), cpot:G('eCPOT'), camicu:G('eCAMICU'), ventSed:G('eVentSed'),
     dolorAuto:G('eDolorAuto'), dolorEscala:G('eDolorEscala'),
     sedacion:getMultiselectValues('msSedacion'), analgesia:getMultiselectValues('msAnalgesia'),
@@ -4679,6 +4947,20 @@ async function guardarEvolucion(){
     oclusionCanula:G('eOclusionCanula'), deglusion:G('eDeglusion'),
     tipoCan:G('eTipoCan'), canDI:G('eCanDI'), canDE:G('eCanDE'), estadoBajon:G('eEstadoBajon'),
     ostoma:G('eOstoma'), secTrqCant:G('eSecTrqCant'), secTrqCal:G('eSecTrqCal'), lof:G('eLOF'),
+    tolDesinf:G('eTolDesinf'), tolOclusion:G('eTolOclusion'), tolValvula:G('eTolValvula'),
+    blueTest:G('eBlueTest'), calidadVoz:G('eCalidadVoz'),
+    // Grupo: respiratorio
+    auscult:G('eAuscult'), tos:G('eTos'), spo2Reposo:GN('eSpO2Reposo'), frResp:GN('eFRResp'),
+    // Grupo: neuro
+    neuroConciencia:G('eNeuroConciencia'), neuroHemi:G('eNeuroHemi'), neuroTronco:G('eNeuroTronco'),
+    neuroDeglusion:G('eNeuroDeglusion'), neuroFAC:G('eNeuroFAC'),
+    // Grupo: qx
+    qxDiaPOP:GN('eQxDiaPOP'), qxCarga:G('eQxCarga'), qxHerida:G('eQxHerida'),
+    // Grupo: amputado
+    ampNivel:G('eAmpNivel'), ampMunon:G('eAmpMunon'), ampVendaje:G('eAmpVendaje'),
+    // Grupo: quemado
+    qemSCQ:GN('eQemSCQ'), qemZona:G('eQemZona'), qemEstado:G('eQemEstado'),
+    qemContractura:G('eQemContractura'), qemPosicion:G('eQemPosicion'),
     tecnicas, secCant:G('eSecCant'), secChar:G('eSecChar'),
     obs:G('eObs'),
   };
