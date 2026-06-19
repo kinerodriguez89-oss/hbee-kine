@@ -4265,7 +4265,6 @@ function openNuevoPaciente(){
   campos.forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   document.getElementById('fTipoKine').value = '';
   document.getElementById('fEstFx').value = '';
-  document.getElementById('fFrecuencia').value = '';
   document.getElementById('fTQTMin').value = '';
   document.getElementById('fTQTMinTipo').value = '';
   document.getElementById('fTQTMinID').value = '';
@@ -4299,7 +4298,7 @@ function openEditPaciente(id){
   populateCama(p.sala, p.cama);
   M('fFIHosp',p.fIHosp); M('fFIUTI',p.fIUTI);
   M('fDiag',p.diagnostico);
-  M('fTipoKine',p.tipoKine); M('fEstFx',p.estFx); M('fFrecuencia',p.frecuencia);
+  M('fTipoKine',p.tipoKine); M('fEstFx',p.estFx);
   M('fTQTMin',p.tqtMin); M('fTQTMinTipo',p.tqtMinTipo); M('fTQTMinID',p.tqtMinID); M('fTQTMinED',p.tqtMinED);
   toggleTQTMinDetalle();
   // Antecedentes
@@ -4333,7 +4332,7 @@ async function guardarPaciente(){
     apellido, nombre:G('fNombre'), dni:G('fDNI'), edad:parseInt(G('fEdad'))||null, genero,
     peso, talla, imc, pcp: pcp!==null ? +pcp.toFixed(1) : null,
     sala:G('fSala'), cama:G('fCama'),
-    tipoKine:G('fTipoKine'), estFx:G('fEstFx'), frecuencia:G('fFrecuencia'),
+    tipoKine:G('fTipoKine'), estFx:G('fEstFx'),
     tqtMin:G('fTQTMin'), tqtMinTipo:G('fTQTMinTipo'), tqtMinID:G('fTQTMinID'), tqtMinED:G('fTQTMinED'),
     fIHosp:G('fFIHosp'), fIUTI:G('fFIUTI'),
     diagnostico:G('fDiag'),
