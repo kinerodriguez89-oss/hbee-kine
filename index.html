@@ -582,7 +582,6 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
     <button class="btn btn-primary btn-block" onclick="doLogin()"><i class="ti ti-login"></i>Ingresar</button>
 
     <span class="link-small" onclick="showSetup()">⚙ Configurar Google Drive</span>
-    <span class="link-small" onclick="showGeminiSetup()" style="color:var(--teal-600)">🤖 Configurar OCR (Gemini API Key)</span>
 
     <div style="text-align:center;margin-top:1.4rem;padding-top:.9rem;border-top:1px solid var(--border)">
       <p style="font-size:10.5px;color:var(--text-light)">Desarrollado por <strong style="color:var(--text-muted)">Lic. Rodríguez Daniel</strong></p>
@@ -649,8 +648,8 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
         <button class="btn btn-success btn-sm" onclick="openNuevoPaciente()"><i class="ti ti-plus"></i>Nuevo paciente</button>
       </div>
       <div class="stats-grid">
-        <div class="stat-card stat-blue"><div class="stat-label">Pacientes activos</div><div class="stat-value" id="statActivos">0</div><div class="stat-sub">En UTI / Emergencia</div></div>
-        <div class="stat-card stat-amber"><div class="stat-label">Pacientes en ARM</div><div class="stat-value" id="statARM">0</div><div class="stat-sub">Asistencia respiratoria</div></div>
+        <div class="stat-card stat-blue"><div class="stat-label">Pacientes activos</div><div class="stat-value" id="statActivos">0</div><div class="stat-sub" id="statActivosSub">En UTI / Emergencia</div></div>
+        <div class="stat-card stat-amber"><div class="stat-label" id="statARMLabel">Pacientes en ARM</div><div class="stat-value" id="statARM">0</div><div class="stat-sub" id="statARMSub">Asistencia respiratoria</div></div>
         <div class="stat-card stat-teal"><div class="stat-label">Evoluciones hoy</div><div class="stat-value" id="statHoy">0</div><div class="stat-sub">Cargadas en guardia</div></div>
         <div class="stat-card stat-red"><div class="stat-label">Sin evoluciones hoy</div><div class="stat-value" id="statSinEvo">0</div><div class="stat-sub">Requieren atención</div></div>
       </div>
@@ -973,6 +972,22 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
             <i class="ti ti-plug-connected"></i><span>TQT</span><small>Traqueostomía</small>
           </button>
         </div>
+        <!-- Diámetro interno: aparece al elegir TET o TQT en ARM -->
+        <div id="eSubARMdiametro" style="display:none;margin-top:10px">
+          <div class="form-group" style="max-width:200px">
+            <label id="eSubARMdiametroLabel">ID (mm)</label>
+            <select id="eARMdiametro">
+              <option value="">-</option>
+              <option value="6">6 mm</option>
+              <option value="6.5">6.5 mm</option>
+              <option value="7">7 mm</option>
+              <option value="7.5">7.5 mm</option>
+              <option value="8">8 mm</option>
+              <option value="8.5">8.5 mm</option>
+              <option value="9">9 mm</option>
+            </select>
+          </div>
+        </div>
       </div>
 
       <!-- Si no ARM: opciones de interfaz espontánea -->
@@ -1043,20 +1058,6 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
       <i class="ti ti-chevron-down accordion-arrow open" id="arrVent"></i>
     </div>
     <div class="accordion-body open" id="accVent">
-      <!-- OCR ZONE -->
-      <div class="ocr-zone" style="margin-top:10px">
-        <div class="ocr-zone-title"><i class="ti ti-camera" style="margin-right:5px"></i>Completar con foto del respirador</div>
-        <div class="ocr-zone-sub">Sacá una foto a la pantalla durante la pausa teleinspiratoria — la IA lee los valores y completa los campos automáticamente</div>
-        <input type="file" id="ocrCamera" accept="image/*" capture="environment" style="display:none" onchange="handleOCRImage(event)">
-        <input type="file" id="ocrGallery" accept="image/*" style="display:none" onchange="handleOCRImage(event)">
-        <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
-          <button class="btn-ocr" id="btnOCRCam" onclick="document.getElementById('ocrCamera').click()"><i class="ti ti-camera"></i>Sacar foto</button>
-          <button class="btn-ocr" onclick="document.getElementById('ocrGallery').click()" style="background:linear-gradient(135deg,var(--blue-600),var(--purple-400))"><i class="ti ti-photo"></i>Subir imagen</button>
-        </div>
-        <img id="ocrPreview" class="ocr-preview">
-        <div class="ocr-status" id="ocrStatus"></div>
-        <div id="ocrChips" style="margin-top:8px;display:flex;flex-wrap:wrap;justify-content:center"></div>
-      </div>
       <div class="form-row three" style="margin-top:8px">
         <div class="form-group"><label>Modo ventilatorio</label>
           <select id="eModo">
@@ -1153,20 +1154,6 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
     <!-- ══ Signos vitales (siempre visible) ══ -->
     <div class="form-section" id="vsBox">
       <div class="form-section-title"><i class="ti ti-heartbeat"></i> Signos vitales (monitor)</div>
-      <!-- OCR ZONE — Monitor -->
-      <div class="ocr-zone">
-        <div class="ocr-zone-title"><i class="ti ti-camera" style="margin-right:5px"></i>Completar con foto del monitor</div>
-        <div class="ocr-zone-sub">Sacá una foto a la pantalla del monitor de signos vitales — la IA lee FC, TA, SpO₂, FR, PIC y EtCO₂ y completa los campos automáticamente</div>
-        <input type="file" id="ocrCameraVS" accept="image/*" capture="environment" style="display:none" onchange="handleOCRImageVS(event)">
-        <input type="file" id="ocrGalleryVS" accept="image/*" style="display:none" onchange="handleOCRImageVS(event)">
-        <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
-          <button class="btn-ocr" id="btnOCRCamVS" onclick="document.getElementById('ocrCameraVS').click()"><i class="ti ti-camera"></i>Sacar foto</button>
-          <button class="btn-ocr" onclick="document.getElementById('ocrGalleryVS').click()" style="background:linear-gradient(135deg,var(--blue-600),var(--purple-400))"><i class="ti ti-photo"></i>Subir imagen</button>
-        </div>
-        <img id="ocrPreviewVS" class="ocr-preview">
-        <div class="ocr-status" id="ocrStatusVS"></div>
-        <div id="ocrChipsVS" style="margin-top:8px;display:flex;flex-wrap:wrap;justify-content:center"></div>
-      </div>
       <div class="form-row four" style="margin-top:8px">
         <div class="form-group"><label>FC (lpm)</label><input type="number" id="eFC" inputmode="numeric"></div>
         <div class="form-group"><label>TA sistólica</label><input type="number" id="eTAS" inputmode="numeric" placeholder="120"></div>
@@ -4267,11 +4254,16 @@ function renderDashboard(){
   const todayStr = today();
   const evosHoy = evoluciones.filter(e=>e.date===todayStr && activos.some(p=>p.id===e.patientId));
   const conARM = activos.filter(p=>p.inicioARM && !p.finARM);
+  const conTQT = activos.filter(p=> (p.tqt && p.tqt !== 'No') || p.tqtMin === 'Sí');
   const sinEvo = activos.filter(p=>!evoluciones.some(e=>e.patientId===p.id && e.date===todayStr));
+  const esMin = ES_MINIMOS(currentSector);
 
   document.getElementById('statActivos').textContent = activos.length;
+  document.getElementById('statActivosSub').textContent = currentSector ? (SALA_LABEL[currentSector]||currentSector) : 'En todos los sectores';
   document.getElementById('statHoy').textContent = evosHoy.length;
-  document.getElementById('statARM').textContent = conARM.length;
+  document.getElementById('statARMLabel').textContent = esMin ? 'Pacientes TQT' : 'Pacientes en ARM';
+  document.getElementById('statARMSub').textContent = esMin ? 'Con traqueostomía' : 'Asistencia respiratoria';
+  document.getElementById('statARM').textContent = esMin ? conTQT.length : conARM.length;
   document.getElementById('statSinEvo').textContent = sinEvo.length;
 
   const cont = document.getElementById('dashPacientes');
@@ -4792,6 +4784,8 @@ function openEvolucion(patientId){
   document.getElementById('tqtBlock').style.display = 'none';
   document.getElementById('eSubVANO2').style.display = 'none';
   document.getElementById('eSubCNAF').style.display = 'none';
+  document.getElementById('eSubARMdiametro').style.display = 'none';
+  const diamEl = document.getElementById('eARMdiametro'); if(diamEl) diamEl.value = '';
   document.querySelectorAll('#eSubArmNo .dec-btn').forEach(b=>b.classList.remove('dec-sel','dec-sel-tqt'));
   document.querySelectorAll('#eSubArmSi .interfaz-btn').forEach(b=>b.className='interfaz-btn');
 
@@ -4879,21 +4873,22 @@ function openEvolucion(patientId){
 
 function selectInterfaz(tipo, visual=true){
   // Limpiar selección anterior
-  document.querySelectorAll('.interfaz-btn').forEach(b=>b.className='interfaz-btn');
+  document.querySelectorAll('#eSubArmSi .interfaz-btn').forEach(b=>b.className='interfaz-btn');
   document.getElementById('eInterfazPrincipal').value = tipo;
   // Determinar clase según tipo
-  const vmClass = ['TET','TQT','VMNI'].includes(tipo) ? 'selected-vm' : '';
-  const cnafClass = tipo === 'CNAF' ? 'selected-sup' : '';
-  const espoClass = ['Cánula nasal','Máscara Venturi','Máscara reservorio','Aire ambiente'].includes(tipo) ? 'selected-spe' : '';
-  const cls = vmClass || cnafClass || espoClass || 'selected-sup';
-  const idMap = {
-    'TET':'ibTET','TQT':'ibTQT','VMNI':'ibVMNI','CNAF':'ibCNAF',
-    'Cánula nasal':'ibCN','Máscara Venturi':'ibMV','Máscara reservorio':'ibMR','Aire ambiente':'ibAA'
-  };
+  const cls = ['TET','TQT'].includes(tipo) ? 'selected-vm' : 'selected-sup';
+  const idMap = { 'TET':'ibTET', 'TQT':'ibTQT' };
   const btn = document.getElementById(idMap[tipo]);
   if(btn) btn.className = `interfaz-btn ${cls}`;
+  // Mostrar selector de diámetro interno al elegir TET o TQT
+  const diamBox = document.getElementById('eSubARMdiametro');
+  const diamLabel = document.getElementById('eSubARMdiametroLabel');
+  if(diamBox){
+    diamBox.style.display = ['TET','TQT'].includes(tipo) ? 'block' : 'none';
+    if(diamLabel) diamLabel.textContent = tipo === 'TET' ? 'Diámetro interno TET (mm)' : 'Diámetro interno TQT (mm)';
+  }
   // Si es ARM, abrir acordeón de mecánica automáticamente
-  if(visual && ['TET','TQT','VMNI'].includes(tipo)){
+  if(visual && ['TET','TQT'].includes(tipo)){
     const accVent = document.getElementById('accVent');
     if(accVent && !accVent.classList.contains('open')){
       accVent.classList.add('open');
@@ -4926,6 +4921,7 @@ async function guardarEvolucion(){
     armDia:GN('eARM'), utiDia:GN('eUTI'),
     interfaz:G('eInterfazPrincipal') || G('eInterfaz'),
     interfazEsp:G('eInterfazEsp'),
+    armDiametro:G('eARMdiametro'),
     cnafFlujo:GN('eCNAFflujo'), cnafFio2:GN('eCNAFfio2'),
     modo:G('eModo'), vt:GN('eVT'), vtkg:GN('eVTkg'), fr:GN('eFR'), peep:GN('ePEEP'),
     fc:GN('eFC'), tas:GN('eTAS'), tad:GN('eTAD'), tam:G('eTAM'), spo2Mon:GN('eSpO2Mon'), frMon:GN('eFRMon'), pic:GN('ePIC'), etco2:GN('eEtCO2'),
