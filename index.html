@@ -992,20 +992,40 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
             <i class="ti ti-plug-connected"></i><span>TQT</span><small>Traqueostomía</small>
           </button>
         </div>
-        <!-- Diámetro interno: aparece al elegir TET o TQT en ARM -->
+        <!-- Diámetro interno + progresión ADS: aparece al elegir TET o TQT en ARM -->
         <div id="eSubARMdiametro" style="display:none;margin-top:10px">
-          <div class="form-group" style="max-width:200px">
-            <label id="eSubARMdiametroLabel">ID (mm)</label>
-            <select id="eARMdiametro">
-              <option value="">-</option>
-              <option value="6">6 mm</option>
-              <option value="6.5">6.5 mm</option>
-              <option value="7">7 mm</option>
-              <option value="7.5">7.5 mm</option>
-              <option value="8">8 mm</option>
-              <option value="8.5">8.5 mm</option>
-              <option value="9">9 mm</option>
-            </select>
+          <div class="form-row">
+            <div class="form-group">
+              <label id="eSubARMdiametroLabel">ID (mm)</label>
+              <select id="eARMdiametro">
+                <option value="">-</option>
+                <option value="6">6 mm</option>
+                <option value="6.5">6.5 mm</option>
+                <option value="7">7 mm</option>
+                <option value="7.5">7.5 mm</option>
+                <option value="8">8 mm</option>
+                <option value="8.5">8.5 mm</option>
+                <option value="9">9 mm</option>
+              </select>
+            </div>
+            <!-- Progresión ADS: solo para TET -->
+            <div class="form-group" id="eSubTETads" style="display:none">
+              <label>Progresión TET a ADS (cm)</label>
+              <select id="eTETads">
+                <option value="">-</option>
+                <option value="16">16 cm</option>
+                <option value="17">17 cm</option>
+                <option value="18">18 cm</option>
+                <option value="19">19 cm</option>
+                <option value="20">20 cm</option>
+                <option value="21">21 cm</option>
+                <option value="22">22 cm</option>
+                <option value="23">23 cm</option>
+                <option value="24">24 cm</option>
+                <option value="25">25 cm</option>
+                <option value="26">26 cm</option>
+              </select>
+            </div>
           </div>
         </div>
       </div>
@@ -1047,6 +1067,55 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
             <button type="button" class="dec-btn" id="eBtnMR" onclick="setVANO2tipo('MR')">
               <i class="ti ti-circle-dashed"></i> Máscara reservorio
             </button>
+          </div>
+          <!-- CN: flujo -->
+          <div id="eSubCNflujo" style="display:none;margin-top:10px" class="dec-sublevel">
+            <div class="form-group" style="max-width:200px">
+              <label>Flujo (L/min)</label>
+              <select id="eCNflujo">
+                <option value="">-</option>
+                <option value="0.5">0.5 L/min</option>
+                <option value="1">1 L/min</option>
+                <option value="1.5">1.5 L/min</option>
+                <option value="2">2 L/min</option>
+                <option value="2.5">2.5 L/min</option>
+                <option value="3">3 L/min</option>
+                <option value="3.5">3.5 L/min</option>
+                <option value="4">4 L/min</option>
+                <option value="4.5">4.5 L/min</option>
+                <option value="5">5 L/min</option>
+              </select>
+            </div>
+          </div>
+          <!-- Máscara Venturi: FiO2 -->
+          <div id="eSubMVfio2" style="display:none;margin-top:10px" class="dec-sublevel">
+            <div class="form-group" style="max-width:200px">
+              <label>FiO₂</label>
+              <select id="eMVfio2">
+                <option value="">-</option>
+                <option value="24%">24%</option>
+                <option value="28%">28%</option>
+                <option value="35%">35%</option>
+                <option value="40%">40%</option>
+                <option value="50%">50%</option>
+                <option value="60%">60%</option>
+              </select>
+            </div>
+          </div>
+          <!-- Máscara reservorio: flujo -->
+          <div id="eSubMRflujo" style="display:none;margin-top:10px" class="dec-sublevel">
+            <div class="form-group" style="max-width:200px">
+              <label>Flujo (L/min)</label>
+              <select id="eMRflujo">
+                <option value="">-</option>
+                <option value="10">10 L/min</option>
+                <option value="11">11 L/min</option>
+                <option value="12">12 L/min</option>
+                <option value="13">13 L/min</option>
+                <option value="14">14 L/min</option>
+                <option value="15">15 L/min</option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -3547,6 +3616,10 @@ function setVANO2tipo(tipo){
   document.querySelectorAll('#eSubVANO2 .dec-btn').forEach(b=>b.classList.remove('dec-sel'));
   const btnId = { CN:'eBtnCN', MV:'eBtnMV', MR:'eBtnMR' }[tipo];
   if(btnId) document.getElementById(btnId).classList.add('dec-sel');
+  // Mostrar solo el sub-campo del dispositivo elegido
+  document.getElementById('eSubCNflujo').style.display = tipo === 'CN' ? 'block' : 'none';
+  document.getElementById('eSubMVfio2').style.display  = tipo === 'MV' ? 'block' : 'none';
+  document.getElementById('eSubMRflujo').style.display = tipo === 'MR' ? 'block' : 'none';
   const mapaInterfaz = { CN:'Cánula nasal', MV:'Máscara Venturi', MR:'Máscara reservorio' };
   document.getElementById('eInterfazPrincipal').value = mapaInterfaz[tipo] || tipo;
 }
@@ -4785,6 +4858,14 @@ function openEvolucion(patientId){
   document.getElementById('eSubCNAF').style.display = 'none';
   document.getElementById('eSubARMdiametro').style.display = 'none';
   const diamEl = document.getElementById('eARMdiametro'); if(diamEl) diamEl.value = '';
+  const adsEl = document.getElementById('eTETads'); if(adsEl) adsEl.value = '';
+  const adsBox = document.getElementById('eSubTETads'); if(adsBox) adsBox.style.display = 'none';
+  document.getElementById('eSubCNflujo').style.display = 'none';
+  document.getElementById('eSubMVfio2').style.display = 'none';
+  document.getElementById('eSubMRflujo').style.display = 'none';
+  const cnF = document.getElementById('eCNflujo'); if(cnF) cnF.value = '';
+  const mvF = document.getElementById('eMVfio2'); if(mvF) mvF.value = '';
+  const mrF = document.getElementById('eMRflujo'); if(mrF) mrF.value = '';
   document.querySelectorAll('#eSubArmNo .dec-btn').forEach(b=>b.classList.remove('dec-sel','dec-sel-tqt'));
   document.querySelectorAll('#eSubArmSi .interfaz-btn').forEach(b=>b.className='interfaz-btn');
 
@@ -4882,10 +4963,12 @@ function selectInterfaz(tipo, visual=true){
   // Mostrar selector de diámetro interno al elegir TET o TQT
   const diamBox = document.getElementById('eSubARMdiametro');
   const diamLabel = document.getElementById('eSubARMdiametroLabel');
+  const adsBox = document.getElementById('eSubTETads');
   if(diamBox){
     diamBox.style.display = ['TET','TQT'].includes(tipo) ? 'block' : 'none';
     if(diamLabel) diamLabel.textContent = tipo === 'TET' ? 'Diámetro interno TET (mm)' : 'Diámetro interno TQT (mm)';
   }
+  if(adsBox) adsBox.style.display = tipo === 'TET' ? 'block' : 'none';
   // Si es ARM, abrir acordeón de mecánica automáticamente
   if(visual && ['TET','TQT'].includes(tipo)){
     const accVent = document.getElementById('accVent');
@@ -4921,6 +5004,8 @@ async function guardarEvolucion(){
     interfaz:G('eInterfazPrincipal') || G('eInterfaz'),
     interfazEsp:G('eInterfazEsp'),
     armDiametro:G('eARMdiametro'),
+    tetADS:G('eTETads'),
+    cnFlujo:G('eCNflujo'), mvFio2:G('eMVfio2'), mrFlujo:G('eMRflujo'),
     cnafFlujo:GN('eCNAFflujo'), cnafFio2:GN('eCNAFfio2'),
     modo:G('eModo'), vt:GN('eVT'), vtkg:GN('eVTkg'), fr:GN('eFR'), peep:GN('ePEEP'),
     fc:GN('eFC'), tas:GN('eTAS'), tad:GN('eTAD'), tam:G('eTAM'), spo2Mon:GN('eSpO2Mon'), frMon:GN('eFRMon'), pic:GN('ePIC'), etco2:GN('eEtCO2'),
