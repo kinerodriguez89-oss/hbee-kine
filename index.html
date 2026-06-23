@@ -965,36 +965,86 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
         <!-- Post UTI: MRC al ingreso -->
         <div id="fGrupoPostUTI" style="display:none">
           <div class="form-section-title" style="margin-bottom:10px"><i class="ti ti-activity"></i> MRC-Sumy al ingreso</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
             <!-- MMSS -->
             <div>
               <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--text-muted);margin-bottom:8px;border-bottom:1px solid var(--border);padding-bottom:4px">Miembro superior</div>
-              ${[['fMRCAbdHombD','Abducción hombro D'],['fMRCFlexCodoD','Flexión codo D'],['fMRCExtMuñD','Extensión muñeca D'],
-                 ['fMRCAbdHombI','Abducción hombro I'],['fMRCFlexCodoI','Flexión codo I'],['fMRCExtMuñI','Extensión muñeca I']
-                ].map(([id,lbl])=>`
-              <div class="form-row" style="margin-bottom:6px;align-items:center">
-                <div style="flex:1;font-size:12px">${lbl}</div>
-                <select id="${id}" onchange="calcMRCIngreso()" style="width:70px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;font-family:var(--font);font-size:13px">
-                  <option value="">-</option>
-                  <option value="0">0</option><option value="1">1</option><option value="2">2</option>
-                  <option value="3">3</option><option value="4">4</option><option value="5">5</option>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px">
+                <span style="font-size:12px">Abducción hombro D</span>
+                <select id="fMRCAbdHombD" onchange="calcMRCIngreso()" style="width:64px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;font-size:13px">
+                  <option value="">-</option><option>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
                 </select>
-              </div>`).join('')}
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px">
+                <span style="font-size:12px">Flexión codo D</span>
+                <select id="fMRCFlexCodoD" onchange="calcMRCIngreso()" style="width:64px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;font-size:13px">
+                  <option value="">-</option><option>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
+                </select>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px">
+                <span style="font-size:12px">Extensión muñeca D</span>
+                <select id="fMRCExtMunD" onchange="calcMRCIngreso()" style="width:64px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;font-size:13px">
+                  <option value="">-</option><option>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
+                </select>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px">
+                <span style="font-size:12px">Abducción hombro I</span>
+                <select id="fMRCAbdHombI" onchange="calcMRCIngreso()" style="width:64px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;font-size:13px">
+                  <option value="">-</option><option>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
+                </select>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px">
+                <span style="font-size:12px">Flexión codo I</span>
+                <select id="fMRCFlexCodoI" onchange="calcMRCIngreso()" style="width:64px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;font-size:13px">
+                  <option value="">-</option><option>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
+                </select>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px">
+                <span style="font-size:12px">Extensión muñeca I</span>
+                <select id="fMRCExtMunI" onchange="calcMRCIngreso()" style="width:64px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;font-size:13px">
+                  <option value="">-</option><option>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
+                </select>
+              </div>
             </div>
             <!-- MMII -->
             <div>
               <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--text-muted);margin-bottom:8px;border-bottom:1px solid var(--border);padding-bottom:4px">Miembro inferior</div>
-              ${[['fMRCFlexCadD','Flexión cadera D'],['fMRCExtRodD','Extensión rodilla D'],['fMRCDorsiTobD','Dorsiflexión tobillo D'],
-                 ['fMRCFlexCadI','Flexión cadera I'],['fMRCExtRodI','Extensión rodilla I'],['fMRCDorsiTobI','Dorsiflexión tobillo I']
-                ].map(([id,lbl])=>`
-              <div class="form-row" style="margin-bottom:6px;align-items:center">
-                <div style="flex:1;font-size:12px">${lbl}</div>
-                <select id="${id}" onchange="calcMRCIngreso()" style="width:70px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;font-family:var(--font);font-size:13px">
-                  <option value="">-</option>
-                  <option value="0">0</option><option value="1">1</option><option value="2">2</option>
-                  <option value="3">3</option><option value="4">4</option><option value="5">5</option>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px">
+                <span style="font-size:12px">Flexión cadera D</span>
+                <select id="fMRCFlexCadD" onchange="calcMRCIngreso()" style="width:64px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;font-size:13px">
+                  <option value="">-</option><option>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
                 </select>
-              </div>`).join('')}
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px">
+                <span style="font-size:12px">Extensión rodilla D</span>
+                <select id="fMRCExtRodD" onchange="calcMRCIngreso()" style="width:64px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;font-size:13px">
+                  <option value="">-</option><option>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
+                </select>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px">
+                <span style="font-size:12px">Dorsiflexión tobillo D</span>
+                <select id="fMRCDorsiTobD" onchange="calcMRCIngreso()" style="width:64px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;font-size:13px">
+                  <option value="">-</option><option>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
+                </select>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px">
+                <span style="font-size:12px">Flexión cadera I</span>
+                <select id="fMRCFlexCadI" onchange="calcMRCIngreso()" style="width:64px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;font-size:13px">
+                  <option value="">-</option><option>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
+                </select>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px">
+                <span style="font-size:12px">Extensión rodilla I</span>
+                <select id="fMRCExtRodI" onchange="calcMRCIngreso()" style="width:64px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;font-size:13px">
+                  <option value="">-</option><option>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
+                </select>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px">
+                <span style="font-size:12px">Dorsiflexión tobillo I</span>
+                <select id="fMRCDorsiTobI" onchange="calcMRCIngreso()" style="width:64px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;font-size:13px">
+                  <option value="">-</option><option>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
+                </select>
+              </div>
             </div>
           </div>
           <!-- Resultado MRC -->
@@ -3838,7 +3888,7 @@ function onGrupoChange(grupo){
   if(hayBloque) document.getElementById(bloques[grupo]).style.display = 'block';
 }
 
-const MRC_CAMPOS = ['fMRCAbdHombD','fMRCFlexCodoD','fMRCExtMuñD','fMRCAbdHombI','fMRCFlexCodoI','fMRCExtMuñI',
+const MRC_CAMPOS = ['fMRCAbdHombD','fMRCFlexCodoD','fMRCExtMunD','fMRCAbdHombI','fMRCFlexCodoI','fMRCExtMunI',
                     'fMRCFlexCadD','fMRCExtRodD','fMRCDorsiTobD','fMRCFlexCadI','fMRCExtRodI','fMRCDorsiTobI'];
 
 function calcMRCIngreso(){
