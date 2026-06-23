@@ -1134,132 +1134,6 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
 
     <!-- ══ Bloques solo cuando está en ARM ══ -->
     <div id="armOnlyBlock" style="display:none">
-    <div class="accordion-header" onclick="toggleAccordion('accSed')">
-      <span><i class="ti ti-brain" style="margin-right:6px;color:var(--purple-400)"></i>Neurológico / Sedoanalgesia</span>
-      <i class="ti ti-chevron-down accordion-arrow" id="arrSed"></i>
-    </div>
-    <div class="accordion-body" id="accSed">
-      <div class="form-row four" style="margin-top:8px">
-        <div class="form-group"><label>RASS</label>
-          <select id="eRASS">
-            <option value="">-</option>
-            <option>+4 Combativo</option><option>+3 Muy agitado</option><option>+2 Agitado</option>
-            <option>+1 Inquieto</option><option>0 Alerta y tranquilo</option><option>-1 Somnoliento</option>
-            <option>-2 Sedación leve</option><option>-3 Sedación moderada</option>
-            <option>-4 Sedación profunda</option><option>-5 Sin respuesta</option>
-          </select>
-        </div>
-        <div class="form-group"><label>CPOT / Dolor</label>
-          <select id="eCPOT">
-            <option value="">-</option><option>0 Sin dolor</option><option>1</option><option>2</option>
-            <option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8 Dolor máximo</option>
-            <option>No evaluable</option>
-          </select>
-        </div>
-        <div class="form-group"><label>CAM-ICU</label>
-          <select id="eCAMICU">
-            <option value="">-</option><option>Positivo (delirium)</option><option>Negativo</option><option>No evaluable</option>
-          </select>
-        </div>
-        <div class="form-group"><label>Ventana de sedación</label>
-          <select id="eVentSed">
-            <option value="">-</option><option>Sí</option><option>No</option><option>No aplica</option>
-          </select>
-        </div>
-      </div>
-
-      <!-- Dolor autopercibido -->
-      <div class="form-row">
-        <div class="form-group"><label>Dolor autopercibido</label>
-          <select id="eDolorAuto" onchange="toggleDolorEscala()">
-            <option value="">-</option><option>No</option><option>Sí</option>
-          </select>
-        </div>
-        <div class="form-group" id="eDolorEscalaRow" style="display:none">
-          <label>Escala de dolor (1–10)</label>
-          <select id="eDolorEscala">
-            <option value="">-</option>
-            <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
-            <option>6</option><option>7</option><option>8</option><option>9</option><option>10 — Peor dolor imaginable</option>
-          </select>
-        </div>
-      </div>
-
-      <!-- Sedación, Analgesia, BNM, Vasoactivos — multi-select -->
-      <div class="form-row four" style="margin-top:6px">
-        <div class="form-group">
-          <label>Sedación</label>
-          <div class="multisel" id="msSedacion" onclick="toggleMultiselect('msSedacion')">
-            <span class="multisel-label">Seleccionar…</span>
-            <i class="ti ti-chevron-down"></i>
-            <div class="multisel-panel">
-              <label class="multisel-opt"><input type="checkbox" value="Midazolam">Midazolam</label>
-              <label class="multisel-opt"><input type="checkbox" value="Propofol">Propofol</label>
-              <label class="multisel-opt"><input type="checkbox" value="Lorazepam">Lorazepam</label>
-              <label class="multisel-opt"><input type="checkbox" value="Quetamina">Quetamina</label>
-            </div>
-          </div>
-        </div>
-        <div class="form-group">
-          <label>Analgesia</label>
-          <div class="multisel" id="msAnalgesia" onclick="toggleMultiselect('msAnalgesia')">
-            <span class="multisel-label">Seleccionar…</span>
-            <i class="ti ti-chevron-down"></i>
-            <div class="multisel-panel">
-              <label class="multisel-opt"><input type="checkbox" value="Fentanilo">Fentanilo</label>
-              <label class="multisel-opt"><input type="checkbox" value="Morfina">Morfina</label>
-              <label class="multisel-opt"><input type="checkbox" value="Remifentanilo">Remifentanilo</label>
-              <label class="multisel-opt"><input type="checkbox" value="Dexmedetomidina">Dexmedetomidina</label>
-            </div>
-          </div>
-        </div>
-        <div class="form-group">
-          <label>BNM</label>
-          <div class="multisel" id="msBNM" onclick="toggleMultiselect('msBNM')">
-            <span class="multisel-label">Seleccionar…</span>
-            <i class="ti ti-chevron-down"></i>
-            <div class="multisel-panel">
-              <label class="multisel-opt"><input type="checkbox" value="Atracurio">Atracurio</label>
-              <label class="multisel-opt"><input type="checkbox" value="Vecuronio">Vecuronio</label>
-              <label class="multisel-opt"><input type="checkbox" value="Rocuronio">Rocuronio</label>
-            </div>
-          </div>
-        </div>
-        <div class="form-group">
-          <label>Vasoactivos</label>
-          <div class="multisel" id="msVasoact" onclick="toggleMultiselect('msVasoact')">
-            <span class="multisel-label">Seleccionar…</span>
-            <i class="ti ti-chevron-down"></i>
-            <div class="multisel-panel">
-              <label class="multisel-opt"><input type="checkbox" value="Noradrenalina">Noradrenalina</label>
-              <label class="multisel-opt"><input type="checkbox" value="Adrenalina">Adrenalina</label>
-              <label class="multisel-opt"><input type="checkbox" value="Vasopresina">Vasopresina</label>
-              <label class="multisel-opt"><input type="checkbox" value="Dobutamina">Dobutamina</label>
-              <label class="multisel-opt"><input type="checkbox" value="Milrinona">Milrinona</label>
-              <label class="multisel-opt"><input type="checkbox" value="Nitroprusiato">Nitroprusiato</label>
-              <label class="multisel-opt"><input type="checkbox" value="Nitroglicerina">Nitroglicerina</label>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Otros fármacos -->
-      <div class="form-row" style="margin-top:6px">
-        <div class="form-group"><label>Otros fármacos</label><input type="text" id="eOtrosFarmacos" placeholder="Texto libre — fármacos no listados arriba"></div>
-      </div>
-    </div>
-
-    <hr class="sep">
-
-    <!-- AKM / Movilización -->
-
-    <!-- Peso Corporal Predicho — destacado -->
-    <div class="form-section" id="pcpBox" style="display:none">
-      <div class="form-section-title"><i class="ti ti-ruler-2"></i> Peso corporal predicho (ventilación protectora)</div>
-      <div id="pcpContent" style="display:flex;flex-wrap:wrap;gap:10px"></div>
-    </div>
-
-    <!-- Mecánica ventilatoria -->
     <div class="accordion-header" onclick="toggleAccordion('accVent')">
       <span><i class="ti ti-lungs" style="margin-right:6px;color:var(--blue-400)"></i>Mecánica ventilatoria</span>
       <i class="ti ti-chevron-down accordion-arrow" id="arrVent"></i>
@@ -1413,7 +1287,6 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
 
     <hr class="sep">
 
-    </div><!-- fin armOnlyBlock -->
 
     <div class="accordion-header" onclick="toggleAccordion('accAKM')">
       <span><i class="ti ti-run" style="margin-right:6px;color:var(--green-400)"></i>Movilización / AKM</span>
@@ -1437,6 +1310,134 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
     </div>
 
     <!-- ══ TQT: visible cuando hay TQT (ARM o espontáneo) ══ -->
+
+      <span><i class="ti ti-brain" style="margin-right:6px;color:var(--purple-400)"></i>Neurológico / Sedoanalgesia</span>
+      <i class="ti ti-chevron-down accordion-arrow" id="arrSed"></i>
+    </div>
+    <div class="accordion-body" id="accSed">
+      <div class="form-row four" style="margin-top:8px">
+        <div class="form-group"><label>RASS</label>
+          <select id="eRASS">
+            <option value="">-</option>
+            <option>+4 Combativo</option><option>+3 Muy agitado</option><option>+2 Agitado</option>
+            <option>+1 Inquieto</option><option>0 Alerta y tranquilo</option><option>-1 Somnoliento</option>
+            <option>-2 Sedación leve</option><option>-3 Sedación moderada</option>
+            <option>-4 Sedación profunda</option><option>-5 Sin respuesta</option>
+          </select>
+        </div>
+        <div class="form-group"><label>CPOT / Dolor</label>
+          <select id="eCPOT">
+            <option value="">-</option><option>0 Sin dolor</option><option>1</option><option>2</option>
+            <option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8 Dolor máximo</option>
+            <option>No evaluable</option>
+          </select>
+        </div>
+        <div class="form-group"><label>CAM-ICU</label>
+          <select id="eCAMICU">
+            <option value="">-</option><option>Positivo (delirium)</option><option>Negativo</option><option>No evaluable</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Ventana de sedación</label>
+          <select id="eVentSed">
+            <option value="">-</option><option>Sí</option><option>No</option><option>No aplica</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Dolor autopercibido -->
+      <div class="form-row">
+        <div class="form-group"><label>Dolor autopercibido</label>
+          <select id="eDolorAuto" onchange="toggleDolorEscala()">
+            <option value="">-</option><option>No</option><option>Sí</option>
+          </select>
+        </div>
+        <div class="form-group" id="eDolorEscalaRow" style="display:none">
+          <label>Escala de dolor (1–10)</label>
+          <select id="eDolorEscala">
+            <option value="">-</option>
+            <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
+            <option>6</option><option>7</option><option>8</option><option>9</option><option>10 — Peor dolor imaginable</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Sedación, Analgesia, BNM, Vasoactivos — multi-select -->
+      <div class="form-row four" style="margin-top:6px">
+        <div class="form-group">
+          <label>Sedación</label>
+          <div class="multisel" id="msSedacion" onclick="toggleMultiselect('msSedacion')">
+            <span class="multisel-label">Seleccionar…</span>
+            <i class="ti ti-chevron-down"></i>
+            <div class="multisel-panel">
+              <label class="multisel-opt"><input type="checkbox" value="Midazolam">Midazolam</label>
+              <label class="multisel-opt"><input type="checkbox" value="Propofol">Propofol</label>
+              <label class="multisel-opt"><input type="checkbox" value="Lorazepam">Lorazepam</label>
+              <label class="multisel-opt"><input type="checkbox" value="Quetamina">Quetamina</label>
+            </div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Analgesia</label>
+          <div class="multisel" id="msAnalgesia" onclick="toggleMultiselect('msAnalgesia')">
+            <span class="multisel-label">Seleccionar…</span>
+            <i class="ti ti-chevron-down"></i>
+            <div class="multisel-panel">
+              <label class="multisel-opt"><input type="checkbox" value="Fentanilo">Fentanilo</label>
+              <label class="multisel-opt"><input type="checkbox" value="Morfina">Morfina</label>
+              <label class="multisel-opt"><input type="checkbox" value="Remifentanilo">Remifentanilo</label>
+              <label class="multisel-opt"><input type="checkbox" value="Dexmedetomidina">Dexmedetomidina</label>
+            </div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>BNM</label>
+          <div class="multisel" id="msBNM" onclick="toggleMultiselect('msBNM')">
+            <span class="multisel-label">Seleccionar…</span>
+            <i class="ti ti-chevron-down"></i>
+            <div class="multisel-panel">
+              <label class="multisel-opt"><input type="checkbox" value="Atracurio">Atracurio</label>
+              <label class="multisel-opt"><input type="checkbox" value="Vecuronio">Vecuronio</label>
+              <label class="multisel-opt"><input type="checkbox" value="Rocuronio">Rocuronio</label>
+            </div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Vasoactivos</label>
+          <div class="multisel" id="msVasoact" onclick="toggleMultiselect('msVasoact')">
+            <span class="multisel-label">Seleccionar…</span>
+            <i class="ti ti-chevron-down"></i>
+            <div class="multisel-panel">
+              <label class="multisel-opt"><input type="checkbox" value="Noradrenalina">Noradrenalina</label>
+              <label class="multisel-opt"><input type="checkbox" value="Adrenalina">Adrenalina</label>
+              <label class="multisel-opt"><input type="checkbox" value="Vasopresina">Vasopresina</label>
+              <label class="multisel-opt"><input type="checkbox" value="Dobutamina">Dobutamina</label>
+              <label class="multisel-opt"><input type="checkbox" value="Milrinona">Milrinona</label>
+              <label class="multisel-opt"><input type="checkbox" value="Nitroprusiato">Nitroprusiato</label>
+              <label class="multisel-opt"><input type="checkbox" value="Nitroglicerina">Nitroglicerina</label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Otros fármacos -->
+      <div class="form-row" style="margin-top:6px">
+        <div class="form-group"><label>Otros fármacos</label><input type="text" id="eOtrosFarmacos" placeholder="Texto libre — fármacos no listados arriba"></div>
+      </div>
+    </div>
+
+    <hr class="sep">
+
+    <!-- AKM / Movilización -->
+
+    <!-- Peso Corporal Predicho — destacado -->
+    <div class="form-section" id="pcpBox" style="display:none">
+      <div class="form-section-title"><i class="ti ti-ruler-2"></i> Peso corporal predicho (ventilación protectora)</div>
+      <div id="pcpContent" style="display:flex;flex-wrap:wrap;gap:10px"></div>
+    </div>
+
+    <!-- Mecánica ventilatoria -->
+    </div><!-- fin armOnlyBlock -->
+
     <div id="tqtBlock" style="display:none">
     <div class="accordion-header" onclick="toggleAccordion('accTQT')">
       <span><i class="ti ti-stethoscope" style="margin-right:6px;color:var(--amber-400)"></i>Vía aérea / Presión de cuff</span>
@@ -3617,6 +3618,9 @@ function setARMStatus(enARM){
   document.getElementById('eSubArmSi').style.display = enARM ? 'block' : 'none';
   document.getElementById('eSubArmNo').style.display = !enARM ? 'block' : 'none';
   document.getElementById('armOnlyBlock').style.display = enARM ? 'block' : 'none';
+  // Sección Neurológico (grupo): solo visible cuando NO está en ARM
+  const grupoNeuro = document.getElementById('eGrupoNeuro');
+  if(grupoNeuro) grupoNeuro.style.display = (!enARM && grupoNeuro.dataset.grupoActivo === '1') ? 'block' : 'none';
   // Si pasa a no ARM, resetear los botones de interfaz ARM
   if(!enARM){
     document.querySelectorAll('#eSubArmSi .interfaz-btn').forEach(b=>b.className='interfaz-btn');
@@ -3670,7 +3674,6 @@ function setVANO2tipo(tipo){
 
 // ── Lógica de grupos ────────────────────────────────────
 function actualizarGrupoEvo(tipoKine){
-  const grupos = { respiratorio:'Resp.', neurologico:'Neuro', pre_qx:'Qx', post_qx:'Qx', post_uti:'Resp.', quemado:'Quemado', amputado:'Amputado', otro:'' };
   const iconos = { respiratorio:'ti-lungs', neurologico:'ti-brain', pre_qx:'ti-cut', post_qx:'ti-cut', post_uti:'ti-lungs', quemado:'ti-flame', amputado:'ti-tools', otro:'ti-stethoscope' };
   const labels = { respiratorio:'Respiratorio', neurologico:'Neurológico', pre_qx:'Pre-quirúrgico', post_qx:'Post-quirúrgico', post_uti:'Post UTI', quemado:'Quemado', amputado:'Amputado', otro:'Específico' };
   const showResp = ['respiratorio','post_uti','quemado','post_qx'].includes(tipoKine);
@@ -3681,7 +3684,16 @@ function actualizarGrupoEvo(tipoKine){
   const showAny = showResp || showNeuro || showQx || showAmputado || showQuemado;
   document.getElementById('eGrupoBlock').style.display = (showAny && tipoKine) ? 'block' : 'none';
   document.getElementById('eGrupoResp').style.display = showResp ? 'block' : 'none';
-  document.getElementById('eGrupoNeuro').style.display = showNeuro ? 'block' : 'none';
+
+  // Neurológico: solo visible si NO está en ARM (se controla también desde setARMStatus)
+  const neuroEl = document.getElementById('eGrupoNeuro');
+  if(neuroEl){
+    neuroEl.dataset.grupoActivo = showNeuro ? '1' : '0';
+    // Saber si el paciente está en ARM en este momento
+    const enARM = document.getElementById('eBtnArmSi')?.classList.contains('dec-arm-si');
+    neuroEl.style.display = (showNeuro && !enARM) ? 'block' : 'none';
+  }
+
   document.getElementById('eGrupoQx').style.display = showQx ? 'block' : 'none';
   document.getElementById('eGrupoAmputado').style.display = showAmputado ? 'block' : 'none';
   document.getElementById('eGrupoQuemado').style.display = showQuemado ? 'block' : 'none';
