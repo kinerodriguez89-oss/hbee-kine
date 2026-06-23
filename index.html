@@ -1138,7 +1138,7 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
       <span><i class="ti ti-brain" style="margin-right:6px;color:var(--purple-400)"></i>Neurológico / Sedoanalgesia</span>
       <i class="ti ti-chevron-down accordion-arrow" id="arrSed"></i>
     </div>
-    <div class="accordion-body open" id="accSed">
+    <div class="accordion-body" id="accSed">
       <div class="form-row four" style="margin-top:8px">
         <div class="form-group"><label>RASS</label>
           <select id="eRASS">
@@ -1262,9 +1262,9 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
     <!-- Mecánica ventilatoria -->
     <div class="accordion-header" onclick="toggleAccordion('accVent')">
       <span><i class="ti ti-lungs" style="margin-right:6px;color:var(--blue-400)"></i>Mecánica ventilatoria</span>
-      <i class="ti ti-chevron-down accordion-arrow open" id="arrVent"></i>
+      <i class="ti ti-chevron-down accordion-arrow" id="arrVent"></i>
     </div>
-    <div class="accordion-body open" id="accVent">
+    <div class="accordion-body" id="accVent">
       <div class="form-row three" style="margin-top:8px">
         <div class="form-group"><label>Modo ventilatorio</label>
           <select id="eModo">
@@ -1310,7 +1310,7 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
       <span><i class="ti ti-droplet" style="margin-right:6px;color:var(--teal-400)"></i>Equilibrio ácido-base (EAB)</span>
       <i class="ti ti-chevron-down accordion-arrow" id="arrEAB"></i>
     </div>
-    <div class="accordion-body open" id="accEAB">
+    <div class="accordion-body" id="accEAB">
       <div class="form-row four" style="margin-top:8px">
         <div class="form-group"><label>pH</label><input type="number" id="ePH" inputmode="decimal" step="0.01" placeholder="7.35–7.45"></div>
         <div class="form-group"><label>pCO₂ (mmHg)</label><input type="number" id="ePCO2" inputmode="decimal" placeholder="35–45"></div>
@@ -1356,13 +1356,70 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
 
     <hr class="sep">
 
+
+    <!-- Secreciones (ARM) -->
+    <div class="accordion-header" onclick="toggleAccordion('accSec')">
+      <span><i class="ti ti-droplets" style="margin-right:6px;color:var(--blue-400)"></i>Secreciones</span>
+      <i class="ti ti-chevron-down accordion-arrow" id="arrSec"></i>
+    </div>
+    <div class="accordion-body" id="accSec">
+      <div class="form-row" style="margin-top:8px">
+        <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid var(--border)">LOF — Lago orofaríngeo</div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Cantidad LOF</label>
+          <select id="eSecLOFcant">
+            <option value="">-</option>
+            <option>Escaso</option>
+            <option>Moderado</option>
+            <option>Abundante</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Calidad LOF</label>
+          <select id="eSecLOFcal">
+            <option value="">-</option>
+            <option>Mucoso</option>
+            <option>Mucopurulento</option>
+            <option>Mucohemático</option>
+            <option>Hemático</option>
+            <option>Con restos de alimento</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row" style="margin-top:10px">
+        <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid var(--border)">VAA — Vía aérea artificial</div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Cantidad VAA</label>
+          <select id="eSecVAAcant">
+            <option value="">-</option>
+            <option>Escasa</option>
+            <option>Moderada</option>
+            <option>Abundante</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Calidad VAA</label>
+          <select id="eSecVAAcal">
+            <option value="">-</option>
+            <option>Mucosa</option>
+            <option>Mucopurulenta</option>
+            <option>Mucohemática</option>
+            <option>Hemática</option>
+            <option>Con restos de alimento</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <hr class="sep">
+
     </div><!-- fin armOnlyBlock -->
 
     <div class="accordion-header" onclick="toggleAccordion('accAKM')">
       <span><i class="ti ti-run" style="margin-right:6px;color:var(--green-400)"></i>Movilización / AKM</span>
       <i class="ti ti-chevron-down accordion-arrow" id="arrAKM"></i>
     </div>
-    <div class="accordion-body open" id="accAKM">
+    <div class="accordion-body" id="accAKM">
       <div class="form-row" style="margin-top:8px">
         <div class="form-group"><label>Nivel AKM</label>
           <select id="eAKM1">
@@ -1610,19 +1667,6 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
           <span class="tag" onclick="toggleTag(this)">Asistencia decúbito prono</span>
           <span class="tag" onclick="toggleTag(this)">Asistencia decúbito supino</span>
           <span class="tag" onclick="toggleTag(this)">Cambio de cánula de TQT</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Secreciones -->
-    <div class="form-section">
-      <div class="form-section-title"><i class="ti ti-droplets"></i> Secreciones</div>
-      <div class="form-row">
-        <div class="form-group"><label>Cantidad</label>
-          <select id="eSecCant"><option value="">-</option><option>Escasas</option><option>Moderadas</option><option>Abundantes</option></select>
-        </div>
-        <div class="form-group"><label>Características</label>
-          <select id="eSecChar"><option value="">-</option><option>Fluidas / claras</option><option>Mucosas</option><option>Mucopurulentas</option><option>Purulentas</option><option>Hemáticas</option></select>
         </div>
       </div>
     </div>
@@ -4834,13 +4878,14 @@ function openEvolucion(patientId){
     'eTipoCan','eCanDI','eCanDE','eEstadoBajon','eOstoma',
     'eTolDesinf','eTolOclusion','eTolValvula','eBlueTest','eCalidadVoz',
     'eSecTrqCant','eSecTrqCal','eLOF',
+    'eSecLOFcant','eSecLOFcal','eSecVAAcant','eSecVAAcal',
     'eAuscult','eTos','eSpO2Reposo','eFRResp',
     'eNeuroConciencia','eNeuroHemi','eNeuroTronco','eNeuroDeglusion','eNeuroFAC',
     'eQxDiaPOP','eQxCarga','eQxHerida',
     'eAmpNivel','eAmpMunon','eAmpVendaje',
     'eQemZona','eQemEstado','eQemContractura','eQemPosicion',
     'eCNAFflujo','eCNAFfio2',
-    'eSecCant','eSecChar','eObs','eInterfazPrincipal','eInterfazEsp'];
+    'eObs','eInterfazPrincipal','eInterfazEsp'];
   nFields.forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   document.querySelectorAll('.tag.active').forEach(t=>t.classList.remove('active'));
   ['msSedacion','msAnalgesia','msBNM','msVasoact'].forEach(resetMultiselect);
@@ -5027,6 +5072,8 @@ async function guardarEvolucion(){
     oclusionCanula:G('eOclusionCanula'), deglusion:G('eDeglusion'),
     tipoCan:G('eTipoCan'), canDI:G('eCanDI'), canDE:G('eCanDE'), estadoBajon:G('eEstadoBajon'),
     ostoma:G('eOstoma'), secTrqCant:G('eSecTrqCant'), secTrqCal:G('eSecTrqCal'), lof:G('eLOF'),
+    secLOFcant:G('eSecLOFcant'), secLOFcal:G('eSecLOFcal'),
+    secVAAcant:G('eSecVAAcant'), secVAAcal:G('eSecVAAcal'),
     tolDesinf:G('eTolDesinf'), tolOclusion:G('eTolOclusion'), tolValvula:G('eTolValvula'),
     blueTest:G('eBlueTest'), calidadVoz:G('eCalidadVoz'),
     // Grupo: respiratorio
@@ -5041,8 +5088,7 @@ async function guardarEvolucion(){
     // Grupo: quemado
     qemSCQ:GN('eQemSCQ'), qemZona:G('eQemZona'), qemEstado:G('eQemEstado'),
     qemContractura:G('eQemContractura'), qemPosicion:G('eQemPosicion'),
-    tecnicas, secCant:G('eSecCant'), secChar:G('eSecChar'),
-    obs:G('eObs'),
+    tecnicas, obs:G('eObs'),
   };
   evoluciones.unshift(evo);
   await persistAll();
