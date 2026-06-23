@@ -951,7 +951,7 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
       <span><i class="ti ti-heartbeat" style="margin-right:6px;color:var(--red-400)"></i>Signos vitales (monitor)</span>
       <i class="ti ti-chevron-down accordion-arrow" id="arrVS"></i>
     </div>
-    <div class="accordion-body" id="vsBox">
+    <div class="accordion-body" id="accVS">
       <div class="form-row four" style="margin-top:8px">
         <div class="form-group"><label>FC (lpm)</label><input type="number" id="eFC" inputmode="numeric"></div>
         <div class="form-group"><label>TA sistólica</label><input type="number" id="eTAS" inputmode="numeric" placeholder="120"></div>
@@ -1679,6 +1679,8 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
         </div>
       </div>
     </div>
+
+    <hr class="sep">
 
     <!-- Observaciones -->
     <div class="form-section">
@@ -3629,7 +3631,6 @@ function setARMStatus(enARM){
   // Sección Neurológico (grupo): solo visible cuando NO está en ARM
   const grupoNeuro = document.getElementById('eGrupoNeuro');
   if(grupoNeuro) grupoNeuro.style.display = (!enARM && grupoNeuro.dataset.grupoActivo === '1') ? 'block' : 'none';
-  // Si pasa a no ARM, resetear los botones de interfaz ARM
   if(!enARM){
     document.querySelectorAll('#eSubArmSi .interfaz-btn').forEach(b=>b.className='interfaz-btn');
     document.getElementById('eInterfazPrincipal').value = '';
@@ -3693,13 +3694,12 @@ function actualizarGrupoEvo(tipoKine){
   document.getElementById('eGrupoBlock').style.display = (showAny && tipoKine) ? 'block' : 'none';
   document.getElementById('eGrupoResp').style.display = showResp ? 'block' : 'none';
 
-  // Neurológico: solo visible si NO está en ARM (se controla también desde setARMStatus)
+  // Neurológico: solo visible si NO está en ARM Y el usuario seleccionó "No ARM" explícitamente
   const neuroEl = document.getElementById('eGrupoNeuro');
   if(neuroEl){
     neuroEl.dataset.grupoActivo = showNeuro ? '1' : '0';
-    // Saber si el paciente está en ARM en este momento
-    const enARM = document.getElementById('eBtnArmSi')?.classList.contains('dec-arm-si');
-    neuroEl.style.display = (showNeuro && !enARM) ? 'block' : 'none';
+    const noArmSelected = document.getElementById('eBtnArmNo')?.classList.contains('dec-arm-no');
+    neuroEl.style.display = (showNeuro && noArmSelected) ? 'block' : 'none';
   }
 
   document.getElementById('eGrupoQx').style.display = showQx ? 'block' : 'none';
