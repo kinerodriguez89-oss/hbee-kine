@@ -962,7 +962,58 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
           </div>
         </div>
 
+        <!-- Post UTI: MRC al ingreso -->
+        <div id="fGrupoPostUTI" style="display:none">
+          <div class="form-section-title" style="margin-bottom:10px"><i class="ti ti-activity"></i> MRC-Sumy al ingreso</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <!-- MMSS -->
+            <div>
+              <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--text-muted);margin-bottom:8px;border-bottom:1px solid var(--border);padding-bottom:4px">Miembro superior</div>
+              ${[['fMRCAbdHombD','Abducción hombro D'],['fMRCFlexCodoD','Flexión codo D'],['fMRCExtMuñD','Extensión muñeca D'],
+                 ['fMRCAbdHombI','Abducción hombro I'],['fMRCFlexCodoI','Flexión codo I'],['fMRCExtMuñI','Extensión muñeca I']
+                ].map(([id,lbl])=>`
+              <div class="form-row" style="margin-bottom:6px;align-items:center">
+                <div style="flex:1;font-size:12px">${lbl}</div>
+                <select id="${id}" onchange="calcMRCIngreso()" style="width:70px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;font-family:var(--font);font-size:13px">
+                  <option value="">-</option>
+                  <option value="0">0</option><option value="1">1</option><option value="2">2</option>
+                  <option value="3">3</option><option value="4">4</option><option value="5">5</option>
+                </select>
+              </div>`).join('')}
+            </div>
+            <!-- MMII -->
+            <div>
+              <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--text-muted);margin-bottom:8px;border-bottom:1px solid var(--border);padding-bottom:4px">Miembro inferior</div>
+              ${[['fMRCFlexCadD','Flexión cadera D'],['fMRCExtRodD','Extensión rodilla D'],['fMRCDorsiTobD','Dorsiflexión tobillo D'],
+                 ['fMRCFlexCadI','Flexión cadera I'],['fMRCExtRodI','Extensión rodilla I'],['fMRCDorsiTobI','Dorsiflexión tobillo I']
+                ].map(([id,lbl])=>`
+              <div class="form-row" style="margin-bottom:6px;align-items:center">
+                <div style="flex:1;font-size:12px">${lbl}</div>
+                <select id="${id}" onchange="calcMRCIngreso()" style="width:70px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;font-family:var(--font);font-size:13px">
+                  <option value="">-</option>
+                  <option value="0">0</option><option value="1">1</option><option value="2">2</option>
+                  <option value="3">3</option><option value="4">4</option><option value="5">5</option>
+                </select>
+              </div>`).join('')}
+            </div>
+          </div>
+          <!-- Resultado MRC -->
+          <div id="fMRCResultBox" style="display:none;margin-top:12px;background:var(--blue-50);border:1.5px solid var(--blue-200);border-radius:8px;padding:12px 16px">
+            <div style="display:flex;align-items:center;gap:12px">
+              <div style="text-align:center;min-width:60px">
+                <div style="font-size:28px;font-weight:800;color:var(--blue-700)" id="fMRCTotal">—</div>
+                <div style="font-size:10px;color:var(--text-muted)">/ 60</div>
+              </div>
+              <div>
+                <div style="font-weight:700;font-size:13px" id="fMRCCategoria">—</div>
+                <div style="font-size:11px;color:var(--text-muted)" id="fMRCDesc">—</div>
+              </div>
+            </div>
+          </div>
+          <input type="hidden" id="fMRCScore">
+        </div><!-- fin fGrupoPostUTI -->
       </div><!-- fin fGrupoEspecifico -->
+
       <div class="form-group" id="fEstFxRow">
         <label>Estado funcional previo</label>
         <select id="fEstFx">
@@ -3772,7 +3823,11 @@ function populateCama(sala, selected){
 }
 
 function onGrupoChange(grupo){
-  const bloques = { respiratorio:'fGrupoResp', neurologico:'fGrupoNeuro', quemado:'fGrupoQuemado', amputado:'fGrupoAmputado' };
+  const bloques = {
+    respiratorio:'fGrupoResp', neurologico:'fGrupoNeuro',
+    quemado:'fGrupoQuemado', amputado:'fGrupoAmputado',
+    post_uti:'fGrupoPostUTI'
+  };
   const wrapper = document.getElementById('fGrupoEspecifico');
   const hayBloque = !!bloques[grupo];
   wrapper.style.display = hayBloque ? 'block' : 'none';
@@ -3783,7 +3838,34 @@ function onGrupoChange(grupo){
   if(hayBloque) document.getElementById(bloques[grupo]).style.display = 'block';
 }
 
+const MRC_CAMPOS = ['fMRCAbdHombD','fMRCFlexCodoD','fMRCExtMuñD','fMRCAbdHombI','fMRCFlexCodoI','fMRCExtMuñI',
+                    'fMRCFlexCadD','fMRCExtRodD','fMRCDorsiTobD','fMRCFlexCadI','fMRCExtRodI','fMRCDorsiTobI'];
+
+function calcMRCIngreso(){
+  const vals = MRC_CAMPOS.map(id=>parseInt(document.getElementById(id)?.value)||null);
+  const llenos = vals.filter(v=>v!==null);
+  if(llenos.length === 0){ document.getElementById('fMRCResultBox').style.display='none'; return; }
+  const total = llenos.reduce((s,v)=>s+v,0);
+  const completado = llenos.length === 12;
+  const score = completado ? total : null;
+  document.getElementById('fMRCScore').value = score !== null ? score : '';
+  document.getElementById('fMRCTotal').textContent = completado ? total : `${total}*`;
+  let cat, desc, color;
+  if(!completado){ cat='Evaluación incompleta'; desc=`${llenos.length}/12 movimientos evaluados`; color='var(--amber-600)'; }
+  else if(total < 36){ cat='ICU-AW — Debilidad severa'; desc='MRC-Sumy < 36: debilidad adquirida en UCI'; color='var(--red-600)'; }
+  else if(total < 48){ cat='Debilidad leve a moderada'; desc='MRC-Sumy 36-47: considerar rehabilitación intensiva'; color='var(--amber-600)'; }
+  else { cat='Sin debilidad clínica significativa'; desc='MRC-Sumy ≥ 48'; color='var(--teal-600)'; }
+  document.getElementById('fMRCCategoria').textContent = cat;
+  document.getElementById('fMRCCategoria').style.color = color;
+  document.getElementById('fMRCDesc').textContent = desc;
+  document.getElementById('fMRCResultBox').style.display = 'block';
+}
+
 function resetGrupoFields(){
+  // Campos post UTI / MRC
+  MRC_CAMPOS.forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  const mrcScore=document.getElementById('fMRCScore'); if(mrcScore) mrcScore.value='';
+  const mrcBox=document.getElementById('fMRCResultBox'); if(mrcBox) mrcBox.style.display='none';
   // Campos neurológico
   ['fNeuroFoco','fNeuroFocoLoc','fNeuroTipo','fNeuroHemi','fNeuroConciencia','fNeuroLenguaje'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.value='';
@@ -3800,7 +3882,7 @@ function resetGrupoFields(){
   ['fAmpNivel','fAmpMotivo','fAmpCausa'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   // Ocultar wrapper
   const w=document.getElementById('fGrupoEspecifico'); if(w) w.style.display='none';
-  ['fGrupoResp','fGrupoNeuro','fGrupoQuemado','fGrupoAmputado'].forEach(id=>{
+  ['fGrupoResp','fGrupoNeuro','fGrupoQuemado','fGrupoAmputado','fGrupoPostUTI'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.style.display='none';
   });
 }
@@ -4899,6 +4981,10 @@ function openEditPaciente(id){
   if(p.tipoKine==='amputado'){
     M('fAmpNivel',p.grupoAmpNivel||''); M('fAmpMotivo',p.grupoAmpMotivo||''); M('fAmpCausa',p.grupoAmpCausa||'');
   }
+  if(p.tipoKine==='post_uti' && p.grupoMRC){
+    MRC_CAMPOS.forEach(id=>{ const el=document.getElementById(id); if(el) el.value=p.grupoMRC[id]||''; });
+    calcMRCIngreso();
+  }
   M('fTQTMin',p.tqtMin); M('fTQTMinTipo',p.tqtMinTipo); M('fTQTMinID',p.tqtMinID); M('fTQTMinED',p.tqtMinED);
   toggleTQTMinDetalle();
   // Antecedentes
@@ -4943,6 +5029,8 @@ async function guardarPaciente(){
       .filter(a=>{ const el=document.getElementById('fQuem'+a); return el?.checked; })
       .map(a=>{ const el=document.getElementById('fQuem'+a); return el?.value; }),
     grupoAmpNivel:G('fAmpNivel')||null, grupoAmpMotivo:G('fAmpMotivo')||null, grupoAmpCausa:G('fAmpCausa')||null,
+    grupoMRC: MRC_CAMPOS.reduce((obj,id)=>{ obj[id]=document.getElementById(id)?.value||null; return obj; },{}),
+    grupoMRCScore: document.getElementById('fMRCScore')?.value ? parseInt(document.getElementById('fMRCScore').value) : null,
     tqtMin:G('fTQTMin'), tqtMinTipo:G('fTQTMinTipo'), tqtMinID:G('fTQTMinID'), tqtMinED:G('fTQTMinED'),
     fIHosp:G('fFIHosp'), fIUTI:G('fFIUTI'),
     diagnostico:G('fDiag'),
