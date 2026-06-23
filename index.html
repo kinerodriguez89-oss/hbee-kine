@@ -5799,6 +5799,50 @@ function deglucionEnMes(sala, mesStr){
   }).length;
 }
 
+// ── Prestaciones ─────────────────────────────────────────
+// Técnicas específicas que cuentan como prestación especial
+const PRESTACIONES_ESP = [
+  'Evaluación de deglución',
+  'Toma de aspirado traqueal',
+  'Toma de minibal',
+  'Traslado a TAC',
+  'Traslado a QX',
+  'Cambio de cánula de TQT',
+  'Asistencia TQT percutánea',
+  'Asistencia IOT',
+  'Asistencia BAL',
+  'Asistencia decúbito prono',
+  'Asistencia decúbito supino',
+];
+
+function esTecnicaEsp(tec){
+  return PRESTACIONES_ESP.some(p => tec?.toLowerCase().includes(p.toLowerCase().split(' ').slice(0,2).join(' ').toLowerCase()));
+}
+
+function prestacionesGeneralesEnMes(sala, mesStr){
+  // ARM/TQT → 6 prestaciones por evolución; resto → 2
+  return evoluciones.filter(e=>!e.tipo && e.date?.startsWith(mesStr) && (!sala || patients.find(p=>p.id===e.patientId)?.sala===sala))
+    .reduce((total, e)=>{
+      const enARMoTQT = e.interfaz==='TET' || e.interfaz==='TQT' || (e.interfaz||'').includes('TQT espontáneo');
+      return total + (enARMoTQT ? 6 : 2);
+    }, 0);
+}
+
+function prestacionesEspEnMes(sala, mesStr, tipoEsp){
+  // Cuenta las evoluciones que tienen esa técnica específica registrada
+  return evoluciones.filter(e=>{
+    if(e.tipo || !e.date?.startsWith(mesStr)) return false;
+    if(sala){ const p=patients.find(x=>x.id===e.patientId); if(!p||p.sala!==sala) return false; }
+    const tecnicas = e.tecnicas||[];
+    return tecnicas.some(t=> tipoEsp ? t?.toLowerCase().includes(tipoEsp.toLowerCase()) : esTecnicaEsp(t));
+  }).length;
+}
+
+function prestacionesTotalesEnMes(sala, mesStr){
+  return prestacionesGeneralesEnMes(sala, mesStr) +
+    PRESTACIONES_ESP.reduce((s, esp)=>s + prestacionesEspEnMes(sala, mesStr, esp.split(' ').slice(0,3).join(' ')), 0);
+}
+
 function evolucionesEnMes(sala, mesStr){
   return evoluciones.filter(e=>{
     if(mesStr && !e.date?.startsWith(mesStr)) return false;
@@ -5827,6 +5871,9 @@ function renderIndMensual(mesStr){
   if(!body) return;
 
   const totalEvo = evolucionesEnMes('', mesStr);
+  const totalPrestGen = prestacionesGeneralesEnMes('', mesStr);
+  const totalPrestEsp = PRESTACIONES_ESP.reduce((s,esp)=>s+prestacionesEspEnMes('',mesStr,esp.split(' ').slice(0,3).join(' ')),0);
+  const totalPrestTot = totalPrestGen + totalPrestEsp;
   const totalARM = patients.reduce((s,p)=>s+diasARMenMes(p,mesStr),0);
   const totalTET = diasTETenMes(mesStr);
   const totalTQTarm = diasTQTarmEnMes(mesStr);
@@ -5849,7 +5896,7 @@ function renderIndMensual(mesStr){
   body.innerHTML = `
   <!-- KPIs del mes -->
   <div class="kpi-row" style="margin-bottom:16px">
-    <div class="kpi-card"><div class="kpi-icon blue"><i class="ti ti-clipboard-check"></i></div><div class="kpi-content"><div class="label">Prestaciones totales</div><div class="value">${totalEvo}</div><div class="sub">${mesStr}</div></div></div>
+    <div class="kpi-card"><div class="kpi-icon blue"><i class="ti ti-clipboard-check"></i></div><div class="kpi-content"><div class="label">Prestaciones totales</div><div class="value">${totalPrestTot}</div><div class="sub">Gen: ${totalPrestGen} + Esp: ${totalPrestEsp}</div></div></div>
     <div class="kpi-card"><div class="kpi-icon amber"><i class="ti ti-lungs"></i></div><div class="kpi-content"><div class="label">Días de ARM</div><div class="value">${totalARM}</div><div class="sub">TET: ${totalTET} / TQT ARM: ${totalTQTarm}</div></div></div>
     <div class="kpi-card"><div class="kpi-icon teal"><i class="ti ti-plug-x"></i></div><div class="kpi-content"><div class="label">TQT espontáneo</div><div class="value">${totalTQTesp}</div><div class="sub">Días sin ARM</div></div></div>
     <div class="kpi-card"><div class="kpi-icon purple"><i class="ti ti-activity"></i></div><div class="kpi-content"><div class="label">PVE realizadas</div><div class="value">${totalPVE}</div><div class="sub">Pruebas de vent. espontánea</div></div></div>
@@ -5869,7 +5916,19 @@ function renderIndMensual(mesStr){
       </thead>
       <tbody>
         <tr style="background:var(--gray-50)"><td colspan="${SECTORES.length+2}" style="padding:6px 12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--text-muted)">Prestaciones</td></tr>
-        ${fila('Prestaciones totales', s=>evolucionesEnMes(s,mesStr))}
+        ${fila('Prestaciones totales del servicio', s=>prestacionesTotalesEnMes(s,mesStr))}
+        ${fila('Prestaciones generales (ARM/TQT ×6, resto ×2)', s=>prestacionesGeneralesEnMes(s,mesStr))}
+        <tr style="background:var(--gray-50)"><td colspan="${SECTORES.length+2}" style="padding:6px 12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--text-muted)">Prestaciones específicas</td></tr>
+        ${fila('Evaluación de deglución', s=>prestacionesEspEnMes(s,mesStr,'Evaluación de deglución'))}
+        ${fila('Toma de muestra resp. (aspirado/miniBAL)', s=>prestacionesEspEnMes(s,mesStr,'aspirado')+prestacionesEspEnMes(s,mesStr,'minibal'))}
+        ${fila('Traslado a TAC', s=>prestacionesEspEnMes(s,mesStr,'TAC'))}
+        ${fila('Traslado a QX', s=>prestacionesEspEnMes(s,mesStr,'QX'))}
+        ${fila('Cambio de cánula de TQT', s=>prestacionesEspEnMes(s,mesStr,'Cambio de cánula'))}
+        ${fila('Asistencia TQT percutánea', s=>prestacionesEspEnMes(s,mesStr,'Asistencia TQT'))}
+        ${fila('Asistencia IOT', s=>prestacionesEspEnMes(s,mesStr,'Asistencia IOT'))}
+        ${fila('Asistencia BAL', s=>prestacionesEspEnMes(s,mesStr,'Asistencia BAL'))}
+        ${fila('Asistencia decúbito prono', s=>prestacionesEspEnMes(s,mesStr,'prono'))}
+        ${fila('Asistencia decúbito supino', s=>prestacionesEspEnMes(s,mesStr,'supino'))}
         <tr style="background:var(--gray-50)"><td colspan="${SECTORES.length+2}" style="padding:6px 12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--text-muted)">ARM / Ventilación mecánica</td></tr>
         ${filaARM('Días de ARMI totales', s=>patients.filter(p=>!s||p.sala===s).reduce((acc,p)=>acc+diasARMenMes(p,mesStr),0))}
         ${filaARM('Días de TET', s=>evoluciones.filter(e=>e.date?.startsWith(mesStr)&&e.interfaz==='TET'&&(!s||patients.find(p=>p.id===e.patientId)?.sala===s)).length)}
@@ -5969,7 +6028,19 @@ async function exportarIndicadores(vista, mesStr){
     rows.push(['Mes:', mesStr]);
     rows.push([]);
     rows.push(['PRESTACIONES']);
-    rows.push(calcFila('Prestaciones totales', s=>evolucionesEnMes(s,mesStr)));
+    rows.push(calcFila('Prestaciones totales', s=>prestacionesTotalesEnMes(s,mesStr)));
+    rows.push(calcFila('Prestaciones generales', s=>prestacionesGeneralesEnMes(s,mesStr)));
+    rows.push(['PRESTACIONES ESPECÍFICAS']);
+    rows.push(calcFila('Evaluación de deglución', s=>prestacionesEspEnMes(s,mesStr,'Evaluación de deglución')));
+    rows.push(calcFila('Toma de muestra resp.', s=>prestacionesEspEnMes(s,mesStr,'aspirado')+prestacionesEspEnMes(s,mesStr,'minibal')));
+    rows.push(calcFila('Traslado a TAC', s=>prestacionesEspEnMes(s,mesStr,'TAC')));
+    rows.push(calcFila('Traslado a QX', s=>prestacionesEspEnMes(s,mesStr,'QX')));
+    rows.push(calcFila('Cambio cánula TQT', s=>prestacionesEspEnMes(s,mesStr,'Cambio de cánula')));
+    rows.push(calcFila('Asistencia TQT', s=>prestacionesEspEnMes(s,mesStr,'Asistencia TQT')));
+    rows.push(calcFila('Asistencia IOT', s=>prestacionesEspEnMes(s,mesStr,'Asistencia IOT')));
+    rows.push(calcFila('Asistencia BAL', s=>prestacionesEspEnMes(s,mesStr,'Asistencia BAL')));
+    rows.push(calcFila('Asistencia decúbito prono', s=>prestacionesEspEnMes(s,mesStr,'prono')));
+    rows.push(calcFila('Asistencia decúbito supino', s=>prestacionesEspEnMes(s,mesStr,'supino')));
     rows.push(['ARM / VENTILACIÓN']);
     rows.push(calcFila('Días de ARMI totales', s=>patients.filter(p=>!s||p.sala===s).reduce((acc,p)=>acc+diasARMenMes(p,mesStr),0)));
     rows.push(calcFila('Días de TET', s=>evoluciones.filter(e=>e.date?.startsWith(mesStr)&&e.interfaz==='TET'&&(!s||patients.find(p=>p.id===e.patientId)?.sala===s)).length));
