@@ -608,6 +608,7 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
       <div class="nav-tab active" onclick="showSection('dashboard')" id="tab-dashboard"><i class="ti ti-layout-dashboard"></i> Inicio</div>
       <div class="nav-tab" onclick="showSection('pacientes')" id="tab-pacientes"><i class="ti ti-users"></i> Pacientes</div>
       <div class="nav-tab" onclick="showSection('historial')" id="tab-historial"><i class="ti ti-clipboard-list"></i> Historial</div>
+      <div class="nav-tab" onclick="showSection('indicadores')" id="tab-indicadores" style="display:none"><i class="ti ti-chart-bar"></i> Indicadores</div>
       <div class="nav-tab" onclick="showSection('indicadores')" id="tab-indicadores"><i class="ti ti-chart-bar"></i> Indicadores</div>
       <div class="nav-tab" onclick="showSection('actividad')" id="tab-actividad"><i class="ti ti-activity"></i> Actividad</div>
     </div>
@@ -631,6 +632,7 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
       <button class="bottom-tab active" onclick="showSection('dashboard')" id="btab-dashboard"><i class="ti ti-layout-dashboard"></i><span>Inicio</span></button>
       <button class="bottom-tab" onclick="showSection('pacientes')" id="btab-pacientes"><i class="ti ti-users"></i><span>Pacientes</span></button>
       <button class="bottom-tab" onclick="showSection('historial')" id="btab-historial"><i class="ti ti-clipboard-list"></i><span>Historial</span></button>
+      <button class="bottom-tab" onclick="showSection('indicadores')" id="btab-indicadores" style="display:none"><i class="ti ti-chart-bar"></i><span>Indicadores</span></button>
       <button class="bottom-tab" onclick="showSection('indicadores')" id="btab-indicadores"><i class="ti ti-chart-bar"></i><span>Indicadores</span></button>
       <button class="bottom-tab" onclick="showSection('actividad')" id="btab-actividad"><i class="ti ti-activity"></i><span>Actividad</span></button>
     </div>
@@ -795,7 +797,7 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
       <div class="form-group"><label>Diagnóstico principal</label><input type="text" id="fDiag"></div>
       <div class="form-group" id="fTipoKineRow">
         <label>Grupo</label>
-        <select id="fTipoKine">
+        <select id="fTipoKine" onchange="onGrupoChange(this.value)">
           <option value="">Seleccioná el grupo...</option>
           <option value="respiratorio">🫁 Respiratorio</option>
           <option value="neurologico">🧠 Neurológico</option>
@@ -807,6 +809,160 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
           <option value="otro">📋 Otro</option>
         </select>
       </div>
+
+      <!-- Campos específicos por grupo -->
+      <div id="fGrupoEspecifico" style="display:none">
+
+        <!-- Respiratorio -->
+        <div id="fGrupoResp" style="display:none">
+          <div class="form-group">
+            <label>¿Está en ARM al ingreso?</label>
+            <select id="fRespARM">
+              <option value="">-</option>
+              <option value="Si">Sí</option>
+              <option value="No">No</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Neurológico -->
+        <div id="fGrupoNeuro" style="display:none">
+          <div class="form-row">
+            <div class="form-group">
+              <label>¿Tiene foco neurológico?</label>
+              <select id="fNeuroFoco">
+                <option value="">-</option>
+                <option value="Si">Sí</option>
+                <option value="No">No</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Localización del foco</label>
+              <input type="text" id="fNeuroFocoLoc" placeholder="Ej: frontal izquierdo, tronco encéfalo...">
+            </div>
+          </div>
+          <div class="form-row three">
+            <div class="form-group">
+              <label>Tipo de compromiso motor</label>
+              <select id="fNeuroTipo">
+                <option value="">-</option>
+                <option>Paresia</option>
+                <option>Plejia</option>
+                <option>Paraparesia</option>
+                <option>Paraplejia</option>
+                <option>Tetraparesia</option>
+                <option>Tetraplejia</option>
+                <option>Sin compromiso motor</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Hemicuerpo afectado</label>
+              <select id="fNeuroHemi">
+                <option value="">-</option>
+                <option>Derecho</option>
+                <option>Izquierdo</option>
+                <option>Bilateral</option>
+                <option>No aplica</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Nivel de conciencia</label>
+              <select id="fNeuroConciencia">
+                <option value="">-</option>
+                <option>Alerta</option>
+                <option>Somnoliento</option>
+                <option>Estuporoso</option>
+                <option>Coma superficial</option>
+                <option>Coma profundo</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Lenguaje</label>
+            <select id="fNeuroLenguaje">
+              <option value="">-</option>
+              <option>Conservado</option>
+              <option>Disartria leve</option>
+              <option>Disartria moderada</option>
+              <option>Disartria severa</option>
+              <option>Afasia de Broca (motora)</option>
+              <option>Afasia de Wernicke (sensorial)</option>
+              <option>Afasia global</option>
+              <option>No evaluable (intubado / sedado)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Quemado -->
+        <div id="fGrupoQuemado" style="display:none">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Superficie corporal quemada (%)</label>
+              <input type="number" id="fQuemSCQ" inputmode="decimal" placeholder="0–100" min="0" max="100">
+            </div>
+            <div class="form-group">
+              <label>Grado de quemadura predominante</label>
+              <select id="fQuemGrado">
+                <option value="">-</option>
+                <option>Grado I</option>
+                <option>Grado II superficial (A)</option>
+                <option>Grado II profundo (AB)</option>
+                <option>Grado III</option>
+                <option>Mixto</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Áreas quemadas</label>
+            <div class="ant-grid" style="margin-top:6px">
+              <label class="ant-chip"><input type="checkbox" id="fQuemCara" value="cara">Cara</label>
+              <label class="ant-chip"><input type="checkbox" id="fQuemCuello" value="cuello">Cuello</label>
+              <label class="ant-chip"><input type="checkbox" id="fQuemToraxAnt" value="torax_ant">Tórax anterior</label>
+              <label class="ant-chip"><input type="checkbox" id="fQuemDorso" value="dorso">Dorso</label>
+              <label class="ant-chip"><input type="checkbox" id="fQuemAbdomen" value="abdomen">Abdomen</label>
+              <label class="ant-chip"><input type="checkbox" id="fQuemMMSS_der" value="mmss_der">MMSS derecho</label>
+              <label class="ant-chip"><input type="checkbox" id="fQuemMMSS_izq" value="mmss_izq">MMSS izquierdo</label>
+              <label class="ant-chip"><input type="checkbox" id="fQuemMMII_der" value="mmii_der">MMII derecho</label>
+              <label class="ant-chip"><input type="checkbox" id="fQuemMMII_izq" value="mmii_izq">MMII izquierdo</label>
+              <label class="ant-chip"><input type="checkbox" id="fQuemPerine" value="perine">Periné</label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Amputado -->
+        <div id="fGrupoAmputado" style="display:none">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Nivel de amputación</label>
+              <select id="fAmpNivel">
+                <option value="">-</option>
+                <option>Transtibial</option>
+                <option>Transfemoral</option>
+                <option>Transmetatarsiana</option>
+                <option>Desarticulación de rodilla</option>
+                <option>Desarticulación de cadera</option>
+                <option>MMSS — radio-carpiana</option>
+                <option>MMSS — transradial</option>
+                <option>MMSS — transhumeral</option>
+                <option>Bilateral</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Motivo</label>
+              <select id="fAmpMotivo">
+                <option value="">-</option>
+                <option value="traumatico">Traumático</option>
+                <option value="no_traumatico">No traumático</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Causa / detalle</label>
+            <input type="text" id="fAmpCausa" placeholder="Ej: accidente de tránsito, isquemia vascular, diabetes...">
+          </div>
+        </div>
+
+      </div><!-- fin fGrupoEspecifico -->
       <div class="form-group" id="fEstFxRow">
         <label>Estado funcional previo</label>
         <select id="fEstFx">
@@ -925,6 +1081,8 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
         <div class="form-group"><label>Kinesiólogo</label><input type="text" id="eKine" readonly style="background:var(--gray-50)"></div>
       </div>
       <input type="hidden" id="eTurno">
+      <!-- Banner de traslado reciente -->
+      <div id="evoBannerTraslado" style="display:none"></div>
       <!-- Contador de días automáticos -->
       <div id="evoDayCounters" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:.8rem"></div>
       <div class="form-row three">
@@ -2630,6 +2788,13 @@ function launchApp(){
   } else {
     badge.style.display = 'none';
   }
+  // Control de acceso a Indicadores: solo usuarios autorizados
+  const INDICADORES_USERS = ['Rodríguez Daniel','Santana Andrés','Petre Mauricio'];
+  const puedeVerIndicadores = INDICADORES_USERS.some(u=>currentUser.name.toLowerCase().includes(u.split(' ')[0].toLowerCase()));
+  ['tab-indicadores','btab-indicadores'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.style.display = puedeVerIndicadores ? '' : 'none';
+  });
   addLog('login',`Ingresó: ${currentUser.name}${currentSector?' ('+currentSector+')':''}`);
   updateDashHeader();
   setSyncStatus('syncing');
@@ -3606,6 +3771,52 @@ function populateCama(sala, selected){
     opts.map(c => `<option value="${c}"${c===selected?' selected':''}>${c}</option>`).join('');
 }
 
+function onGrupoChange(grupo){
+  const bloques = { respiratorio:'fGrupoResp', neurologico:'fGrupoNeuro', quemado:'fGrupoQuemado', amputado:'fGrupoAmputado' };
+  const wrapper = document.getElementById('fGrupoEspecifico');
+  const hayBloque = !!bloques[grupo];
+  wrapper.style.display = hayBloque ? 'block' : 'none';
+  Object.values(bloques).forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.style.display = 'none';
+  });
+  if(hayBloque) document.getElementById(bloques[grupo]).style.display = 'block';
+}
+
+function resetGrupoFields(){
+  // Campos neurológico
+  ['fNeuroFoco','fNeuroFocoLoc','fNeuroTipo','fNeuroHemi','fNeuroConciencia','fNeuroLenguaje'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  // Campos respiratorio
+  const rARM=document.getElementById('fRespARM'); if(rARM) rARM.value='';
+  // Campos quemado
+  ['fQuemSCQ','fQuemGrado'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  ['fQuemCara','fQuemCuello','fQuemToraxAnt','fQuemDorso','fQuemAbdomen','fQuemMMSS_der','fQuemMMSS_izq','fQuemMMII_der','fQuemMMII_izq','fQuemPerine'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el){ el.checked=false; el.closest('.ant-chip')?.classList.remove('is-checked'); }
+  });
+  // Campos amputado
+  ['fAmpNivel','fAmpMotivo','fAmpCausa'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  // Ocultar wrapper
+  const w=document.getElementById('fGrupoEspecifico'); if(w) w.style.display='none';
+  ['fGrupoResp','fGrupoNeuro','fGrupoQuemado','fGrupoAmputado'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.style.display='none';
+  });
+}
+
+async function marcarBannerVisto(patientId){
+  const idx = patients.findIndex(x=>x.id===patientId);
+  if(idx<0) return;
+  const bt = patients[idx].bannerTraslado;
+  if(!bt) return;
+  if(!bt.vistosPor) bt.vistosPor = [];
+  if(!bt.vistosPor.includes(currentUser.name)) bt.vistosPor.push(currentUser.name);
+  await persistAll();
+  const bannerEl = document.getElementById('evoBannerTraslado');
+  if(bannerEl){ bannerEl.innerHTML=''; bannerEl.style.display='none'; }
+}
+
 function onSalaChange(sala){
   populateCama(sala);
 }
@@ -4174,11 +4385,19 @@ async function confirmarEgreso(){
     patients[idx].sala = destino;
     if(nuevaCama) patients[idx].cama = nuevaCama;
     patients[idx].fISector = fecha;
+    patients[idx].estado = 'Activo'; // siempre activo al trasladarse
+    // Banner de bienvenida para el sector receptor
+    patients[idx].bannerTraslado = {
+      fecha, salaOrigen, camaOrigen, destino, nuevaCama,
+      kine: currentUser.name, obs,
+      vistosPor: [] // se va llenando con los usuarios que lo vieron
+    };
+    const textoObs = `TRASLADO: De ${SALA_LABEL[salaOrigen]||salaOrigen} C${camaOrigen} → ${SALA_LABEL[destino]||destino}${nuevaCama?' C'+nuevaCama:''}${obs?'. '+obs:''}`;
     const evo = {
       id:Date.now(), patientId:egresoPacId, date:fecha,
       turno:currentShift(), kine:currentUser.name, tipo:'traslado',
-      obs:`TRASLADO: De ${SALA_LABEL[salaOrigen]||salaOrigen} C${camaOrigen} → ${SALA_LABEL[destino]||destino}${nuevaCama?' C'+nuevaCama:''}${obs?'. '+obs:''}`,
-      tecnicas:[], secCant:'', secChar:'', tolerancia:'',
+      obs: textoObs,
+      tecnicas:[], tolerancia:'',
     };
     evoluciones.unshift(evo);
     addLog('traslado',`Traslado ${p.apellido}: ${SALA_LABEL[salaOrigen]||salaOrigen} → ${SALA_LABEL[destino]||destino}`);
@@ -4624,6 +4843,7 @@ function openNuevoPaciente(){
     'fCausaVM','fFIOT','fInicioARM','fVMNI','fProno','fTQT','fFinARM','fReintubado'];
   campos.forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   document.getElementById('fTipoKine').value = '';
+  resetGrupoFields();
   document.getElementById('fEstFx').value = '';
   document.getElementById('fTQTMin').value = '';
   document.getElementById('fTQTMinTipo').value = '';
@@ -4659,6 +4879,26 @@ function openEditPaciente(id){
   M('fFIHosp',p.fIHosp); M('fFIUTI',p.fIUTI);
   M('fDiag',p.diagnostico);
   M('fTipoKine',p.tipoKine); M('fEstFx',p.estFx);
+  // Campos específicos por grupo
+  resetGrupoFields();
+  if(p.tipoKine) onGrupoChange(p.tipoKine);
+  if(p.tipoKine==='respiratorio'){ M('fRespARM',p.grupoRespARM||''); }
+  if(p.tipoKine==='neurologico'){
+    M('fNeuroFoco',p.grupoNeuroFoco||''); M('fNeuroFocoLoc',p.grupoNeuroFocoLoc||'');
+    M('fNeuroTipo',p.grupoNeuroTipo||''); M('fNeuroHemi',p.grupoNeuroHemi||'');
+    M('fNeuroConciencia',p.grupoNeuroConciencia||''); M('fNeuroLenguaje',p.grupoNeuroLenguaje||'');
+  }
+  if(p.tipoKine==='quemado'){
+    M('fQuemSCQ',p.grupoQuemSCQ||''); M('fQuemGrado',p.grupoQuemGrado||'');
+    const areas = Array.isArray(p.grupoQuemAreas) ? p.grupoQuemAreas : [];
+    ['Cara','Cuello','ToraxAnt','Dorso','Abdomen','MMSS_der','MMSS_izq','MMII_der','MMII_izq','Perine'].forEach(a=>{
+      const chk=document.getElementById('fQuem'+a);
+      if(chk){ chk.checked=areas.includes(chk.value); chk.closest('.ant-chip')?.classList.toggle('is-checked',chk.checked); }
+    });
+  }
+  if(p.tipoKine==='amputado'){
+    M('fAmpNivel',p.grupoAmpNivel||''); M('fAmpMotivo',p.grupoAmpMotivo||''); M('fAmpCausa',p.grupoAmpCausa||'');
+  }
   M('fTQTMin',p.tqtMin); M('fTQTMinTipo',p.tqtMinTipo); M('fTQTMinID',p.tqtMinID); M('fTQTMinED',p.tqtMinED);
   toggleTQTMinDetalle();
   // Antecedentes
@@ -4693,6 +4933,16 @@ async function guardarPaciente(){
     peso, talla, imc, pcp: pcp!==null ? +pcp.toFixed(1) : null,
     sala:G('fSala'), cama:G('fCama'),
     tipoKine:G('fTipoKine'), estFx:G('fEstFx'),
+    // Campos por grupo
+    grupoRespARM: G('fRespARM')||null,
+    grupoNeuroFoco:G('fNeuroFoco')||null, grupoNeuroFocoLoc:G('fNeuroFocoLoc')||null,
+    grupoNeuroTipo:G('fNeuroTipo')||null, grupoNeuroHemi:G('fNeuroHemi')||null,
+    grupoNeuroConciencia:G('fNeuroConciencia')||null, grupoNeuroLenguaje:G('fNeuroLenguaje')||null,
+    grupoQuemSCQ:G('fQuemSCQ')||null, grupoQuemGrado:G('fQuemGrado')||null,
+    grupoQuemAreas: ['Cara','Cuello','ToraxAnt','Dorso','Abdomen','MMSS_der','MMSS_izq','MMII_der','MMII_izq','Perine']
+      .filter(a=>{ const el=document.getElementById('fQuem'+a); return el?.checked; })
+      .map(a=>{ const el=document.getElementById('fQuem'+a); return el?.value; }),
+    grupoAmpNivel:G('fAmpNivel')||null, grupoAmpMotivo:G('fAmpMotivo')||null, grupoAmpCausa:G('fAmpCausa')||null,
     tqtMin:G('fTQTMin'), tqtMinTipo:G('fTQTMinTipo'), tqtMinID:G('fTQTMinID'), tqtMinED:G('fTQTMinED'),
     fIHosp:G('fFIHosp'), fIUTI:G('fFIUTI'),
     diagnostico:G('fDiag'),
@@ -5012,6 +5262,32 @@ function openEvolucion(patientId){
   // ── Sección por grupo ──
   actualizarGrupoEvo(p.tipoKine || '');
 
+  // ── Banner de traslado reciente ──────────────────────────
+  const bannerEl = document.getElementById('evoBannerTraslado');
+  if(bannerEl){
+    const bt = p.bannerTraslado;
+    const yaVisto = bt && (bt.vistosPor||[]).includes(currentUser.name);
+    if(bt && !yaVisto){
+      bannerEl.innerHTML = `
+        <div style="background:var(--blue-50);border:1.5px solid var(--blue-200);border-radius:10px;padding:12px 16px;margin-bottom:14px;display:flex;gap:12px;align-items:flex-start">
+          <i class="ti ti-arrows-transfer-up" style="color:var(--blue-500);font-size:22px;flex-shrink:0;margin-top:2px"></i>
+          <div style="flex:1">
+            <div style="font-weight:700;color:var(--blue-800);font-size:13px">Paciente trasladado el ${fmtDate(bt.fecha)}</div>
+            <div style="font-size:12px;color:var(--blue-700);margin-top:2px">
+              Desde <strong>${SALA_LABEL[bt.salaOrigen]||bt.salaOrigen}</strong> cama ${bt.camaOrigen} → <strong>${SALA_LABEL[bt.destino]||bt.destino}</strong>${bt.nuevaCama?' cama '+bt.nuevaCama:''}
+            </div>
+            <div style="font-size:11.5px;color:var(--text-muted);margin-top:2px">Kinesiólogo: ${bt.kine}</div>
+            ${bt.obs ? `<div style="font-size:12px;color:var(--text);background:#fff;border-radius:6px;padding:6px 10px;margin-top:6px;border:1px solid var(--blue-100)">${bt.obs}</div>` : ''}
+          </div>
+          <button onclick="marcarBannerVisto(${p.id})" style="background:none;border:none;cursor:pointer;color:var(--blue-400);font-size:11px;white-space:nowrap;padding:0;flex-shrink:0">✓ Entendido</button>
+        </div>`;
+      bannerEl.style.display = 'block';
+    } else {
+      bannerEl.innerHTML = '';
+      bannerEl.style.display = 'none';
+    }
+  }
+
   renderTimeline(patientId);
   openModal('modalEvo');
 }
@@ -5269,146 +5545,338 @@ function buscarHistorial(){
 // ════════════════════════════════════════════════════════
 function renderIndicadores(){
   const el = document.getElementById('indicadoresContent');
-  const todayStr = today();
-  const thisMonth = todayStr.slice(0,7);
-  const activos = patients.filter(p=>p.estado==='Activo');
-  const conARM = activos.filter(p=>p.inicioARM && !p.finARM);
-  const evosHoy = evoluciones.filter(e=>e.date===todayStr);
-  const evosMes = evoluciones.filter(e=>e.date.startsWith(thisMonth));
-  const sinEvoHoy = activos.filter(p=>!evoluciones.some(e=>e.patientId===p.id && e.date===todayStr));
+  if(!el) return;
 
-  // Días ARM promedio (solo dados de alta o con ARM finalizado)
-  const conARMFin = patients.filter(p=>p.inicioARM && p.finARM);
-  const diasARMProm = conARMFin.length ?
-    Math.round(conARMFin.reduce((acc,p)=>acc+daysBetween(p.inicioARM,p.finARM),0)/conARMFin.length) : null;
-
-  // PVE del mes
-  const pveMes = evosMes.filter(e=>e.pve==='Sí');
-  const pveExitosas = pveMes.filter(e=>e.pveResult==='Exitosa');
-
-  // Extubaciones este mes
-  const extubMes = evosMes.filter(e=>e.extubacion?.startsWith('Sí'));
-
-  // Técnicas más frecuentes (total)
-  const allTecnicas = evoluciones.flatMap(e=>e.tecnicas||[]);
-  const tecCount = {};
-  allTecnicas.forEach(t=>{ tecCount[t]=(tecCount[t]||0)+1; });
-  const topTec = Object.entries(tecCount).sort((a,b)=>b[1]-a[1]).slice(0,10);
-  const maxTec = topTec[0]?.[1] || 1;
-
-  // Por kinesiólogo
-  const kineEvos = {};
-  evoluciones.forEach(e=>{
-    kineEvos[e.kine]=(kineEvos[e.kine]||0)+1;
-  });
-  const kineList = Object.entries(kineEvos).sort((a,b)=>b[1]-a[1]);
-
-  // Distribución por sala (activos)
-  const salaCount = {};
-  activos.forEach(p=>{ salaCount[p.sala]=(salaCount[p.sala]||0)+1; });
-
-  // Egresos este mes
-  const egresosMes = patients.filter(p=>p.fEUTI?.startsWith(thisMonth)||p.fEK?.startsWith(thisMonth));
-  const obitosMes = patients.filter(p=>p.estado==='Óbito'&&(p.fEK||'').startsWith(thisMonth));
+  // Vista actual: 'mensual' o 'pacientes'
+  const vistaActual = el.dataset.vista || 'mensual';
+  const mesSel = el.dataset.mes || today().slice(0,7);
 
   el.innerHTML = `
-  <!-- KPIs principales -->
-  <div class="kpi-row">
-    <div class="kpi-card">
-      <div class="kpi-icon blue"><i class="ti ti-users"></i></div>
-      <div class="kpi-content"><div class="label">Pacientes activos</div><div class="value">${activos.length}</div><div class="sub">En todas las salas</div></div>
+  <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center">
+    <div style="display:flex;gap:4px;background:var(--gray-100);padding:4px;border-radius:8px">
+      <button class="btn btn-sm ${vistaActual==='mensual'?'btn-primary':'btn-ghost'}" onclick="cambiarVistaInd('mensual')"><i class="ti ti-calendar-stats"></i> Vista mensual</button>
+      <button class="btn btn-sm ${vistaActual==='pacientes'?'btn-primary':'btn-ghost'}" onclick="cambiarVistaInd('pacientes')"><i class="ti ti-users"></i> Por paciente</button>
     </div>
-    <div class="kpi-card">
-      <div class="kpi-icon teal"><i class="ti ti-clipboard-check"></i></div>
-      <div class="kpi-content"><div class="label">Evoluciones hoy</div><div class="value">${evosHoy.length}</div><div class="sub">${sinEvoHoy.length > 0 ? sinEvoHoy.length+' pacientes sin evo.' : 'Todos evolucionados ✓'}</div></div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-icon amber"><i class="ti ti-lungs"></i></div>
-      <div class="kpi-content"><div class="label">Con ARM activo</div><div class="value">${conARM.length}</div><div class="sub">Días prom: ${diasARMProm!=null?diasARMProm:'—'}</div></div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-icon teal"><i class="ti ti-wind"></i></div>
-      <div class="kpi-content"><div class="label">PVE este mes</div><div class="value">${pveMes.length}</div><div class="sub">${pveExitosas.length} exitosas (${pveMes.length?Math.round(pveExitosas.length/pveMes.length*100):0}%)</div></div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-icon blue"><i class="ti ti-calendar-stats"></i></div>
-      <div class="kpi-content"><div class="label">Evoluciones este mes</div><div class="value">${evosMes.length}</div><div class="sub">Promedio: ${activos.length?Math.round(evosMes.length/activos.length*10)/10:0}/paciente</div></div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-icon purple"><i class="ti ti-arrow-up-right"></i></div>
-      <div class="kpi-content"><div class="label">Extubaciones este mes</div><div class="value">${extubMes.length}</div><div class="sub">Egresos UTI: ${egresosMes.length}</div></div>
-    </div>
+    ${vistaActual==='mensual' ? `<input type="month" id="indMesSel" value="${mesSel}" onchange="cambiarMesInd(this.value)" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-family:var(--font);font-size:13px">` : ''}
+    <button class="btn btn-sm btn-ghost" onclick="exportarIndicadores('${vistaActual}','${mesSel}')"><i class="ti ti-table-export"></i> Exportar Excel</button>
+  </div>
+  <div id="indBody"></div>`;
+
+  if(vistaActual==='mensual') renderIndMensual(mesSel);
+  else renderIndPacientes();
+}
+
+function cambiarVistaInd(vista){
+  const el = document.getElementById('indicadoresContent');
+  el.dataset.vista = vista;
+  renderIndicadores();
+}
+
+function cambiarMesInd(mes){
+  const el = document.getElementById('indicadoresContent');
+  el.dataset.mes = mes;
+  renderIndicadores();
+}
+
+// ── Helpers de cálculo ───────────────────────────────────
+const SECTORES = ['EMERG','UTI-A','UTI-B','UTI-C','MIN-B','MIN-C'];
+const SECTOR_LBL = s => SALA_LABEL[s]||s;
+
+function diasARMenMes(p, mesStr){
+  // Días del mes en que el paciente estuvo en ARM
+  if(!p.inicioARM) return 0;
+  const [y,m] = mesStr.split('-').map(Number);
+  const inicioMes = `${mesStr}-01`;
+  const lastDay = new Date(y, m, 0).getDate();
+  const finMes = `${mesStr}-${String(lastDay).padStart(2,'0')}`;
+  const desde = p.inicioARM > inicioMes ? p.inicioARM : inicioMes;
+  const hasta = (!p.finARM || p.finARM > finMes) ? finMes : p.finARM;
+  if(desde > hasta) return 0;
+  return (daysBetween(desde, hasta)||0) + 1;
+}
+
+function diasTETenMes(mesStr){
+  return evoluciones.filter(e=>e.date?.startsWith(mesStr) && e.interfaz==='TET').length;
+}
+
+function diasTQTarmEnMes(mesStr){
+  return evoluciones.filter(e=>e.date?.startsWith(mesStr) && e.interfaz==='TQT').length;
+}
+
+function diasTQTespEnMes(mesStr){
+  return evoluciones.filter(e=>e.date?.startsWith(mesStr) && (e.interfaz||'').includes('TQT espontáneo')).length;
+}
+
+function pacientesEnARMenMes(sala, mesStr){
+  // Pacientes únicos que estuvieron en ARM en ese mes en esa sala
+  return patients.filter(p=>
+    (!sala || p.sala===sala) &&
+    p.inicioARM && diasARMenMes(p, mesStr) > 0
+  ).length;
+}
+
+function extubaciones(tipo, sala, mesStr){
+  // tipo: 'exitosa','fallida','noprogramada','auto','accidental'
+  return evoluciones.filter(e=>{
+    if(mesStr && !e.date?.startsWith(mesStr)) return false;
+    if(sala){
+      const p = patients.find(x=>x.id===e.patientId);
+      if(!p || p.sala!==sala) return false;
+    }
+    if(tipo==='exitosa') return e.extubacion==='Sí — planificada' && e.pveResult==='Exitosa';
+    if(tipo==='fallida') return e.extubacion==='Sí — planificada' && e.pveResult?.startsWith('Fallida');
+    if(tipo==='noprogramada') return e.extubacion==='Sí — no planificada';
+    if(tipo==='auto') return e.extubacion==='Sí — no planificada'; // autoextubación = no planificada
+    if(tipo==='accidental') return false; // no tenemos campo específico aún
+    return false;
+  }).length;
+}
+
+function decanulaciones(tipo, sala, mesStr){
+  return evoluciones.filter(e=>{
+    if(mesStr && !e.date?.startsWith(mesStr)) return false;
+    if(sala){
+      const p = patients.find(x=>x.id===e.patientId);
+      if(!p || p.sala!==sala) return false;
+    }
+    return false; // TODO: agregar campo decanulación
+  }).length;
+}
+
+function controlCuffEnMes(sala, mesStr){
+  return evoluciones.filter(e=>{
+    if(mesStr && !e.date?.startsWith(mesStr)) return false;
+    const p = patients.find(x=>x.id===e.patientId);
+    if(sala && (!p || p.sala!==sala)) return false;
+    return !!(e.cuffM || e.cuffT || e.cuffN);
+  }).length;
+}
+
+function deglucionEnMes(sala, mesStr){
+  return evoluciones.filter(e=>{
+    if(mesStr && !e.date?.startsWith(mesStr)) return false;
+    const p = patients.find(x=>x.id===e.patientId);
+    if(sala && (!p || p.sala!==sala)) return false;
+    return !!(e.deglusion && e.deglusion !== 'No realizada');
+  }).length;
+}
+
+function evolucionesEnMes(sala, mesStr){
+  return evoluciones.filter(e=>{
+    if(mesStr && !e.date?.startsWith(mesStr)) return false;
+    if(sala){
+      const p = patients.find(x=>x.id===e.patientId);
+      if(!p || p.sala!==sala) return false;
+    }
+    return !e.tipo; // excluir traslado/alta/óbito
+  }).length;
+}
+
+function pveEnMes(sala, mesStr){
+  return evoluciones.filter(e=>{
+    if(mesStr && !e.date?.startsWith(mesStr)) return false;
+    if(sala){
+      const p = patients.find(x=>x.id===e.patientId);
+      if(!p || p.sala!==sala) return false;
+    }
+    return e.pve && e.pve !== 'No' && e.pve !== '';
+  }).length;
+}
+
+// ── Vista mensual ──────────────────────────────────────────
+function renderIndMensual(mesStr){
+  const body = document.getElementById('indBody');
+  if(!body) return;
+
+  const totalEvo = evolucionesEnMes('', mesStr);
+  const totalARM = patients.reduce((s,p)=>s+diasARMenMes(p,mesStr),0);
+  const totalTET = diasTETenMes(mesStr);
+  const totalTQTarm = diasTQTarmEnMes(mesStr);
+  const totalTQTesp = diasTQTespEnMes(mesStr);
+  const totalCuff = controlCuffEnMes('', mesStr);
+  const totalPVE = pveEnMes('', mesStr);
+
+  const fila = (label, fn) => {
+    const total = fn('');
+    const celdas = SECTORES.map(s=>`<td>${fn(s)||0}</td>`).join('');
+    return `<tr><td style="font-weight:600">${label}</td>${celdas}<td style="font-weight:700;color:var(--blue-700)">${total}</td></tr>`;
+  };
+
+  const filaARM = (label, fn) => {
+    const celdas = SECTORES.map(s=>`<td>${fn(s)||0}</td>`).join('');
+    const total = SECTORES.reduce((s,sala)=>s+(fn(sala)||0),0);
+    return `<tr><td style="font-weight:600">${label}</td>${celdas}<td style="font-weight:700;color:var(--blue-700)">${total}</td></tr>`;
+  };
+
+  body.innerHTML = `
+  <!-- KPIs del mes -->
+  <div class="kpi-row" style="margin-bottom:16px">
+    <div class="kpi-card"><div class="kpi-icon blue"><i class="ti ti-clipboard-check"></i></div><div class="kpi-content"><div class="label">Prestaciones totales</div><div class="value">${totalEvo}</div><div class="sub">${mesStr}</div></div></div>
+    <div class="kpi-card"><div class="kpi-icon amber"><i class="ti ti-lungs"></i></div><div class="kpi-content"><div class="label">Días de ARM</div><div class="value">${totalARM}</div><div class="sub">TET: ${totalTET} / TQT ARM: ${totalTQTarm}</div></div></div>
+    <div class="kpi-card"><div class="kpi-icon teal"><i class="ti ti-plug-x"></i></div><div class="kpi-content"><div class="label">TQT espontáneo</div><div class="value">${totalTQTesp}</div><div class="sub">Días sin ARM</div></div></div>
+    <div class="kpi-card"><div class="kpi-icon purple"><i class="ti ti-activity"></i></div><div class="kpi-content"><div class="label">PVE realizadas</div><div class="value">${totalPVE}</div><div class="sub">Pruebas de vent. espontánea</div></div></div>
+    <div class="kpi-card"><div class="kpi-icon blue"><i class="ti ti-gauge"></i></div><div class="kpi-content"><div class="label">Controles de cuff</div><div class="value">${totalCuff}</div><div class="sub">Registros con presión</div></div></div>
   </div>
 
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
-
-    <!-- Técnicas más frecuentes -->
-    <div class="card">
-      <div class="card-header"><div class="card-header-title"><i class="ti ti-chart-bar" style="color:var(--blue-400)"></i>Técnicas más realizadas</div></div>
-      <div class="card-body">
-        ${topTec.length ? topTec.map(([t,n])=>`
-          <div class="tecnica-bar">
-            <span class="tecnica-name">${t}</span>
-            <div class="tecnica-track"><div class="tecnica-fill" style="width:${Math.round(n/maxTec*100)}%"></div></div>
-            <span class="tecnica-count">${n}</span>
-          </div>`).join('') : '<div class="empty"><i class="ti ti-chart-off"></i><p>Sin datos suficientes</p></div>'}
-      </div>
+  <div class="card" style="margin-bottom:12px;overflow-x:auto">
+    <div class="card-header"><div class="card-header-title"><i class="ti ti-table" style="color:var(--blue-400)"></i> Indicadores detallados — ${mesStr}</div></div>
+    <div class="card-body" style="padding:0">
+    <table style="width:100%;border-collapse:collapse;font-size:12px">
+      <thead>
+        <tr style="background:var(--blue-50)">
+          <th style="text-align:left;padding:8px 12px;border-bottom:2px solid var(--blue-100)">Indicador</th>
+          ${SECTORES.map(s=>`<th style="padding:8px 8px;border-bottom:2px solid var(--blue-100);white-space:nowrap">${SECTOR_LBL(s)}</th>`).join('')}
+          <th style="padding:8px 8px;border-bottom:2px solid var(--blue-100);color:var(--blue-700)">TOTAL</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="background:var(--gray-50)"><td colspan="${SECTORES.length+2}" style="padding:6px 12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--text-muted)">Prestaciones</td></tr>
+        ${fila('Prestaciones totales', s=>evolucionesEnMes(s,mesStr))}
+        <tr style="background:var(--gray-50)"><td colspan="${SECTORES.length+2}" style="padding:6px 12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--text-muted)">ARM / Ventilación mecánica</td></tr>
+        ${filaARM('Días de ARMI totales', s=>patients.filter(p=>!s||p.sala===s).reduce((acc,p)=>acc+diasARMenMes(p,mesStr),0))}
+        ${filaARM('Días de TET', s=>evoluciones.filter(e=>e.date?.startsWith(mesStr)&&e.interfaz==='TET'&&(!s||patients.find(p=>p.id===e.patientId)?.sala===s)).length)}
+        ${filaARM('Días de TQT en ARM', s=>evoluciones.filter(e=>e.date?.startsWith(mesStr)&&e.interfaz==='TQT'&&(!s||patients.find(p=>p.id===e.patientId)?.sala===s)).length)}
+        ${filaARM('Días de TQT sin ARM (espontáneo)', s=>evoluciones.filter(e=>e.date?.startsWith(mesStr)&&(e.interfaz||'').includes('TQT espontáneo')&&(!s||patients.find(p=>p.id===e.patientId)?.sala===s)).length)}
+        ${filaARM('Pacientes únicos en ARM', s=>pacientesEnARMenMes(s,mesStr))}
+        <tr style="background:var(--gray-50)"><td colspan="${SECTORES.length+2}" style="padding:6px 12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--text-muted)">Extubaciones</td></tr>
+        ${filaARM('Extubaciones exitosas', s=>evoluciones.filter(e=>e.date?.startsWith(mesStr)&&e.extubacion==='Sí — planificada'&&e.pveResult==='Exitosa'&&(!s||patients.find(p=>p.id===e.patientId)?.sala===s)).length)}
+        ${filaARM('Extubaciones fallidas', s=>evoluciones.filter(e=>e.date?.startsWith(mesStr)&&e.extubacion?.startsWith('Sí')&&e.pveResult?.startsWith('Fallida')&&(!s||patients.find(p=>p.id===e.patientId)?.sala===s)).length)}
+        ${filaARM('Extubaciones no programadas', s=>evoluciones.filter(e=>e.date?.startsWith(mesStr)&&e.extubacion==='Sí — no planificada'&&(!s||patients.find(p=>p.id===e.patientId)?.sala===s)).length)}
+        <tr style="background:var(--gray-50)"><td colspan="${SECTORES.length+2}" style="padding:6px 12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--text-muted)">PVE / Ventilación espontánea</td></tr>
+        ${filaARM('PVE realizadas', s=>pveEnMes(s,mesStr))}
+        ${filaARM('PVE exitosas', s=>evoluciones.filter(e=>e.date?.startsWith(mesStr)&&e.pveResult==='Exitosa'&&(!s||patients.find(p=>p.id===e.patientId)?.sala===s)).length)}
+        <tr style="background:var(--gray-50)"><td colspan="${SECTORES.length+2}" style="padding:6px 12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--text-muted)">Vía aérea artificial</td></tr>
+        ${filaARM('Controles de cuff', s=>controlCuffEnMes(s,mesStr))}
+        ${filaARM('Evaluaciones de deglución', s=>deglucionEnMes(s,mesStr))}
+      </tbody>
+    </table>
     </div>
-
-    <!-- Por kinesiólogo -->
-    <div class="card">
-      <div class="card-header"><div class="card-header-title"><i class="ti ti-user-check" style="color:var(--teal-400)"></i>Evoluciones por kinesiólogo</div></div>
-      <div class="card-body">
-        ${kineList.length ? kineList.map(([k,n])=>{
-          const maxK = kineList[0][1];
-          return `<div class="tecnica-bar">
-            <span class="tecnica-name" style="font-weight:500">${k}</span>
-            <div class="tecnica-track"><div class="tecnica-fill" style="width:${Math.round(n/maxK*100)}%;background:var(--teal-400)"></div></div>
-            <span class="tecnica-count" style="color:var(--teal-600)">${n}</span>
-          </div>`;
-        }).join('') : '<div class="empty"><i class="ti ti-users-off"></i><p>Sin datos</p></div>'}
-      </div>
-    </div>
-
-  </div>
-
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-
-    <!-- Distribución por sala -->
-    <div class="card">
-      <div class="card-header"><div class="card-header-title"><i class="ti ti-bed" style="color:var(--amber-400)"></i>Pacientes activos por sala</div></div>
-      <div class="card-body">
-        ${Object.entries(salaCount).length ? Object.entries(salaCount).map(([s,n])=>`
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px">
-            ${salaChip(s)}
-            <div style="flex:1;margin:0 10px;background:var(--gray-100);border-radius:99px;height:7px;overflow:hidden">
-              <div style="width:${Math.round(n/activos.length*100)}%;height:100%;background:var(--amber-400);border-radius:99px"></div>
-            </div>
-            <span style="font-size:12px;font-weight:700;color:var(--amber-600);min-width:20px;text-align:right">${n}</span>
-          </div>`).join('') : '<div class="empty"><i class="ti ti-bed-off"></i><p>Sin pacientes activos</p></div>'}
-      </div>
-    </div>
-
-    <!-- Pacientes sin evolución hoy -->
-    <div class="card">
-      <div class="card-header"><div class="card-header-title"><i class="ti ti-alert-circle" style="color:var(--red-400)"></i>Sin evolución hoy</div></div>
-      <div class="card-body">
-        ${sinEvoHoy.length ? sinEvoHoy.map(p=>`
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px">
-            <div>
-              <div style="font-size:12px;font-weight:600;color:var(--text)">${p.apellido}, ${p.nombre}</div>
-              <div style="font-size:10px;color:var(--text-muted)">${SALA_LABEL[p.sala]||p.sala} · C.${p.cama}</div>
-            </div>
-            <button class="btn-evolve btn-sm" onclick="showSection('dashboard');openEvolucion(${p.id})">
-              <i class="ti ti-stethoscope"></i> Evolucionar
-            </button>
-          </div>`).join('')
-          : '<div class="empty" style="padding:1rem"><i class="ti ti-circle-check" style="color:var(--teal-400)"></i><p>Todos los pacientes fueron evolucionados hoy</p></div>'}
-      </div>
-    </div>
-
   </div>`;
 }
+
+// ── Vista por paciente ────────────────────────────────────
+function renderIndPacientes(){
+  const body = document.getElementById('indBody');
+  if(!body) return;
+
+  const filas = patients.map(p=>{
+    const evos = evoluciones.filter(e=>e.patientId===p.id && !e.tipo);
+    const diasArm = p.inicioARM ? (daysBetween(p.inicioARM, p.finARM||today())||0)+1 : 0;
+    const diasTET = evos.filter(e=>e.interfaz==='TET').length;
+    const diasTQTarm = evos.filter(e=>e.interfaz==='TQT').length;
+    const diasTQTesp = evos.filter(e=>(e.interfaz||'').includes('TQT espontáneo')).length;
+    const pves = evos.filter(e=>e.pve && e.pve!=='No' && e.pve!=='').length;
+    const pvesEx = evos.filter(e=>e.pveResult==='Exitosa').length;
+    const extub = evos.filter(e=>e.extubacion?.startsWith('Sí')).length;
+    const deg = evos.filter(e=>e.deglusion && e.deglusion!=='No realizada').length;
+    const cuff = evos.filter(e=>e.cuffM||e.cuffT||e.cuffN).length;
+    const diasHosp = p.fIHosp ? (daysBetween(p.fIHosp,p.fEUTI||today())||0)+1 : '—';
+    return `<tr>
+      <td style="font-weight:600;white-space:nowrap">${p.apellido}, ${p.nombre}</td>
+      <td>${p.dni||'—'}</td>
+      <td>${SALA_LABEL[p.sala]||p.sala||'—'}</td>
+      <td>${p.cama||'—'}</td>
+      <td><span class="badge ${p.estado==='Activo'?'badge-teal':'badge-gray'}">${p.estado||'—'}</span></td>
+      <td>${diasHosp}</td>
+      <td style="font-weight:${diasArm>0?'700':'400'};color:${diasArm>0?'var(--red-600)':'inherit'}">${diasArm||'—'}</td>
+      <td>${diasTET||'—'}</td>
+      <td>${diasTQTarm||'—'}</td>
+      <td>${diasTQTesp||'—'}</td>
+      <td>${pves||'—'}</td>
+      <td>${pvesEx||'—'}</td>
+      <td>${extub||'—'}</td>
+      <td>${deg||'—'}</td>
+      <td>${cuff||'—'}</td>
+      <td>${evos.length}</td>
+    </tr>`;
+  }).join('');
+
+  body.innerHTML = `
+  <div class="card" style="overflow-x:auto">
+    <div class="card-header"><div class="card-header-title"><i class="ti ti-users" style="color:var(--blue-400)"></i> Indicadores por paciente — todos los registros</div></div>
+    <div class="card-body" style="padding:0">
+    <table style="width:100%;border-collapse:collapse;font-size:11.5px">
+      <thead>
+        <tr style="background:var(--blue-50)">
+          <th style="text-align:left;padding:8px 10px;border-bottom:2px solid var(--blue-100)">Paciente</th>
+          <th style="padding:8px 6px;border-bottom:2px solid var(--blue-100)">DNI</th>
+          <th style="padding:8px 6px;border-bottom:2px solid var(--blue-100)">Sala</th>
+          <th style="padding:8px 6px;border-bottom:2px solid var(--blue-100)">Cama</th>
+          <th style="padding:8px 6px;border-bottom:2px solid var(--blue-100)">Estado</th>
+          <th style="padding:8px 6px;border-bottom:2px solid var(--blue-100)">Días hosp.</th>
+          <th style="padding:8px 6px;border-bottom:2px solid var(--blue-100);color:var(--red-600)">Días ARM</th>
+          <th style="padding:8px 6px;border-bottom:2px solid var(--blue-100)">Días TET</th>
+          <th style="padding:8px 6px;border-bottom:2px solid var(--blue-100)">Días TQT ARM</th>
+          <th style="padding:8px 6px;border-bottom:2px solid var(--blue-100)">Días TQT esp.</th>
+          <th style="padding:8px 6px;border-bottom:2px solid var(--blue-100)">PVE</th>
+          <th style="padding:8px 6px;border-bottom:2px solid var(--blue-100)">PVE exit.</th>
+          <th style="padding:8px 6px;border-bottom:2px solid var(--blue-100)">Extub.</th>
+          <th style="padding:8px 6px;border-bottom:2px solid var(--blue-100)">Eval. deg.</th>
+          <th style="padding:8px 6px;border-bottom:2px solid var(--blue-100)">Ctrl. cuff</th>
+          <th style="padding:8px 6px;border-bottom:2px solid var(--blue-100)">Evol. total</th>
+        </tr>
+      </thead>
+      <tbody>${filas||'<tr><td colspan="16" style="text-align:center;padding:2rem;color:var(--text-muted)">Sin datos</td></tr>'}</tbody>
+    </table>
+    </div>
+  </div>`;
+}
+
+// ── Exportar indicadores a Excel ─────────────────────────
+async function exportarIndicadores(vista, mesStr){
+  const rows = [];
+  if(vista==='mensual'){
+    rows.push(['Indicador', ...SECTORES.map(SECTOR_LBL), 'TOTAL']);
+    const calcFila = (label, fn) => [label, ...SECTORES.map(fn), SECTORES.reduce((s,sala)=>s+(fn(sala)||0),0)];
+    rows.push(['Mes:', mesStr]);
+    rows.push([]);
+    rows.push(['PRESTACIONES']);
+    rows.push(calcFila('Prestaciones totales', s=>evolucionesEnMes(s,mesStr)));
+    rows.push(['ARM / VENTILACIÓN']);
+    rows.push(calcFila('Días de ARMI totales', s=>patients.filter(p=>!s||p.sala===s).reduce((acc,p)=>acc+diasARMenMes(p,mesStr),0)));
+    rows.push(calcFila('Días de TET', s=>evoluciones.filter(e=>e.date?.startsWith(mesStr)&&e.interfaz==='TET'&&(!s||patients.find(p=>p.id===e.patientId)?.sala===s)).length));
+    rows.push(calcFila('Días de TQT en ARM', s=>evoluciones.filter(e=>e.date?.startsWith(mesStr)&&e.interfaz==='TQT'&&(!s||patients.find(p=>p.id===e.patientId)?.sala===s)).length));
+    rows.push(calcFila('Días de TQT sin ARM', s=>evoluciones.filter(e=>e.date?.startsWith(mesStr)&&(e.interfaz||'').includes('TQT espontáneo')&&(!s||patients.find(p=>p.id===e.patientId)?.sala===s)).length));
+    rows.push(calcFila('Pacientes únicos en ARM', s=>pacientesEnARMenMes(s,mesStr)));
+    rows.push(['EXTUBACIONES']);
+    rows.push(calcFila('Exitosas', s=>evoluciones.filter(e=>e.date?.startsWith(mesStr)&&e.extubacion==='Sí — planificada'&&e.pveResult==='Exitosa'&&(!s||patients.find(p=>p.id===e.patientId)?.sala===s)).length));
+    rows.push(calcFila('Fallidas', s=>evoluciones.filter(e=>e.date?.startsWith(mesStr)&&e.extubacion?.startsWith('Sí')&&e.pveResult?.startsWith('Fallida')&&(!s||patients.find(p=>p.id===e.patientId)?.sala===s)).length));
+    rows.push(calcFila('No programadas', s=>evoluciones.filter(e=>e.date?.startsWith(mesStr)&&e.extubacion==='Sí — no planificada'&&(!s||patients.find(p=>p.id===e.patientId)?.sala===s)).length));
+    rows.push(['VÍA AÉREA / CUFF']);
+    rows.push(calcFila('Controles de cuff', s=>controlCuffEnMes(s,mesStr)));
+    rows.push(calcFila('Evaluaciones de deglución', s=>deglucionEnMes(s,mesStr)));
+  } else {
+    rows.push(['Paciente','DNI','Sala','Cama','Estado','Días hosp.','Días ARM','Días TET','Días TQT ARM','Días TQT esp.','PVE','PVE exitosas','Extubaciones','Eval. deglución','Ctrl. cuff','Evoluciones']);
+    patients.forEach(p=>{
+      const evos = evoluciones.filter(e=>e.patientId===p.id&&!e.tipo);
+      const diasArm = p.inicioARM ? (daysBetween(p.inicioARM,p.finARM||today())||0)+1 : 0;
+      rows.push([
+        `${p.apellido}, ${p.nombre}`, p.dni||'', SALA_LABEL[p.sala]||p.sala||'', p.cama||'', p.estado||'',
+        p.fIHosp ? (daysBetween(p.fIHosp,p.fEUTI||today())||0)+1 : '',
+        diasArm||'', evos.filter(e=>e.interfaz==='TET').length||'',
+        evos.filter(e=>e.interfaz==='TQT').length||'',
+        evos.filter(e=>(e.interfaz||'').includes('TQT espontáneo')).length||'',
+        evos.filter(e=>e.pve&&e.pve!=='No'&&e.pve!=='').length||'',
+        evos.filter(e=>e.pveResult==='Exitosa').length||'',
+        evos.filter(e=>e.extubacion?.startsWith('Sí')).length||'',
+        evos.filter(e=>e.deglusion&&e.deglusion!=='No realizada').length||'',
+        evos.filter(e=>e.cuffM||e.cuffT||e.cuffN).length||'',
+        evos.length
+      ]);
+    });
+  }
+
+  const csv = rows.map(r=>r.map(c=>
+    typeof c==='string' && c.includes(',') ? `"${c}"` : c
+  ).join(',')).join('\n');
+  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `indicadores_HBEE_kine_${vista}_${mesStr||today().slice(0,7)}.csv`;
+  a.click();
+  addLog('export','Exportó indicadores: '+vista);
+}
+
 
 // ════════════════════════════════════════════════════════
 //  EXPORTAR DATOS
