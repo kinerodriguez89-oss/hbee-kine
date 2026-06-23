@@ -946,6 +946,26 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
       </div>
     </div>
 
+    <!-- ══ Signos vitales (siempre visible) ══ -->
+    <div class="form-section" id="vsBox">
+      <div class="form-section-title"><i class="ti ti-heartbeat"></i> Signos vitales (monitor)</div>
+      <div class="form-row four" style="margin-top:8px">
+        <div class="form-group"><label>FC (lpm)</label><input type="number" id="eFC" inputmode="numeric"></div>
+        <div class="form-group"><label>TA sistólica</label><input type="number" id="eTAS" inputmode="numeric" placeholder="120"></div>
+        <div class="form-group"><label>TA diastólica</label><input type="number" id="eTAD" inputmode="numeric" placeholder="80"></div>
+        <div class="form-group"><label>TAM (calculada)</label><input type="text" id="eTAM" readonly style="background:var(--blue-50);color:var(--blue-800);font-weight:600"></div>
+      </div>
+      <div class="form-row three">
+        <div class="form-group"><label>SpO₂ monitor (%)</label><input type="number" id="eSpO2Mon" inputmode="numeric" max="100"></div>
+        <div class="form-group"><label>FR monitor (rpm)</label><input type="number" id="eFRMon" inputmode="numeric"></div>
+        <div class="form-group"><label>PIC (mmHg)</label><input type="number" id="ePIC" inputmode="numeric" placeholder="Si tiene sensor"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>EtCO₂ (mmHg)</label><input type="number" id="eEtCO2" inputmode="numeric" placeholder="Si tiene capnografía"></div>
+      </div>
+    </div>
+
+    <!-- Sedación / Neurológico -->
     <!-- ══ Ventilación — árbol de decisión ══ -->
     <div class="form-section">
       <div class="form-section-title"><i class="ti ti-lungs"></i> Ventilación</div>
@@ -1045,132 +1065,6 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
 
     <!-- ══ Bloques solo cuando está en ARM ══ -->
     <div id="armOnlyBlock" style="display:none">
-
-    <!-- Peso Corporal Predicho — destacado -->
-    <div class="form-section" id="pcpBox" style="display:none">
-      <div class="form-section-title"><i class="ti ti-ruler-2"></i> Peso corporal predicho (ventilación protectora)</div>
-      <div id="pcpContent" style="display:flex;flex-wrap:wrap;gap:10px"></div>
-    </div>
-
-    <!-- Mecánica ventilatoria -->
-    <div class="accordion-header" onclick="toggleAccordion('accVent')">
-      <span><i class="ti ti-lungs" style="margin-right:6px;color:var(--blue-400)"></i>Mecánica ventilatoria</span>
-      <i class="ti ti-chevron-down accordion-arrow open" id="arrVent"></i>
-    </div>
-    <div class="accordion-body open" id="accVent">
-      <div class="form-row three" style="margin-top:8px">
-        <div class="form-group"><label>Modo ventilatorio</label>
-          <select id="eModo">
-            <option value="">-</option>
-            <option>VC-CMV</option><option>PC-CMV</option><option>SIMV-VC</option><option>SIMV-PC</option>
-            <option>PS/CPAP</option><option>BIPAP</option><option>APRV</option>
-            <option>VMNI — BIPAP</option><option>VMNI — CPAP</option>
-          </select>
-        </div>
-        <div class="form-group"><label>VT (ml)</label><input type="number" id="eVT" inputmode="decimal" placeholder="ml"></div>
-        <div class="form-group"><label>VT ml/kg PCP</label><input type="text" id="eVTkg" readonly style="background:var(--gray-50);color:var(--blue-800);font-weight:600"><div class="form-hint">VT / PCP del paciente</div></div>
-      </div>
-      <div class="form-row four">
-        <div class="form-group"><label>FR (rpm)</label><input type="number" id="eFR" inputmode="numeric"></div>
-        <div class="form-group"><label>PEEP (cmH₂O)</label><input type="number" id="ePEEP" inputmode="decimal" step="0.5"></div>
-        <div class="form-group"><label>FiO₂ (%)</label><input type="number" id="eFiO2" inputmode="numeric" min="21" max="100"></div>
-        <div class="form-group"><label>Ti total (seg)</label><input type="number" id="eTi" inputmode="decimal" step="0.1"></div>
-      </div>
-      <div class="form-row four">
-        <div class="form-group"><label>Ppico (cmH₂O)</label><input type="number" id="ePpico" inputmode="decimal"></div>
-        <div class="form-group"><label>Pplat (cmH₂O)</label><input type="number" id="ePplat" inputmode="decimal"></div>
-        <div class="form-group"><label>PEEPt (cmH₂O)</label><input type="number" id="ePEEPt" inputmode="decimal"></div>
-        <div class="form-group"><label>PC (cmH₂O)</label><input type="number" id="ePC" inputmode="decimal"></div>
-      </div>
-      <div class="form-row four">
-        <div class="form-group"><label>DP (cmH₂O)</label><input type="number" id="eDP" inputmode="decimal"><div class="form-hint">Pplat − PEEPt</div></div>
-        <div class="form-group"><label>Crs (ml/cmH₂O)</label><input type="number" id="eCrs" inputmode="decimal"><div class="form-hint">Compliance resp.</div></div>
-        <div class="form-group"><label>Rinsp (cmH₂O/L/s)</label><input type="number" id="eRinsp" inputmode="decimal"></div>
-        <div class="form-group"><label>Flujo pico (L/min)</label><input type="number" id="eFlujo" inputmode="decimal"></div>
-      </div>
-      <div class="form-row three">
-        <div class="form-group"><label>Mec. Power (J/min)</label><input type="number" id="eMP" inputmode="decimal"><div class="form-hint">Potencia mecánica</div></div>
-        <div class="form-group"><label>Elastic Ratio</label><input type="number" id="eER" inputmode="decimal" step="0.1"><div class="form-hint">(4×DP) + FR</div></div>
-        <div class="form-group"><label>Cte. tiempo (seg)</label><input type="number" id="eCT" inputmode="decimal" step="0.01"><div class="form-hint">Crs × Rinsp / 1000</div></div>
-      </div>
-      <div id="ctMultiplesBox" style="display:none;gap:8px;margin-top:8px;flex-wrap:wrap"></div>
-    </div>
-
-    <hr class="sep">
-
-    <!-- EAB -->
-    <div class="accordion-header" onclick="toggleAccordion('accEAB')">
-      <span><i class="ti ti-droplet" style="margin-right:6px;color:var(--teal-400)"></i>Equilibrio ácido-base (EAB)</span>
-      <i class="ti ti-chevron-down accordion-arrow" id="arrEAB"></i>
-    </div>
-    <div class="accordion-body open" id="accEAB">
-      <div class="form-row four" style="margin-top:8px">
-        <div class="form-group"><label>pH</label><input type="number" id="ePH" inputmode="decimal" step="0.01" placeholder="7.35–7.45"></div>
-        <div class="form-group"><label>pCO₂ (mmHg)</label><input type="number" id="ePCO2" inputmode="decimal" placeholder="35–45"></div>
-        <div class="form-group"><label>pO₂ (mmHg)</label><input type="number" id="ePO2" inputmode="decimal"></div>
-        <div class="form-group"><label>HCO₃ (mEq/L)</label><input type="number" id="eHCO3" inputmode="decimal" placeholder="22–26"></div>
-      </div>
-      <div class="form-row">
-        <div class="form-group"><label>SpO₂ (%)</label><input type="number" id="eSpO2" inputmode="numeric" max="100"></div>
-        <div class="form-group"><label>PAFI</label><input type="number" id="ePAFI" inputmode="decimal"><div class="form-hint">PO₂ / FiO₂</div></div>
-      </div>
-    </div>
-
-    <hr class="sep">
-
-    <!-- PVE -->
-    <div class="accordion-header" onclick="toggleAccordion('accPVE')">
-      <span><i class="ti ti-activity" style="margin-right:6px;color:var(--teal-600)"></i>Prueba de ventilación espontánea (PVE)</span>
-      <i class="ti ti-chevron-down accordion-arrow" id="arrPVE"></i>
-    </div>
-    <div class="accordion-body" id="accPVE">
-      <div class="form-row three" style="margin-top:8px">
-        <div class="form-group"><label>¿Se realizó PVE?</label>
-          <select id="ePVE"><option value="">-</option><option>No</option><option>Sí — CPAP</option><option>Sí — T-pieza</option><option>Sí — PS mínima</option></select>
-        </div>
-        <div class="form-group"><label>Duración (min)</label><input type="number" id="ePVEtmin" inputmode="numeric" placeholder="30, 60, 120…"></div>
-        <div class="form-group"><label>Resultado</label>
-          <select id="ePVEresult"><option value="">-</option><option>Exitosa</option><option>Fallida — fatigó</option><option>Fallida — desaturó</option><option>Fallida — hemodinámico</option><option>Fallida — otra causa</option></select>
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group"><label>Tipo de PVE</label>
-          <select id="ePVETipo"><option value="">-</option><option>Primera PVE</option><option>PVE de rutina</option><option>PVE pre-extubación</option></select>
-        </div>
-        <div class="form-group"><label>¿Extubación?</label>
-          <select id="eExtubacion"><option value="">-</option><option>No</option><option>Sí — planificada</option><option>Sí — no planificada</option><option>Sí — fallida (reintubación)</option></select>
-        </div>
-        <div class="form-group"><label>Interfaz post-extubación</label>
-          <select id="eInterfazPE"><option value="">-</option><option>CAFO</option><option>VMNI</option><option>Cánula nasal</option><option>Máscara Venturi</option><option>Aire ambiente</option></select>
-        </div>
-        <div class="form-group"><label>N° PVEs acumuladas</label><input type="text" id="eNPVEDisplay" readonly style="background:var(--gray-50);color:var(--blue-800);font-weight:600"><div class="form-hint">Calculado automáticamente</div></div>
-      </div>
-    </div>
-
-    <hr class="sep">
-
-    </div><!-- fin armOnlyBlock -->
-
-    <!-- ══ Signos vitales (siempre visible) ══ -->
-    <div class="form-section" id="vsBox">
-      <div class="form-section-title"><i class="ti ti-heartbeat"></i> Signos vitales (monitor)</div>
-      <div class="form-row four" style="margin-top:8px">
-        <div class="form-group"><label>FC (lpm)</label><input type="number" id="eFC" inputmode="numeric"></div>
-        <div class="form-group"><label>TA sistólica</label><input type="number" id="eTAS" inputmode="numeric" placeholder="120"></div>
-        <div class="form-group"><label>TA diastólica</label><input type="number" id="eTAD" inputmode="numeric" placeholder="80"></div>
-        <div class="form-group"><label>TAM (calculada)</label><input type="text" id="eTAM" readonly style="background:var(--blue-50);color:var(--blue-800);font-weight:600"></div>
-      </div>
-      <div class="form-row three">
-        <div class="form-group"><label>SpO₂ monitor (%)</label><input type="number" id="eSpO2Mon" inputmode="numeric" max="100"></div>
-        <div class="form-group"><label>FR monitor (rpm)</label><input type="number" id="eFRMon" inputmode="numeric"></div>
-        <div class="form-group"><label>PIC (mmHg)</label><input type="number" id="ePIC" inputmode="numeric" placeholder="Si tiene sensor"></div>
-      </div>
-      <div class="form-row">
-        <div class="form-group"><label>EtCO₂ (mmHg)</label><input type="number" id="eEtCO2" inputmode="numeric" placeholder="Si tiene capnografía"></div>
-      </div>
-    </div>
-
-    <!-- Sedación / Neurológico -->
     <div class="accordion-header" onclick="toggleAccordion('accSed')">
       <span><i class="ti ti-brain" style="margin-right:6px;color:var(--purple-400)"></i>Neurológico / Sedoanalgesia</span>
       <i class="ti ti-chevron-down accordion-arrow" id="arrSed"></i>
@@ -1289,6 +1183,112 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
     <hr class="sep">
 
     <!-- AKM / Movilización -->
+
+    <!-- Peso Corporal Predicho — destacado -->
+    <div class="form-section" id="pcpBox" style="display:none">
+      <div class="form-section-title"><i class="ti ti-ruler-2"></i> Peso corporal predicho (ventilación protectora)</div>
+      <div id="pcpContent" style="display:flex;flex-wrap:wrap;gap:10px"></div>
+    </div>
+
+    <!-- Mecánica ventilatoria -->
+    <div class="accordion-header" onclick="toggleAccordion('accVent')">
+      <span><i class="ti ti-lungs" style="margin-right:6px;color:var(--blue-400)"></i>Mecánica ventilatoria</span>
+      <i class="ti ti-chevron-down accordion-arrow open" id="arrVent"></i>
+    </div>
+    <div class="accordion-body open" id="accVent">
+      <div class="form-row three" style="margin-top:8px">
+        <div class="form-group"><label>Modo ventilatorio</label>
+          <select id="eModo">
+            <option value="">-</option>
+            <option>VC-CMV</option><option>PC-CMV</option><option>SIMV-VC</option><option>SIMV-PC</option>
+            <option>PS/CPAP</option><option>BIPAP</option><option>APRV</option>
+            <option>VMNI — BIPAP</option><option>VMNI — CPAP</option>
+          </select>
+        </div>
+        <div class="form-group"><label>VT (ml)</label><input type="number" id="eVT" inputmode="decimal" placeholder="ml"></div>
+        <div class="form-group"><label>VT ml/kg PCP</label><input type="text" id="eVTkg" readonly style="background:var(--gray-50);color:var(--blue-800);font-weight:600"><div class="form-hint">VT / PCP del paciente</div></div>
+      </div>
+      <div class="form-row four">
+        <div class="form-group"><label>FR (rpm)</label><input type="number" id="eFR" inputmode="numeric"></div>
+        <div class="form-group"><label>PEEP (cmH₂O)</label><input type="number" id="ePEEP" inputmode="decimal" step="0.5"></div>
+        <div class="form-group"><label>FiO₂ (%)</label><input type="number" id="eFiO2" inputmode="numeric" min="21" max="100"></div>
+        <div class="form-group"><label>Ti total (seg)</label><input type="number" id="eTi" inputmode="decimal" step="0.1"></div>
+      </div>
+      <div class="form-row four">
+        <div class="form-group"><label>Ppico (cmH₂O)</label><input type="number" id="ePpico" inputmode="decimal"></div>
+        <div class="form-group"><label>Pplat (cmH₂O)</label><input type="number" id="ePplat" inputmode="decimal"></div>
+        <div class="form-group"><label>PEEPt (cmH₂O)</label><input type="number" id="ePEEPt" inputmode="decimal"></div>
+        <div class="form-group"><label>PC (cmH₂O)</label><input type="number" id="ePC" inputmode="decimal"></div>
+      </div>
+      <div class="form-row four">
+        <div class="form-group"><label>DP (cmH₂O)</label><input type="number" id="eDP" inputmode="decimal"><div class="form-hint">Pplat − PEEPt</div></div>
+        <div class="form-group"><label>Crs (ml/cmH₂O)</label><input type="number" id="eCrs" inputmode="decimal"><div class="form-hint">Compliance resp.</div></div>
+        <div class="form-group"><label>Rinsp (cmH₂O/L/s)</label><input type="number" id="eRinsp" inputmode="decimal"></div>
+        <div class="form-group"><label>Flujo pico (L/min)</label><input type="number" id="eFlujo" inputmode="decimal"></div>
+      </div>
+      <div class="form-row three">
+        <div class="form-group"><label>Mec. Power (J/min)</label><input type="number" id="eMP" inputmode="decimal"><div class="form-hint">Potencia mecánica</div></div>
+        <div class="form-group"><label>Elastic Ratio</label><input type="number" id="eER" inputmode="decimal" step="0.1"><div class="form-hint">(4×DP) + FR</div></div>
+        <div class="form-group"><label>Cte. tiempo (seg)</label><input type="number" id="eCT" inputmode="decimal" step="0.01"><div class="form-hint">Crs × Rinsp / 1000</div></div>
+      </div>
+      <div id="ctMultiplesBox" style="display:none;gap:8px;margin-top:8px;flex-wrap:wrap"></div>
+    </div>
+
+    <hr class="sep">
+
+    <!-- EAB -->
+    <div class="accordion-header" onclick="toggleAccordion('accEAB')">
+      <span><i class="ti ti-droplet" style="margin-right:6px;color:var(--teal-400)"></i>Equilibrio ácido-base (EAB)</span>
+      <i class="ti ti-chevron-down accordion-arrow" id="arrEAB"></i>
+    </div>
+    <div class="accordion-body open" id="accEAB">
+      <div class="form-row four" style="margin-top:8px">
+        <div class="form-group"><label>pH</label><input type="number" id="ePH" inputmode="decimal" step="0.01" placeholder="7.35–7.45"></div>
+        <div class="form-group"><label>pCO₂ (mmHg)</label><input type="number" id="ePCO2" inputmode="decimal" placeholder="35–45"></div>
+        <div class="form-group"><label>pO₂ (mmHg)</label><input type="number" id="ePO2" inputmode="decimal"></div>
+        <div class="form-group"><label>HCO₃ (mEq/L)</label><input type="number" id="eHCO3" inputmode="decimal" placeholder="22–26"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>SpO₂ (%)</label><input type="number" id="eSpO2" inputmode="numeric" max="100"></div>
+        <div class="form-group"><label>PAFI</label><input type="number" id="ePAFI" inputmode="decimal"><div class="form-hint">PO₂ / FiO₂</div></div>
+      </div>
+    </div>
+
+    <hr class="sep">
+
+    <!-- PVE -->
+    <div class="accordion-header" onclick="toggleAccordion('accPVE')">
+      <span><i class="ti ti-activity" style="margin-right:6px;color:var(--teal-600)"></i>Prueba de ventilación espontánea (PVE)</span>
+      <i class="ti ti-chevron-down accordion-arrow" id="arrPVE"></i>
+    </div>
+    <div class="accordion-body" id="accPVE">
+      <div class="form-row three" style="margin-top:8px">
+        <div class="form-group"><label>¿Se realizó PVE?</label>
+          <select id="ePVE"><option value="">-</option><option>No</option><option>Sí — CPAP</option><option>Sí — T-pieza</option><option>Sí — PS mínima</option></select>
+        </div>
+        <div class="form-group"><label>Duración (min)</label><input type="number" id="ePVEtmin" inputmode="numeric" placeholder="30, 60, 120…"></div>
+        <div class="form-group"><label>Resultado</label>
+          <select id="ePVEresult"><option value="">-</option><option>Exitosa</option><option>Fallida — fatigó</option><option>Fallida — desaturó</option><option>Fallida — hemodinámico</option><option>Fallida — otra causa</option></select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Tipo de PVE</label>
+          <select id="ePVETipo"><option value="">-</option><option>Primera PVE</option><option>PVE de rutina</option><option>PVE pre-extubación</option></select>
+        </div>
+        <div class="form-group"><label>¿Extubación?</label>
+          <select id="eExtubacion"><option value="">-</option><option>No</option><option>Sí — planificada</option><option>Sí — no planificada</option><option>Sí — fallida (reintubación)</option></select>
+        </div>
+        <div class="form-group"><label>Interfaz post-extubación</label>
+          <select id="eInterfazPE"><option value="">-</option><option>CAFO</option><option>VMNI</option><option>Cánula nasal</option><option>Máscara Venturi</option><option>Aire ambiente</option></select>
+        </div>
+        <div class="form-group"><label>N° PVEs acumuladas</label><input type="text" id="eNPVEDisplay" readonly style="background:var(--gray-50);color:var(--blue-800);font-weight:600"><div class="form-hint">Calculado automáticamente</div></div>
+      </div>
+    </div>
+
+    <hr class="sep">
+
+    </div><!-- fin armOnlyBlock -->
+
     <div class="accordion-header" onclick="toggleAccordion('accAKM')">
       <span><i class="ti ti-run" style="margin-right:6px;color:var(--green-400)"></i>Movilización / AKM</span>
       <i class="ti ti-chevron-down accordion-arrow" id="arrAKM"></i>
@@ -2166,7 +2166,6 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
             <option value="Domicilio">Alta a domicilio</option>
             <option value="Tercer nivel">Derivación a centro de tercer nivel</option>
             <option value="Contrareferencia">Contrareferencia a otra institución</option>
-            <option value="Piso">Pase a piso / sala general</option>
           </select>
         </div>
       </div>
