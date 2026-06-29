@@ -1350,24 +1350,6 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
           <input type="hidden" id="ePosicionARM" value="supino">
         </div>
 
-        <!-- Cuff Leak Test: solo para TET + grupo quemado -->
-        <div id="eSubCuffLeak" style="display:none;margin-top:10px">
-          <div class="dec-label">Cuff Leak Test</div>
-          <div class="form-row" style="margin-top:6px">
-            <div class="form-group">
-              <select id="eCuffLeak">
-                <option value="">-</option>
-                <option value="positivo">Positivo — No hay fuga (edema subglótico)</option>
-                <option value="negativo">Negativo — Hay fuga (sin edema significativo)</option>
-                <option value="no_evaluado">No evaluado</option>
-              </select>
-              <div class="form-hint" style="color:var(--amber-600)">
-                <strong>+</strong> (No fuga) = riesgo de edema post extubación · 
-                <strong>−</strong> (Hay fuga) = vía aérea permeable
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
 
       <!-- Si no ARM: opciones de interfaz espontánea -->
@@ -1750,6 +1732,22 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
           <select id="eInterfazPE"><option value="">-</option><option>CAFO</option><option>VMNI</option><option>Cánula nasal</option><option>Máscara Venturi</option><option>Aire ambiente</option></select>
         </div>
         <div class="form-group"><label>N° PVEs acumuladas</label><input type="text" id="eNPVEDisplay" readonly style="background:var(--gray-50);color:var(--blue-800);font-weight:600"><div class="form-hint">Calculado automáticamente</div></div>
+      </div>
+      <!-- Cuff Leak Test: solo pacientes quemados -->
+      <div id="pveSubCuffLeak" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--text-muted);margin-bottom:8px">Cuff Leak Test</div>
+        <div class="form-group">
+          <select id="eCuffLeak">
+            <option value="">-</option>
+            <option value="positivo">Positivo — No hay fuga (edema subglótico)</option>
+            <option value="negativo">Negativo — Hay fuga (sin edema significativo)</option>
+            <option value="no_evaluado">No evaluado</option>
+          </select>
+          <div class="form-hint" style="color:var(--amber-600);margin-top:4px">
+            <strong>Positivo</strong> (sin fuga) = riesgo de edema post extubación &nbsp;·&nbsp;
+            <strong>Negativo</strong> (hay fuga) = vía aérea permeable
+          </div>
+        </div>
       </div>
     </div>
 
@@ -5883,8 +5881,10 @@ function openEvolucion(patientId){
   // Posición del paciente
   const posBox = document.getElementById('eSubARMposicion'); if(posBox) posBox.style.display = 'none';
   setPosicionARM('supino');
-  // Cuff Leak Test
-  const cuffLeakBox = document.getElementById('eSubCuffLeak'); if(cuffLeakBox) cuffLeakBox.style.display = 'none';
+  // Cuff Leak Test: visible solo para quemados (dentro de PVE)
+  const esQuemado = patients.find(x=>x.id===patientId)?.tipoKine === 'quemado';
+  const pveSubCuff = document.getElementById('pveSubCuffLeak');
+  if(pveSubCuff) pveSubCuff.style.display = esQuemado ? 'block' : 'none';
   const cuffLeakEl = document.getElementById('eCuffLeak'); if(cuffLeakEl) cuffLeakEl.value = '';
   document.getElementById('eSubCNflujo').style.display = 'none';
   document.getElementById('eSubMVfio2').style.display = 'none';
@@ -6036,13 +6036,6 @@ function selectInterfaz(tipo, visual=true){
   // Posición del paciente: mostrar cuando hay interfaz ARM
   const posBox = document.getElementById('eSubARMposicion');
   if(posBox) posBox.style.display = ['TET','TQT'].includes(tipo) ? 'block' : 'none';
-
-  // Cuff Leak Test: solo TET + grupo quemado
-  const cuffLeakBox = document.getElementById('eSubCuffLeak');
-  if(cuffLeakBox){
-    const esQuemado = (currentEvoPacId && patients.find(p=>p.id===currentEvoPacId)?.tipoKine === 'quemado');
-    cuffLeakBox.style.display = (tipo === 'TET' && esQuemado) ? 'block' : 'none';
-  }
 
   // Si es ARM, abrir acordeón de mecánica automáticamente
   if(visual && ['TET','TQT'].includes(tipo)){
