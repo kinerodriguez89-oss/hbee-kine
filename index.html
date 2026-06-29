@@ -1318,6 +1318,56 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
             </div>
           </div>
         </div>
+
+        <!-- Posición del paciente: siempre visible cuando está en ARM -->
+        <div id="eSubARMposicion" style="display:none;margin-top:10px">
+          <div class="dec-label">Posición del paciente</div>
+          <div class="dec-row" style="margin-top:6px">
+            <button type="button" class="dec-btn dec-sel" id="eBtnSupino" onclick="setPosicionARM('supino')">
+              <i class="ti ti-bed"></i> Decúbito supino
+            </button>
+            <button type="button" class="dec-btn" id="eBtnProno" onclick="setPosicionARM('prono')">
+              <i class="ti ti-rotate-180"></i> Decúbito prono
+            </button>
+          </div>
+          <!-- Ciclo de prono: solo si es prono -->
+          <div id="eSubPronoCiclo" style="display:none;margin-top:10px" class="dec-sublevel">
+            <div class="form-group" style="max-width:200px">
+              <label>Ciclo de decúbito prono</label>
+              <select id="ePronoCiclo">
+                <option value="">-</option>
+                <option value="1">1° ciclo</option>
+                <option value="2">2° ciclo</option>
+                <option value="3">3° ciclo</option>
+                <option value="4">4° ciclo</option>
+                <option value="5">5° ciclo</option>
+                <option value="6">6° ciclo</option>
+                <option value="7">7° ciclo</option>
+                <option value="8">8° o más ciclos</option>
+              </select>
+            </div>
+          </div>
+          <input type="hidden" id="ePosicionARM" value="supino">
+        </div>
+
+        <!-- Cuff Leak Test: solo para TET + grupo quemado -->
+        <div id="eSubCuffLeak" style="display:none;margin-top:10px">
+          <div class="dec-label">Cuff Leak Test</div>
+          <div class="form-row" style="margin-top:6px">
+            <div class="form-group">
+              <select id="eCuffLeak">
+                <option value="">-</option>
+                <option value="positivo">Positivo — No hay fuga (edema subglótico)</option>
+                <option value="negativo">Negativo — Hay fuga (sin edema significativo)</option>
+                <option value="no_evaluado">No evaluado</option>
+              </select>
+              <div class="form-hint" style="color:var(--amber-600)">
+                <strong>+</strong> (No fuga) = riesgo de edema post extubación · 
+                <strong>−</strong> (Hay fuga) = vía aérea permeable
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Si no ARM: opciones de interfaz espontánea -->
@@ -5640,6 +5690,12 @@ function openEvolucion(patientId){
   const diamEl = document.getElementById('eARMdiametro'); if(diamEl) diamEl.value = '';
   const adsEl = document.getElementById('eTETads'); if(adsEl) adsEl.value = '';
   const adsBox = document.getElementById('eSubTETads'); if(adsBox) adsBox.style.display = 'none';
+  // Posición del paciente
+  const posBox = document.getElementById('eSubARMposicion'); if(posBox) posBox.style.display = 'none';
+  setPosicionARM('supino');
+  // Cuff Leak Test
+  const cuffLeakBox = document.getElementById('eSubCuffLeak'); if(cuffLeakBox) cuffLeakBox.style.display = 'none';
+  const cuffLeakEl = document.getElementById('eCuffLeak'); if(cuffLeakEl) cuffLeakEl.value = '';
   document.getElementById('eSubCNflujo').style.display = 'none';
   document.getElementById('eSubMVfio2').style.display = 'none';
   document.getElementById('eSubMRflujo').style.display = 'none';
@@ -5760,6 +5816,14 @@ function openEvolucion(patientId){
   openModal('modalEvo');
 }
 
+function setPosicionARM(pos){
+  document.getElementById('ePosicionARM').value = pos;
+  document.getElementById('eBtnSupino').className = 'dec-btn' + (pos==='supino'?' dec-sel':'');
+  document.getElementById('eBtnProno').className  = 'dec-btn' + (pos==='prono' ?' dec-sel':'');
+  document.getElementById('eSubPronoCiclo').style.display = pos==='prono' ? 'block' : 'none';
+  if(pos==='supino') document.getElementById('ePronoCiclo').value = '';
+}
+
 function selectInterfaz(tipo, visual=true){
   // Limpiar selección anterior
   document.querySelectorAll('#eSubArmSi .interfaz-btn').forEach(b=>b.className='interfaz-btn');
@@ -5778,6 +5842,18 @@ function selectInterfaz(tipo, visual=true){
     if(diamLabel) diamLabel.textContent = tipo === 'TET' ? 'Diámetro interno TET (mm)' : 'Diámetro interno TQT (mm)';
   }
   if(adsBox) adsBox.style.display = tipo === 'TET' ? 'block' : 'none';
+
+  // Posición del paciente: mostrar cuando hay interfaz ARM
+  const posBox = document.getElementById('eSubARMposicion');
+  if(posBox) posBox.style.display = ['TET','TQT'].includes(tipo) ? 'block' : 'none';
+
+  // Cuff Leak Test: solo TET + grupo quemado
+  const cuffLeakBox = document.getElementById('eSubCuffLeak');
+  if(cuffLeakBox){
+    const esQuemado = (currentEvoPacId && patients.find(p=>p.id===currentEvoPacId)?.tipoKine === 'quemado');
+    cuffLeakBox.style.display = (tipo === 'TET' && esQuemado) ? 'block' : 'none';
+  }
+
   // Si es ARM, abrir acordeón de mecánica automáticamente
   if(visual && ['TET','TQT'].includes(tipo)){
     const accVent = document.getElementById('accVent');
@@ -5814,6 +5890,9 @@ async function guardarEvolucion(){
     interfazEsp:G('eInterfazEsp'),
     armDiametro:G('eARMdiametro'),
     tetADS:G('eTETads'),
+    posicionARM:G('ePosicionARM')||'supino',
+    pronoCiclo:G('ePronoCiclo')||null,
+    cuffLeak:G('eCuffLeak')||null,
     cnFlujo:G('eCNflujo'), mvFio2:G('eMVfio2'), mrFlujo:G('eMRflujo'),
     cnafFlujo:GN('eCNAFflujo'), cnafFio2:GN('eCNAFfio2'),
     modo:G('eModo'), vt:GN('eVT'), vtkg:GN('eVTkg'), fr:GN('eFR'), peep:GN('ePEEP'),
