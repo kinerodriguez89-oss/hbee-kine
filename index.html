@@ -2214,21 +2214,107 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
         </div>
 
         <div class="deg-section-title">3. Praxias bucolinguales</div>
-        ${[
-          ['degPraxCierre','Cierre y sellado labial'],
-          ['degPraxLengua','Movimientos de lengua (AP, lateral, ascenso, manipulación)'],
-          ['degPraxPaladar','Elevación del paladar blando'],
-          ['degPraxMandibula','Ascenso/descenso/lateralización mandibular'],
-          ['degPraxMejillas','Contracción e inflado de mejillas'],
-          ['degPraxHioides','Elevación del hioides y movilidad laríngea'],
-        ].map(([id,lbl])=>`<div class="formal-item"><label>${lbl}</label><select id="${id}" style="width:180px"><option value="">-</option><option>Normal</option><option>Alterado leve</option><option>Alterado moderado</option><option>Alterado severo</option><option>No evaluable</option></select></div>`).join('')}
+        <div class="formal-item">
+          <label>Cierre y sellado labial</label>
+          <select id="degPraxCierre" style="width:180px">
+            <option value="">-</option>
+              <option>Normal</option>
+              <option>Alterado leve</option>
+              <option>Alterado moderado</option>
+              <option>Alterado severo</option>
+              <option>No evaluable</option>
+          </select>
+        </div>
+        <div class="formal-item">
+          <label>Movimientos de lengua (AP, lateral, ascenso, manipulación)</label>
+          <select id="degPraxLengua" style="width:180px">
+            <option value="">-</option>
+              <option>Normal</option>
+              <option>Alterado leve</option>
+              <option>Alterado moderado</option>
+              <option>Alterado severo</option>
+              <option>No evaluable</option>
+          </select>
+        </div>
+        <div class="formal-item">
+          <label>Elevación del paladar blando</label>
+          <select id="degPraxPaladar" style="width:180px">
+            <option value="">-</option>
+              <option>Normal</option>
+              <option>Alterado leve</option>
+              <option>Alterado moderado</option>
+              <option>Alterado severo</option>
+              <option>No evaluable</option>
+          </select>
+        </div>
+        <div class="formal-item">
+          <label>Ascenso/descenso/lateralización mandibular</label>
+          <select id="degPraxMandibula" style="width:180px">
+            <option value="">-</option>
+              <option>Normal</option>
+              <option>Alterado leve</option>
+              <option>Alterado moderado</option>
+              <option>Alterado severo</option>
+              <option>No evaluable</option>
+          </select>
+        </div>
+        <div class="formal-item">
+          <label>Contracción e inflado de mejillas</label>
+          <select id="degPraxMejillas" style="width:180px">
+            <option value="">-</option>
+              <option>Normal</option>
+              <option>Alterado leve</option>
+              <option>Alterado moderado</option>
+              <option>Alterado severo</option>
+              <option>No evaluable</option>
+          </select>
+        </div>
+        <div class="formal-item">
+          <label>Elevación del hioides y movilidad laríngea</label>
+          <select id="degPraxHioides" style="width:180px">
+            <option value="">-</option>
+              <option>Normal</option>
+              <option>Alterado leve</option>
+              <option>Alterado moderado</option>
+              <option>Alterado severo</option>
+              <option>No evaluable</option>
+          </select>
+        </div>
 
         <div class="deg-section-title">4. Evaluación muscular</div>
-        ${[
-          ['degMuscFacial','Musculatura facial (fuerza, tono, simetría)'],
-          ['degMuscLingual','Musculatura lingual (fuerza, resistencia, coordinación)'],
-          ['degMuscFaringea','Musculatura faríngea'],
-        ].map(([id,lbl])=>`<div class="formal-item"><label>${lbl}</label><select id="${id}" style="width:180px"><option value="">-</option><option>Normal</option><option>Alterado leve</option><option>Alterado moderado</option><option>Alterado severo</option><option>No evaluable</option></select></div>`).join('')}
+        <div class="formal-item">
+          <label>Musculatura facial (fuerza, tono, simetría)</label>
+          <select id="degMuscFacial" style="width:180px">
+            <option value="">-</option>
+              <option>Normal</option>
+              <option>Alterado leve</option>
+              <option>Alterado moderado</option>
+              <option>Alterado severo</option>
+              <option>No evaluable</option>
+          </select>
+        </div>
+        <div class="formal-item">
+          <label>Musculatura lingual (fuerza, resistencia, coordinación)</label>
+          <select id="degMuscLingual" style="width:180px">
+            <option value="">-</option>
+              <option>Normal</option>
+              <option>Alterado leve</option>
+              <option>Alterado moderado</option>
+              <option>Alterado severo</option>
+              <option>No evaluable</option>
+          </select>
+        </div>
+        <div class="formal-item">
+          <label>Musculatura faríngea</label>
+          <select id="degMuscFaringea" style="width:180px">
+            <option value="">-</option>
+              <option>Normal</option>
+              <option>Alterado leve</option>
+              <option>Alterado moderado</option>
+              <option>Alterado severo</option>
+              <option>No evaluable</option>
+          </select>
+        </div>
 
         <div class="deg-section-title">5. Evaluación de la voz</div>
         <div class="form-row three">
@@ -2244,20 +2330,64 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
         </div>
 
         <div class="deg-section-title">6. Mecanismos de protección de vía aérea</div>
-        ${[
-          ['degTosVol','Tos voluntaria efectiva'],
-          ['degCarraspeo','Capacidad de carraspeo'],
-          ['degReflNauseoso','Reflejo nauseoso'],
-          ['degReflDeglutorio','Reflejo deglutorio espontáneo'],
-        ].map(([id,lbl])=>`<div class="formal-item"><label>${lbl}</label><select id="${id}" style="width:180px"><option value="">-</option><option>Presente y efectivo</option><option>Presente y disminuido</option><option>Ausente</option><option>No evaluado</option></select></div>`).join('')}
+        <div class="formal-item">
+          <label>Tos voluntaria efectiva</label>
+          <select id="degTosVol" style="width:180px">
+            <option value="">-</option>
+            <option>Presente y efectivo</option><option>Presente y disminuido</option><option>Ausente</option><option>No evaluado</option>
+          </select>
+        </div>
+        <div class="formal-item">
+          <label>Capacidad de carraspeo</label>
+          <select id="degCarraspeo" style="width:180px">
+            <option value="">-</option>
+            <option>Presente y efectivo</option><option>Presente y disminuido</option><option>Ausente</option><option>No evaluado</option>
+          </select>
+        </div>
+        <div class="formal-item">
+          <label>Reflejo nauseoso</label>
+          <select id="degReflNauseoso" style="width:180px">
+            <option value="">-</option>
+            <option>Presente y efectivo</option><option>Presente y disminuido</option><option>Ausente</option><option>No evaluado</option>
+          </select>
+        </div>
+        <div class="formal-item">
+          <label>Reflejo deglutorio espontáneo</label>
+          <select id="degReflDeglutorio" style="width:180px">
+            <option value="">-</option>
+            <option>Presente y efectivo</option><option>Presente y disminuido</option><option>Ausente</option><option>No evaluado</option>
+          </select>
+        </div>
 
         <div class="deg-section-title">7. Manejo del lago orofaríngeo</div>
-        ${[
-          ['degLOFVoz','Claridad de voz'],
-          ['degLOFAscLar','Ascenso laríngeo'],
-          ['degLOFHigieneOral','Estado de limpieza oral'],
-          ['degLOFTosPost','Presencia de tos post trago'],
-        ].map(([id,lbl])=>`<div class="formal-item"><label>${lbl}</label><select id="${id}" style="width:180px"><option value="">-</option><option>Normal / Sin alteración</option><option>Alterado</option><option>No evaluado</option></select></div>`).join('')}
+        <div class="formal-item">
+          <label>Claridad de voz</label>
+          <select id="degLOFVoz" style="width:180px">
+            <option value="">-</option>
+            <option>Normal / Sin alteración</option><option>Alterado</option><option>No evaluado</option>
+          </select>
+        </div>
+        <div class="formal-item">
+          <label>Ascenso laríngeo</label>
+          <select id="degLOFAscLar" style="width:180px">
+            <option value="">-</option>
+            <option>Normal / Sin alteración</option><option>Alterado</option><option>No evaluado</option>
+          </select>
+        </div>
+        <div class="formal-item">
+          <label>Estado de limpieza oral</label>
+          <select id="degLOFHigieneOral" style="width:180px">
+            <option value="">-</option>
+            <option>Normal / Sin alteración</option><option>Alterado</option><option>No evaluado</option>
+          </select>
+        </div>
+        <div class="formal-item">
+          <label>Presencia de tos post trago</label>
+          <select id="degLOFTosPost" style="width:180px">
+            <option value="">-</option>
+            <option>Normal / Sin alteración</option><option>Alterado</option><option>No evaluado</option>
+          </select>
+        </div>
         <div class="formal-item">
           <label>Blue test (solo si tiene TQT)</label>
           <select id="degBlueTest" style="width:180px">
@@ -2269,27 +2399,87 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
         </div>
 
         <div class="deg-section-title">8. Evaluación de reflejos</div>
-        ${[
-          ['degReflRDD','Reflejo disparador deglutorio (RDD)'],
-          ['degReflTosVAA','Tos refleja (con VAA)'],
-        ].map(([id,lbl])=>`<div class="formal-item"><label>${lbl}</label><select id="${id}" style="width:180px"><option value="">-</option><option>Normal</option><option>Retardado</option><option>Ausente</option><option>No evaluado</option></select></div>`).join('')}
+        <div class="formal-item">
+          <label>Reflejo disparador deglutorio (RDD)</label>
+          <select id="degReflRDD" style="width:180px">
+            <option value="">-</option>
+            <option>Normal</option><option>Retardado</option><option>Ausente</option><option>No evaluado</option>
+          </select>
+        </div>
+        <div class="formal-item">
+          <label>Tos refleja (con VAA)</label>
+          <select id="degReflTosVAA" style="width:180px">
+            <option value="">-</option>
+            <option>Normal</option><option>Retardado</option><option>Ausente</option><option>No evaluado</option>
+          </select>
+        </div>
 
         <div class="deg-section-title">9. Evaluación de válvulas</div>
-        ${[
-          ['degVal1','1ª válvula — Cierre de labios'],
-          ['degVal2','2ª válvula — Cierre del velo lingual'],
-          ['degVal3','3ª válvula — Cierre del velo del paladar'],
-          ['degVal4','4ª válvula — Cierre del vestíbulo laríngeo'],
-          ['degVal5','5ª válvula — Cierre del esfínter esofágico superior'],
-        ].map(([id,lbl])=>`<div class="formal-item"><label>${lbl}</label><select id="${id}" style="width:180px"><option value="">-</option><option>Competente</option><option>Incompetente leve</option><option>Incompetente moderada</option><option>Incompetente severa</option><option>No evaluada</option></select></div>`).join('')}
+        <div class="formal-item">
+          <label>1ª válvula — Cierre de labios</label>
+          <select id="degVal1" style="width:180px">
+            <option value="">-</option>
+            <option>Competente</option><option>Incompetente leve</option><option>Incompetente moderada</option><option>Incompetente severa</option><option>No evaluada</option>
+          </select>
+        </div>
+        <div class="formal-item">
+          <label>2ª válvula — Cierre del velo lingual</label>
+          <select id="degVal2" style="width:180px">
+            <option value="">-</option>
+            <option>Competente</option><option>Incompetente leve</option><option>Incompetente moderada</option><option>Incompetente severa</option><option>No evaluada</option>
+          </select>
+        </div>
+        <div class="formal-item">
+          <label>3ª válvula — Cierre del velo del paladar</label>
+          <select id="degVal3" style="width:180px">
+            <option value="">-</option>
+            <option>Competente</option><option>Incompetente leve</option><option>Incompetente moderada</option><option>Incompetente severa</option><option>No evaluada</option>
+          </select>
+        </div>
+        <div class="formal-item">
+          <label>4ª válvula — Cierre del vestíbulo laríngeo</label>
+          <select id="degVal4" style="width:180px">
+            <option value="">-</option>
+            <option>Competente</option><option>Incompetente leve</option><option>Incompetente moderada</option><option>Incompetente severa</option><option>No evaluada</option>
+          </select>
+        </div>
+        <div class="formal-item">
+          <label>5ª válvula — Cierre del esfínter esofágico superior</label>
+          <select id="degVal5" style="width:180px">
+            <option value="">-</option>
+            <option>Competente</option><option>Incompetente leve</option><option>Incompetente moderada</option><option>Incompetente severa</option><option>No evaluada</option>
+          </select>
+        </div>
 
         <div class="deg-section-title">10. Etapas de la deglución</div>
-        ${[
-          ['degEtapaOralPrep','Etapa oral preparatoria'],
-          ['degEtapaOral','Etapa oral'],
-          ['degEtapaFaringea','Etapa faríngea'],
-          ['degEtapaEsofagica','Etapa esofágica'],
-        ].map(([id,lbl])=>`<div class="formal-item"><label>${lbl}</label><select id="${id}" style="width:180px"><option value="">-</option><option>Sin alteraciones</option><option>Alteración leve</option><option>Alteración moderada</option><option>Alteración severa</option><option>No evaluada</option></select></div>`).join('')}
+        <div class="formal-item">
+          <label>Etapa oral preparatoria</label>
+          <select id="degEtapaOralPrep" style="width:180px">
+            <option value="">-</option>
+            <option>Sin alteraciones</option><option>Alteración leve</option><option>Alteración moderada</option><option>Alteración severa</option><option>No evaluada</option>
+          </select>
+        </div>
+        <div class="formal-item">
+          <label>Etapa oral</label>
+          <select id="degEtapaOral" style="width:180px">
+            <option value="">-</option>
+            <option>Sin alteraciones</option><option>Alteración leve</option><option>Alteración moderada</option><option>Alteración severa</option><option>No evaluada</option>
+          </select>
+        </div>
+        <div class="formal-item">
+          <label>Etapa faríngea</label>
+          <select id="degEtapaFaringea" style="width:180px">
+            <option value="">-</option>
+            <option>Sin alteraciones</option><option>Alteración leve</option><option>Alteración moderada</option><option>Alteración severa</option><option>No evaluada</option>
+          </select>
+        </div>
+        <div class="formal-item">
+          <label>Etapa esofágica</label>
+          <select id="degEtapaEsofagica" style="width:180px">
+            <option value="">-</option>
+            <option>Sin alteraciones</option><option>Alteración leve</option><option>Alteración moderada</option><option>Alteración severa</option><option>No evaluada</option>
+          </select>
+        </div>
 
         <div class="deg-section-title">11. Evaluación con alimentos</div>
         <div class="form-row three">
