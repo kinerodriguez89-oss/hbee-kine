@@ -5144,8 +5144,8 @@ function renderEvoMinTimeline(patientId){
 }
 
 function openFichaNeuroFromEvo(){
-  closeModal('modalEvoMin');
-  openFichaNeuro(currentEvoMinPacId);
+  if(!currentEvoPacId) return;
+  openFichaNeuro(currentEvoPacId);
 }
 
 // ════════════════════════════════════════════════════════
