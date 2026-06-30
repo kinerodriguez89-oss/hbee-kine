@@ -834,13 +834,23 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
 
         <!-- Respiratorio -->
         <div id="fGrupoResp" style="display:none">
-          <div class="form-group">
-            <label>¿Está en ARM al ingreso?</label>
-            <select id="fRespARM">
-              <option value="">-</option>
-              <option value="Si">Sí</option>
-              <option value="No">No</option>
-            </select>
+          <div class="form-row">
+            <div class="form-group">
+              <label>¿Está en ARM al ingreso?</label>
+              <select id="fRespARM">
+                <option value="">-</option>
+                <option value="Si">Sí</option>
+                <option value="No">No</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>¿Es oxigenodependiente?</label>
+              <select id="fRespO2Dep">
+                <option value="">-</option>
+                <option value="Si">Sí</option>
+                <option value="No">No</option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -1006,14 +1016,13 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
               <input type="number" id="fQuemSCQ" inputmode="decimal" placeholder="0–100" min="0" max="100">
             </div>
             <div class="form-group">
-              <label>Grado de quemadura predominante</label>
+              <label>Tipo de quemadura (según Benaim)</label>
               <select id="fQuemGrado">
                 <option value="">-</option>
-                <option>Grado I</option>
-                <option>Grado II superficial (A)</option>
-                <option>Grado II profundo (AB)</option>
-                <option>Grado III</option>
-                <option>Mixto</option>
+                <option value="A">Tipo A — Superficial (epidérmica, dolorosa, con flictenas)</option>
+                <option value="AB">Tipo AB — Intermedia (hipoestesia, evolución variable)</option>
+                <option value="B">Tipo B — Profunda (anestésica, con escara, requiere injerto)</option>
+                <option value="Mixto">Mixta (combinación de tipos)</option>
               </select>
             </div>
           </div>
@@ -4694,6 +4703,7 @@ function resetGrupoFields(){
   document.getElementById('fERCData').value='';
   // Campos respiratorio
   const rARM=document.getElementById('fRespARM'); if(rARM) rARM.value='';
+  const rO2=document.getElementById('fRespO2Dep'); if(rO2) rO2.value='';
   // Campos quemado
   ['fQuemSCQ','fQuemGrado'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   ['fQuemCara','fQuemCuello','fQuemToraxAnt','fQuemDorso','fQuemAbdomen','fQuemMMSS_der','fQuemMMSS_izq','fQuemMMII_der','fQuemMMII_izq','fQuemPerine'].forEach(id=>{
@@ -5954,7 +5964,7 @@ function openEditPaciente(id){
   // Campos específicos por grupo
   resetGrupoFields();
   if(p.tipoKine) onGrupoChange(p.tipoKine);
-  if(p.tipoKine==='respiratorio'){ M('fRespARM',p.grupoRespARM||''); }
+  if(p.tipoKine==='respiratorio'){ M('fRespARM',p.grupoRespARM||''); M('fRespO2Dep',p.grupoRespO2Dep||''); }
   if(p.tipoKine==='neurologico'){
     M('fNeuroFoco', p.grupoNeuroFoco||'');
     onFocoChange(p.grupoNeuroFoco||'');
@@ -6031,6 +6041,7 @@ async function guardarPaciente(){
     tipoKine:G('fTipoKine'), estFx:G('fEstFx'),
     // Campos por grupo
     grupoRespARM: G('fRespARM')||null,
+    grupoRespO2Dep: G('fRespO2Dep')||null,
     grupoNeuroFoco:G('fNeuroFoco')||null,
     grupoFocoTipo:G('fNeuroFocoTipo')||null, grupoFocoLado:G('fNeuroFocoLado')||null,
     grupoComprTipo:G('fNeuroComprTipo')||null, grupoComprExt:G('fNeuroComprExt')||null,
