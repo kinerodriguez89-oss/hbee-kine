@@ -2783,17 +2783,104 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
     <!-- Escalas funcionales -->
     <div class="form-section">
       <div class="form-section-title"><i class="ti ti-chart-bar"></i> Escalas funcionales</div>
-      <div class="form-row four">
-        <div class="form-group"><label>Barthel previo /100</label><input type="number" id="neuroBarthelPrev" min="0" max="100" inputmode="numeric"></div>
-        <div class="form-group"><label>Barthel actual /100</label><input type="number" id="neuroBarthelAct" min="0" max="100" inputmode="numeric"></div>
-        <div class="form-group"><label>FAC previo /5</label><input type="number" id="neuroFACPrev" min="0" max="5" inputmode="numeric"></div>
-        <div class="form-group"><label>FAC actual /5</label><input type="number" id="neuroFACAct" min="0" max="5" inputmode="numeric"></div>
+
+      <div class="deg-section-title" style="margin-top:0">Índice de Barthel (AVD) — previo y actual</div>
+      <div class="form-row">
+        <div class="form-group"><label>Barthel previo</label>
+          <select id="neuroBarthelPrev">
+            <option value="">-</option>
+            <option value="100">100 — Independiente</option>
+            <option value="91">91-99 — Independencia con desviaciones</option>
+            <option value="61">61-90 — Dependencia leve</option>
+            <option value="21">21-60 — Dependencia moderada</option>
+            <option value="0">0-20 — Dependencia total</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Barthel actual</label>
+          <select id="neuroBarthelAct">
+            <option value="">-</option>
+            <option value="100">100 — Independiente</option>
+            <option value="91">91-99 — Independencia con desviaciones</option>
+            <option value="61">61-90 — Dependencia leve</option>
+            <option value="21">21-60 — Dependencia moderada</option>
+            <option value="0">0-20 — Dependencia total</option>
+          </select>
+        </div>
       </div>
-      <div class="form-row four">
-        <div class="form-group"><label>PASS movilidad /21</label><input type="number" id="neuroPASSMov" min="0" max="21" inputmode="numeric"></div>
-        <div class="form-group"><label>PASS equilibrio /15</label><input type="number" id="neuroPASSEq" min="0" max="15" inputmode="numeric"></div>
-        <div class="form-group"><label>TCT /100</label><input type="number" id="neuroTCT" min="0" max="100" inputmode="numeric"></div>
-        <div class="form-group"><label>Salud autopercibida /10</label><input type="number" id="neuroSaludAP" min="0" max="10" inputmode="numeric"></div>
+
+      <div class="deg-section-title">FAC — Functional Ambulation Category — previo y actual</div>
+      <div class="form-row">
+        <div class="form-group"><label>FAC previo</label>
+          <select id="neuroFACPrev">
+            <option value="">-</option>
+            <option value="0">0 — No deambula</option>
+            <option value="1">1 — Necesita ayuda continua de 2 personas</option>
+            <option value="2">2 — Necesita ayuda continua de 1 persona</option>
+            <option value="3">3 — Necesita supervisión, sin contacto físico</option>
+            <option value="4">4 — Independiente en superficie plana</option>
+            <option value="5">5 — Independiente en cualquier superficie</option>
+          </select>
+        </div>
+        <div class="form-group"><label>FAC actual</label>
+          <select id="neuroFACAct">
+            <option value="">-</option>
+            <option value="0">0 — No deambula</option>
+            <option value="1">1 — Necesita ayuda continua de 2 personas</option>
+            <option value="2">2 — Necesita ayuda continua de 1 persona</option>
+            <option value="3">3 — Necesita supervisión, sin contacto físico</option>
+            <option value="4">4 — Independiente en superficie plana</option>
+            <option value="5">5 — Independiente en cualquier superficie</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="deg-section-title">PASS — Postural Assessment Scale for Stroke</div>
+      <div class="form-row">
+        <div class="form-group"><label>PASS — Mantener postura (0-21, 7 ítems)</label>
+          <select id="neuroPASSMov">
+            <option value="">-</option>
+            <option value="0">0 — No logra mantener ninguna postura</option>
+            <option value="6">6 — Mantiene posturas básicas con asistencia</option>
+            <option value="12">12 — Mantiene posturas con mínima asistencia</option>
+            <option value="18">18 — Mantiene la mayoría de posturas sin ayuda</option>
+            <option value="21">21 — Mantiene todas las posturas sin ayuda</option>
+          </select>
+        </div>
+        <div class="form-group"><label>PASS — Cambiar de postura (0-15, 5 ítems)</label>
+          <select id="neuroPASSEq">
+            <option value="">-</option>
+            <option value="0">0 — No logra cambiar de postura</option>
+            <option value="4">4 — Cambia con asistencia importante</option>
+            <option value="8">8 — Cambia con asistencia moderada</option>
+            <option value="12">12 — Cambia con mínima asistencia</option>
+            <option value="15">15 — Cambia de forma independiente</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="deg-section-title">TCT — Trunk Control Test</div>
+      <div class="form-row">
+        <div class="form-group"><label>TCT (0-100, 4 ítems x 0/12/25)</label>
+          <select id="neuroTCT">
+            <option value="">-</option>
+            <option value="0">0 — Sin control de tronco</option>
+            <option value="25">25 — Control mínimo (1 ítem logrado)</option>
+            <option value="50">50 — Control parcial (2 ítems logrados)</option>
+            <option value="75">75 — Buen control (3 ítems logrados)</option>
+            <option value="100">100 — Control de tronco completo</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Salud autopercibida (EVA 0-10)</label>
+          <select id="neuroSaludAP">
+            <option value="">-</option>
+            <option value="0">0 — Peor estado de salud imaginable</option>
+            <option value="2">2 — Muy mala</option>
+            <option value="4">4 — Mala</option>
+            <option value="6">6 — Regular</option>
+            <option value="8">8 — Buena</option>
+            <option value="10">10 — Mejor estado de salud imaginable</option>
+          </select>
+        </div>
       </div>
     </div>
 
@@ -2808,12 +2895,216 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
             <th style="padding:6px 8px;text-align:center;font-size:10px;color:var(--blue-800)">Izq.</th>
           </tr></thead>
           <tbody id="mrcTableBody">
-            ${['Abd. hombro','Flex. codo','Ext. muñeca','Ext. codo','Ext. dedos','Flex. cadera','Ext. rodilla','Dorsifl. tobillo','Ext. hallux','Flex. plantar'].map((g,i)=>`
             <tr style="border-bottom:1px solid var(--border)">
-              <td style="padding:5px 8px">${g}</td>
-              <td style="padding:5px 8px;text-align:center"><input type="number" id="mrcD${i}" min="0" max="5" style="width:50px;padding:3px;text-align:center;border:1px solid var(--border);border-radius:4px;font-family:var(--font);font-size:12px"></td>
-              <td style="padding:5px 8px;text-align:center"><input type="number" id="mrcI${i}" min="0" max="5" style="width:50px;padding:3px;text-align:center;border:1px solid var(--border);border-radius:4px;font-family:var(--font);font-size:12px"></td>
-            </tr>`).join('')}
+              <td style="padding:5px 8px">Abd. hombro</td>
+              <td style="padding:5px 8px;text-align:center"><select id="mrcD0" onchange="calcMRCScore()" style="width:60px;padding:3px;text-align:center;border:1px solid var(--border);border-radius:4px;font-family:var(--font);font-size:12px">
+                  <option value="">-</option>
+                  <option value="0">0</option>
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                  <option value="5">5</option>
+                </select></td>
+              <td style="padding:5px 8px;text-align:center"><select id="mrcI0" onchange="calcMRCScore()" style="width:60px;padding:3px;text-align:center;border:1px solid var(--border);border-radius:4px;font-family:var(--font);font-size:12px">
+                  <option value="">-</option>
+                  <option value="0">0</option>
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                  <option value="5">5</option>
+                </select></td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--border)">
+              <td style="padding:5px 8px">Flex. codo</td>
+              <td style="padding:5px 8px;text-align:center"><select id="mrcD1" onchange="calcMRCScore()" style="width:60px;padding:3px;text-align:center;border:1px solid var(--border);border-radius:4px;font-family:var(--font);font-size:12px">
+                  <option value="">-</option>
+                  <option value="0">0</option>
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                  <option value="5">5</option>
+                </select></td>
+              <td style="padding:5px 8px;text-align:center"><select id="mrcI1" onchange="calcMRCScore()" style="width:60px;padding:3px;text-align:center;border:1px solid var(--border);border-radius:4px;font-family:var(--font);font-size:12px">
+                  <option value="">-</option>
+                  <option value="0">0</option>
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                  <option value="5">5</option>
+                </select></td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--border)">
+              <td style="padding:5px 8px">Ext. muñeca</td>
+              <td style="padding:5px 8px;text-align:center"><select id="mrcD2" onchange="calcMRCScore()" style="width:60px;padding:3px;text-align:center;border:1px solid var(--border);border-radius:4px;font-family:var(--font);font-size:12px">
+                  <option value="">-</option>
+                  <option value="0">0</option>
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                  <option value="5">5</option>
+                </select></td>
+              <td style="padding:5px 8px;text-align:center"><select id="mrcI2" onchange="calcMRCScore()" style="width:60px;padding:3px;text-align:center;border:1px solid var(--border);border-radius:4px;font-family:var(--font);font-size:12px">
+                  <option value="">-</option>
+                  <option value="0">0</option>
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                  <option value="5">5</option>
+                </select></td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--border)">
+              <td style="padding:5px 8px">Ext. codo</td>
+              <td style="padding:5px 8px;text-align:center"><select id="mrcD3" onchange="calcMRCScore()" style="width:60px;padding:3px;text-align:center;border:1px solid var(--border);border-radius:4px;font-family:var(--font);font-size:12px">
+                  <option value="">-</option>
+                  <option value="0">0</option>
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                  <option value="5">5</option>
+                </select></td>
+              <td style="padding:5px 8px;text-align:center"><select id="mrcI3" onchange="calcMRCScore()" style="width:60px;padding:3px;text-align:center;border:1px solid var(--border);border-radius:4px;font-family:var(--font);font-size:12px">
+                  <option value="">-</option>
+                  <option value="0">0</option>
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                  <option value="5">5</option>
+                </select></td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--border)">
+              <td style="padding:5px 8px">Ext. dedos</td>
+              <td style="padding:5px 8px;text-align:center"><select id="mrcD4" onchange="calcMRCScore()" style="width:60px;padding:3px;text-align:center;border:1px solid var(--border);border-radius:4px;font-family:var(--font);font-size:12px">
+                  <option value="">-</option>
+                  <option value="0">0</option>
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                  <option value="5">5</option>
+                </select></td>
+              <td style="padding:5px 8px;text-align:center"><select id="mrcI4" onchange="calcMRCScore()" style="width:60px;padding:3px;text-align:center;border:1px solid var(--border);border-radius:4px;font-family:var(--font);font-size:12px">
+                  <option value="">-</option>
+                  <option value="0">0</option>
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                  <option value="5">5</option>
+                </select></td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--border)">
+              <td style="padding:5px 8px">Flex. cadera</td>
+              <td style="padding:5px 8px;text-align:center"><select id="mrcD5" onchange="calcMRCScore()" style="width:60px;padding:3px;text-align:center;border:1px solid var(--border);border-radius:4px;font-family:var(--font);font-size:12px">
+                  <option value="">-</option>
+                  <option value="0">0</option>
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                  <option value="5">5</option>
+                </select></td>
+              <td style="padding:5px 8px;text-align:center"><select id="mrcI5" onchange="calcMRCScore()" style="width:60px;padding:3px;text-align:center;border:1px solid var(--border);border-radius:4px;font-family:var(--font);font-size:12px">
+                  <option value="">-</option>
+                  <option value="0">0</option>
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                  <option value="5">5</option>
+                </select></td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--border)">
+              <td style="padding:5px 8px">Ext. rodilla</td>
+              <td style="padding:5px 8px;text-align:center"><select id="mrcD6" onchange="calcMRCScore()" style="width:60px;padding:3px;text-align:center;border:1px solid var(--border);border-radius:4px;font-family:var(--font);font-size:12px">
+                  <option value="">-</option>
+                  <option value="0">0</option>
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                  <option value="5">5</option>
+                </select></td>
+              <td style="padding:5px 8px;text-align:center"><select id="mrcI6" onchange="calcMRCScore()" style="width:60px;padding:3px;text-align:center;border:1px solid var(--border);border-radius:4px;font-family:var(--font);font-size:12px">
+                  <option value="">-</option>
+                  <option value="0">0</option>
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                  <option value="5">5</option>
+                </select></td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--border)">
+              <td style="padding:5px 8px">Dorsifl. tobillo</td>
+              <td style="padding:5px 8px;text-align:center"><select id="mrcD7" onchange="calcMRCScore()" style="width:60px;padding:3px;text-align:center;border:1px solid var(--border);border-radius:4px;font-family:var(--font);font-size:12px">
+                  <option value="">-</option>
+                  <option value="0">0</option>
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                  <option value="5">5</option>
+                </select></td>
+              <td style="padding:5px 8px;text-align:center"><select id="mrcI7" onchange="calcMRCScore()" style="width:60px;padding:3px;text-align:center;border:1px solid var(--border);border-radius:4px;font-family:var(--font);font-size:12px">
+                  <option value="">-</option>
+                  <option value="0">0</option>
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                  <option value="5">5</option>
+                </select></td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--border)">
+              <td style="padding:5px 8px">Ext. hallux</td>
+              <td style="padding:5px 8px;text-align:center"><select id="mrcD8" onchange="calcMRCScore()" style="width:60px;padding:3px;text-align:center;border:1px solid var(--border);border-radius:4px;font-family:var(--font);font-size:12px">
+                  <option value="">-</option>
+                  <option value="0">0</option>
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                  <option value="5">5</option>
+                </select></td>
+              <td style="padding:5px 8px;text-align:center"><select id="mrcI8" onchange="calcMRCScore()" style="width:60px;padding:3px;text-align:center;border:1px solid var(--border);border-radius:4px;font-family:var(--font);font-size:12px">
+                  <option value="">-</option>
+                  <option value="0">0</option>
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                  <option value="5">5</option>
+                </select></td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--border)">
+              <td style="padding:5px 8px">Flex. plantar</td>
+              <td style="padding:5px 8px;text-align:center"><select id="mrcD9" onchange="calcMRCScore()" style="width:60px;padding:3px;text-align:center;border:1px solid var(--border);border-radius:4px;font-family:var(--font);font-size:12px">
+                  <option value="">-</option>
+                  <option value="0">0</option>
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                  <option value="5">5</option>
+                </select></td>
+              <td style="padding:5px 8px;text-align:center"><select id="mrcI9" onchange="calcMRCScore()" style="width:60px;padding:3px;text-align:center;border:1px solid var(--border);border-radius:4px;font-family:var(--font);font-size:12px">
+                  <option value="">-</option>
+                  <option value="0">0</option>
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                  <option value="5">5</option>
+                </select></td>
+            </tr>
           </tbody>
         </table>
       </div>
