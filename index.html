@@ -846,56 +846,71 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
 
         <!-- Neurológico -->
         <div id="fGrupoNeuro" style="display:none">
-          <div class="form-row">
-            <div class="form-group">
-              <label>¿Tiene foco neurológico?</label>
-              <select id="fNeuroFoco">
-                <option value="">-</option>
-                <option value="Si">Sí</option>
-                <option value="No">No</option>
-              </select>
+          <div class="form-group">
+            <label>¿Tiene foco neurológico?</label>
+            <select id="fNeuroFoco" onchange="onFocoChange(this.value)">
+              <option value="">-</option>
+              <option value="Si">Sí</option>
+              <option value="No">No</option>
+            </select>
+          </div>
+
+          <!-- Detalle del foco: solo si Foco = Sí -->
+          <div id="fFocoDetalle" style="display:none">
+            <div class="form-row">
+              <div class="form-group">
+                <label>Tipo de foco</label>
+                <select id="fNeuroFocoTipo" onchange="onFocoTipoChange(this.value)">
+                  <option value="">-</option>
+                  <option value="Motor">Motor</option>
+                  <option value="Sensitivo">Sensitivo</option>
+                  <option value="Mixto">Mixto</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Lado</label>
+                <select id="fNeuroFocoLado">
+                  <option value="">-</option>
+                  <option value="Izquierdo">Izquierdo</option>
+                  <option value="Derecho">Derecho</option>
+                </select>
+              </div>
             </div>
-            <div class="form-group">
-              <label>Localización del foco</label>
-              <input type="text" id="fNeuroFocoLoc" placeholder="Ej: frontal izquierdo, tronco encéfalo...">
+
+            <!-- Motor o Mixto: Paresia/Plejia + extensión -->
+            <div id="fFocoMotorBox" style="display:none">
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Compromiso</label>
+                  <select id="fNeuroComprTipo" onchange="updateFocoResumen()">
+                    <option value="">-</option>
+                    <option value="paresia">Paresia</option>
+                    <option value="plejia">Plejia</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Extensión</label>
+                  <select id="fNeuroComprExt" onchange="updateFocoResumen()">
+                    <option value="">-</option>
+                    <option value="hemi">Hemi</option>
+                    <option value="mono">Mono</option>
+                    <option value="para">Para</option>
+                    <option value="tetra">Tetra</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-hint" id="fFocoMotorResumen" style="font-weight:600;color:var(--blue-700)"></div>
+            </div>
+
+            <!-- Sensitivo: texto libre -->
+            <div id="fFocoSensBox" style="display:none">
+              <div class="form-group">
+                <label>Localización del compromiso sensitivo</label>
+                <input type="text" id="fNeuroSensTexto" placeholder="Ej: hemicara derecha, miembro inferior izquierdo...">
+              </div>
             </div>
           </div>
-          <div class="form-row three">
-            <div class="form-group">
-              <label>Tipo de compromiso motor</label>
-              <select id="fNeuroTipo">
-                <option value="">-</option>
-                <option>Paresia</option>
-                <option>Plejia</option>
-                <option>Paraparesia</option>
-                <option>Paraplejia</option>
-                <option>Tetraparesia</option>
-                <option>Tetraplejia</option>
-                <option>Sin compromiso motor</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Hemicuerpo afectado</label>
-              <select id="fNeuroHemi">
-                <option value="">-</option>
-                <option>Derecho</option>
-                <option>Izquierdo</option>
-                <option>Bilateral</option>
-                <option>No aplica</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Nivel de conciencia</label>
-              <select id="fNeuroConciencia">
-                <option value="">-</option>
-                <option>Alerta</option>
-                <option>Somnoliento</option>
-                <option>Estuporoso</option>
-                <option>Coma superficial</option>
-                <option>Coma profundo</option>
-              </select>
-            </div>
-          </div>
+
           <div class="form-group">
             <label>Lenguaje</label>
             <select id="fNeuroLenguaje">
@@ -4664,10 +4679,14 @@ function resetGrupoFields(){
   const mrcScore=document.getElementById('fMRCScore'); if(mrcScore) mrcScore.value='';
   const mrcBox=document.getElementById('fMRCResultBox'); if(mrcBox) mrcBox.style.display='none';
   // Campos neurológico
-  ['fNeuroFoco','fNeuroFocoLoc','fNeuroTipo','fNeuroHemi','fNeuroConciencia','fNeuroLenguaje',
+  ['fNeuroFoco','fNeuroFocoTipo','fNeuroFocoLado','fNeuroComprTipo','fNeuroComprExt','fNeuroSensTexto','fNeuroLenguaje',
    'fNeuroSospechaEMC','fGlasgowOcular','fGlasgowVerbal','fGlasgowMotora','fGlasgowScore'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.value='';
   });
+  document.getElementById('fFocoDetalle').style.display='none';
+  document.getElementById('fFocoMotorBox').style.display='none';
+  document.getElementById('fFocoSensBox').style.display='none';
+  document.getElementById('fFocoMotorResumen').textContent='';
   document.getElementById('fGlasgowBox').style.display='none';
   document.getElementById('fGlasgowResultBox').style.display='none';
   document.getElementById('fERCBox').style.display='none';
@@ -4700,6 +4719,49 @@ async function marcarBannerVisto(patientId){
   await persistAll();
   const bannerEl = document.getElementById('evoBannerTraslado');
   if(bannerEl){ bannerEl.innerHTML=''; bannerEl.style.display='none'; }
+}
+
+// ── Foco neurológico ──────────────────────────────────
+function onFocoChange(val){
+  document.getElementById('fFocoDetalle').style.display = val==='Si' ? 'block' : 'none';
+  if(val!=='Si'){
+    document.getElementById('fNeuroFocoTipo').value='';
+    document.getElementById('fNeuroFocoLado').value='';
+    document.getElementById('fFocoMotorBox').style.display='none';
+    document.getElementById('fFocoSensBox').style.display='none';
+  }
+}
+
+function onFocoTipoChange(tipo){
+  document.getElementById('fFocoMotorBox').style.display = (tipo==='Motor'||tipo==='Mixto') ? 'block' : 'none';
+  document.getElementById('fFocoSensBox').style.display = tipo==='Sensitivo' ? 'block' : 'none';
+  updateFocoResumen();
+}
+
+function updateFocoResumen(){
+  const tipoCompr = document.getElementById('fNeuroComprTipo').value;
+  const ext = document.getElementById('fNeuroComprExt').value;
+  const resumenEl = document.getElementById('fFocoMotorResumen');
+  if(!tipoCompr || !ext){ resumenEl.textContent=''; return; }
+  const sufijo = tipoCompr==='paresia' ? 'paresia' : 'plejia';
+  const prefijo = { hemi:'Hemi', mono:'Mono', para:'Para', tetra:'Tetra' }[ext] || '';
+  resumenEl.textContent = `Diagnóstico: ${prefijo}${sufijo}`;
+}
+
+function focoResumenTexto(){
+  const tipo = document.getElementById('fNeuroFocoTipo')?.value;
+  const lado = document.getElementById('fNeuroFocoLado')?.value;
+  if(!tipo) return '';
+  if(tipo==='Sensitivo'){
+    const txt = document.getElementById('fNeuroSensTexto')?.value;
+    return `Sensitivo${lado?' '+lado:''}${txt?' — '+txt:''}`;
+  }
+  const tipoCompr = document.getElementById('fNeuroComprTipo')?.value;
+  const ext = document.getElementById('fNeuroComprExt')?.value;
+  if(!tipoCompr || !ext) return `${tipo}${lado?' '+lado:''}`;
+  const sufijo = tipoCompr==='paresia' ? 'paresia' : 'plejia';
+  const prefijo = { hemi:'Hemi', mono:'Mono', para:'Para', tetra:'Tetra' }[ext] || '';
+  return `${prefijo}${sufijo}${lado?' '+lado:''}${tipo==='Mixto'?' (mixto)':''}`;
 }
 
 // ── Sospecha EMC / vegetativo: Glasgow o botón ERC ──────
@@ -5894,9 +5956,18 @@ function openEditPaciente(id){
   if(p.tipoKine) onGrupoChange(p.tipoKine);
   if(p.tipoKine==='respiratorio'){ M('fRespARM',p.grupoRespARM||''); }
   if(p.tipoKine==='neurologico'){
-    M('fNeuroFoco',p.grupoNeuroFoco||''); M('fNeuroFocoLoc',p.grupoNeuroFocoLoc||'');
-    M('fNeuroTipo',p.grupoNeuroTipo||''); M('fNeuroHemi',p.grupoNeuroHemi||'');
-    M('fNeuroConciencia',p.grupoNeuroConciencia||''); M('fNeuroLenguaje',p.grupoNeuroLenguaje||'');
+    M('fNeuroFoco', p.grupoNeuroFoco||'');
+    onFocoChange(p.grupoNeuroFoco||'');
+    if(p.grupoNeuroFoco==='Si'){
+      M('fNeuroFocoTipo', p.grupoFocoTipo||'');
+      M('fNeuroFocoLado', p.grupoFocoLado||'');
+      onFocoTipoChange(p.grupoFocoTipo||'');
+      M('fNeuroComprTipo', p.grupoComprTipo||'');
+      M('fNeuroComprExt', p.grupoComprExt||'');
+      updateFocoResumen();
+      M('fNeuroSensTexto', p.grupoSensTexto||'');
+    }
+    M('fNeuroLenguaje',p.grupoNeuroLenguaje||'');
     M('fNeuroSospechaEMC', p.grupoSospechaEMC||'');
     onSospechaEMCChange(p.grupoSospechaEMC||'');
     if(p.grupoSospechaEMC==='No' && p.grupoGlasgow){
@@ -5960,9 +6031,12 @@ async function guardarPaciente(){
     tipoKine:G('fTipoKine'), estFx:G('fEstFx'),
     // Campos por grupo
     grupoRespARM: G('fRespARM')||null,
-    grupoNeuroFoco:G('fNeuroFoco')||null, grupoNeuroFocoLoc:G('fNeuroFocoLoc')||null,
-    grupoNeuroTipo:G('fNeuroTipo')||null, grupoNeuroHemi:G('fNeuroHemi')||null,
-    grupoNeuroConciencia:G('fNeuroConciencia')||null, grupoNeuroLenguaje:G('fNeuroLenguaje')||null,
+    grupoNeuroFoco:G('fNeuroFoco')||null,
+    grupoFocoTipo:G('fNeuroFocoTipo')||null, grupoFocoLado:G('fNeuroFocoLado')||null,
+    grupoComprTipo:G('fNeuroComprTipo')||null, grupoComprExt:G('fNeuroComprExt')||null,
+    grupoSensTexto:G('fNeuroSensTexto')||null,
+    grupoFocoResumen: G('fNeuroFoco')==='Si' ? focoResumenTexto() : null,
+    grupoNeuroLenguaje:G('fNeuroLenguaje')||null,
     grupoSospechaEMC: G('fNeuroSospechaEMC')||null,
     grupoGlasgow: G('fNeuroSospechaEMC')==='No' ? {
       ocular:G('fGlasgowOcular')||null, verbal:G('fGlasgowVerbal')||null, motora:G('fGlasgowMotora')||null,
