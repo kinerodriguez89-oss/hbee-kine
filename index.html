@@ -910,6 +910,77 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
               <option>No evaluable (intubado / sedado)</option>
             </select>
           </div>
+
+          <!-- Sospecha de EMC / estado vegetativo -->
+          <div class="form-group" style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
+            <label>¿Sospecha de estado de mínima conciencia o vegetativo?</label>
+            <select id="fNeuroSospechaEMC" onchange="onSospechaEMCChange(this.value)">
+              <option value="">-</option>
+              <option value="Si">Sí</option>
+              <option value="No">No</option>
+            </select>
+          </div>
+
+          <!-- Si NO: Glasgow -->
+          <div id="fGlasgowBox" style="display:none">
+            <div class="form-section-title" style="margin-bottom:8px"><i class="ti ti-activity-heartbeat"></i> Escala de Coma de Glasgow</div>
+            <div class="form-row three">
+              <div class="form-group">
+                <label>Apertura ocular</label>
+                <select id="fGlasgowOcular" onchange="calcGlasgowIngreso()">
+                  <option value="">-</option>
+                  <option value="4">4 — Espontánea</option>
+                  <option value="3">3 — A la voz</option>
+                  <option value="2">2 — Al dolor</option>
+                  <option value="1">1 — Ausente</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Respuesta verbal</label>
+                <select id="fGlasgowVerbal" onchange="calcGlasgowIngreso()">
+                  <option value="">-</option>
+                  <option value="5">5 — Orientada</option>
+                  <option value="4">4 — Confusa</option>
+                  <option value="3">3 — Palabras inapropiadas</option>
+                  <option value="2">2 — Sonidos incomprensibles</option>
+                  <option value="1">1 — Ausente</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Respuesta motora</label>
+                <select id="fGlasgowMotora" onchange="calcGlasgowIngreso()">
+                  <option value="">-</option>
+                  <option value="6">6 — Obedece órdenes</option>
+                  <option value="5">5 — Localiza el dolor</option>
+                  <option value="4">4 — Retira al dolor</option>
+                  <option value="3">3 — Flexión anormal</option>
+                  <option value="2">2 — Extensión anormal</option>
+                  <option value="1">1 — Ausente</option>
+                </select>
+              </div>
+            </div>
+            <div id="fGlasgowResultBox" style="display:none;margin-top:10px;background:var(--blue-50);border:1.5px solid var(--blue-200);border-radius:8px;padding:10px 16px">
+              <div style="display:flex;align-items:center;gap:12px">
+                <div style="text-align:center;min-width:50px">
+                  <div style="font-size:24px;font-weight:800;color:var(--blue-700)" id="fGlasgowTotal">—</div>
+                  <div style="font-size:10px;color:var(--text-muted)">/ 15</div>
+                </div>
+                <div style="font-size:12px;font-weight:600" id="fGlasgowCategoria">—</div>
+              </div>
+            </div>
+            <input type="hidden" id="fGlasgowScore">
+          </div>
+
+          <!-- Si SÍ: botón ERC -->
+          <div id="fERCBox" style="display:none">
+            <button type="button" class="btn" style="background:var(--purple-50);color:var(--purple-800);border:1px solid var(--purple-400);width:100%" onclick="abrirERCIngreso()">
+              <i class="ti ti-brain"></i> Realizar evaluación ERC (CRS-R)
+            </button>
+            <div id="fERCResumen" style="display:none;margin-top:10px;background:var(--purple-50);border:1.5px solid var(--purple-200);border-radius:8px;padding:10px 16px">
+              <div style="font-size:12px;font-weight:700;color:var(--purple-800)" id="fERCResumenTxt">—</div>
+            </div>
+            <input type="hidden" id="fERCData">
+          </div>
         </div>
 
         <!-- Quemado -->
@@ -2520,6 +2591,117 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
           <button class="btn btn-ghost" onclick="closeModal('modalDeglusion')">Cancelar</button>
           <button class="btn btn-primary" onclick="guardarEvalDeglusion()"><i class="ti ti-device-floppy"></i> Guardar evaluación</button>
         </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ════ MODAL EVALUACIÓN ERC (CRS-R) ════ -->
+<div class="modal-overlay" id="modalERC">
+  <div class="modal" style="max-width:680px;max-height:92vh;overflow-y:auto">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">Escala de Recuperación del Coma — ERC (CRS-R)</div>
+        <div class="modal-subtitle" id="ercModalSub"></div>
+      </div>
+      <button class="modal-close" onclick="closeModal('modalERC')">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <div class="deg-section-title">Función auditiva</div>
+      <div class="form-group">
+        <select id="ercAuditiva" onchange="calcERC()">
+          <option value="">-</option>
+          <option value="4">4 — Movimiento consistente a la orden</option>
+          <option value="3">3 — Reproduce movimiento a la orden</option>
+          <option value="2">2 — Localiza el sonido</option>
+          <option value="1">1 — Percibe pero no localiza (susto auditivo)</option>
+          <option value="0">0 — No hay respuesta</option>
+        </select>
+      </div>
+
+      <div class="deg-section-title">Función visual</div>
+      <div class="form-group">
+        <select id="ercVisual" onchange="calcERC()">
+          <option value="">-</option>
+          <option value="5">5 — Reconoce el objeto</option>
+          <option value="4">4 — Localiza el objeto: alcanza</option>
+          <option value="3">3 — Seguimiento visual</option>
+          <option value="2">2 — Fijación visual</option>
+          <option value="1">1 — Amenaza</option>
+          <option value="0">0 — No hay respuesta</option>
+        </select>
+      </div>
+
+      <div class="deg-section-title">Función motora</div>
+      <div class="form-group">
+        <select id="ercMotora" onchange="calcERC()">
+          <option value="">-</option>
+          <option value="6">6 — Uso funcional del objeto</option>
+          <option value="5">5 — Respuesta motora automática</option>
+          <option value="4">4 — Manipulación de objetos</option>
+          <option value="3">3 — Localización de estímulos dolorosos</option>
+          <option value="2">2 — Retirada flexora</option>
+          <option value="1">1 — Postura anómala</option>
+          <option value="0">0 — No hay respuesta / Flacidez</option>
+        </select>
+      </div>
+
+      <div class="deg-section-title">Función oromotora / verbal</div>
+      <div class="form-group">
+        <select id="ercOromotora" onchange="calcERC()">
+          <option value="">-</option>
+          <option value="3">3 — Verbalización inteligible</option>
+          <option value="2">2 — Movimientos orales / Vocalización</option>
+          <option value="1">1 — Movimientos orales reflejos</option>
+          <option value="0">0 — No hay respuesta</option>
+        </select>
+      </div>
+
+      <div class="deg-section-title">Comunicación</div>
+      <div class="form-group">
+        <select id="ercComunicacion" onchange="calcERC()">
+          <option value="">-</option>
+          <option value="2">2 — Funcional: adecuada</option>
+          <option value="1">1 — No funcional: intencional</option>
+          <option value="0">0 — No hay respuesta</option>
+        </select>
+      </div>
+
+      <div class="deg-section-title">Nivel de alerta</div>
+      <div class="form-group">
+        <select id="ercAlerta" onchange="calcERC()">
+          <option value="">-</option>
+          <option value="3">3 — Alerta y atento</option>
+          <option value="2">2 — Apertura ocular espontánea</option>
+          <option value="1">1 — Apertura ocular con estimulación</option>
+          <option value="0">0 — No hay respuesta</option>
+        </select>
+      </div>
+
+      <!-- Resultado -->
+      <div id="ercResultBox" style="display:none;margin-top:14px;border-radius:10px;padding:14px 16px">
+        <div style="display:flex;align-items:center;gap:14px">
+          <div style="text-align:center;min-width:56px">
+            <div style="font-size:32px;font-weight:900" id="ercTotalDisp">-</div>
+            <div style="font-size:10px;color:var(--text-muted)">/ 23</div>
+          </div>
+          <div>
+            <div style="font-weight:700;font-size:14px" id="ercCategoria">-</div>
+            <div style="font-size:11.5px;color:var(--text-muted);margin-top:2px" id="ercDetalle">-</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-top:12px">
+        <label>Observaciones</label>
+        <textarea id="ercObs" rows="2" placeholder="Observaciones adicionales..."></textarea>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeModal('modalERC')">Cancelar</button>
+        <button class="btn btn-primary" onclick="guardarERC()"><i class="ti ti-device-floppy"></i> Guardar evaluación</button>
       </div>
 
     </div>
@@ -4482,9 +4664,15 @@ function resetGrupoFields(){
   const mrcScore=document.getElementById('fMRCScore'); if(mrcScore) mrcScore.value='';
   const mrcBox=document.getElementById('fMRCResultBox'); if(mrcBox) mrcBox.style.display='none';
   // Campos neurológico
-  ['fNeuroFoco','fNeuroFocoLoc','fNeuroTipo','fNeuroHemi','fNeuroConciencia','fNeuroLenguaje'].forEach(id=>{
+  ['fNeuroFoco','fNeuroFocoLoc','fNeuroTipo','fNeuroHemi','fNeuroConciencia','fNeuroLenguaje',
+   'fNeuroSospechaEMC','fGlasgowOcular','fGlasgowVerbal','fGlasgowMotora','fGlasgowScore'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.value='';
   });
+  document.getElementById('fGlasgowBox').style.display='none';
+  document.getElementById('fGlasgowResultBox').style.display='none';
+  document.getElementById('fERCBox').style.display='none';
+  document.getElementById('fERCResumen').style.display='none';
+  document.getElementById('fERCData').value='';
   // Campos respiratorio
   const rARM=document.getElementById('fRespARM'); if(rARM) rARM.value='';
   // Campos quemado
@@ -4512,6 +4700,131 @@ async function marcarBannerVisto(patientId){
   await persistAll();
   const bannerEl = document.getElementById('evoBannerTraslado');
   if(bannerEl){ bannerEl.innerHTML=''; bannerEl.style.display='none'; }
+}
+
+// ── Sospecha EMC / vegetativo: Glasgow o botón ERC ──────
+function onSospechaEMCChange(val){
+  document.getElementById('fGlasgowBox').style.display = val==='No' ? 'block' : 'none';
+  document.getElementById('fERCBox').style.display = val==='Si' ? 'block' : 'none';
+}
+
+function calcGlasgowIngreso(){
+  const o = parseInt(document.getElementById('fGlasgowOcular').value)||null;
+  const v = parseInt(document.getElementById('fGlasgowVerbal').value)||null;
+  const m = parseInt(document.getElementById('fGlasgowMotora').value)||null;
+  const box = document.getElementById('fGlasgowResultBox');
+  if(o===null || v===null || m===null){ box.style.display='none'; document.getElementById('fGlasgowScore').value=''; return; }
+  const total = o+v+m;
+  document.getElementById('fGlasgowTotal').textContent = total;
+  let cat, color;
+  if(total<=8){ cat='Coma / Compromiso severo de conciencia'; color='var(--red-600)'; }
+  else if(total<=12){ cat='Compromiso moderado de conciencia'; color='var(--amber-600)'; }
+  else{ cat='Compromiso leve / Conciencia conservada'; color='var(--teal-600)'; }
+  document.getElementById('fGlasgowCategoria').textContent = cat;
+  document.getElementById('fGlasgowCategoria').style.color = color;
+  document.getElementById('fGlasgowScore').value = total;
+  box.style.display = 'block';
+}
+
+// ── ERC (CRS-R) ──────────────────────────────────────────
+let ercOrigen = null; // 'ingreso' | 'evolucion' — desde dónde se abrió
+function abrirERCIngreso(){
+  ercOrigen = 'ingreso';
+  document.getElementById('ercModalSub').textContent = 'Evaluación al ingreso';
+  ['ercAuditiva','ercVisual','ercMotora','ercOromotora','ercComunicacion','ercAlerta','ercObs'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  document.getElementById('ercResultBox').style.display='none';
+  openModal('modalERC');
+}
+
+function calcERC(){
+  const ids = ['ercAuditiva','ercVisual','ercMotora','ercOromotora','ercComunicacion','ercAlerta'];
+  const vals = ids.map(id=>{ const v=document.getElementById(id).value; return v===''?null:parseInt(v); });
+  const llenos = vals.filter(v=>v!==null);
+  if(llenos.length===0){ document.getElementById('ercResultBox').style.display='none'; return; }
+  const total = llenos.reduce((s,v)=>s+v,0);
+  const completo = llenos.length===6;
+
+  // Determinar marcadores según ítem seleccionado
+  const aud = parseInt(document.getElementById('ercAuditiva').value);
+  const vis = parseInt(document.getElementById('ercVisual').value);
+  const mot = parseInt(document.getElementById('ercMotora').value);
+  const oro = parseInt(document.getElementById('ercOromotora').value);
+  const com = parseInt(document.getElementById('ercComunicacion').value);
+  const ale = parseInt(document.getElementById('ercAlerta').value);
+
+  // Emergencia de EMC (+): motora=6 o comunicacion=2
+  const emergencia = mot===6 || com===2;
+  // EMC+ (▪): auditiva 4 o 3, oromotora=3, comunicacion=1
+  const emcPlus = aud===4 || aud===3 || oro===3 || com===1;
+  // EMC- (*): visual 5,4,3,2 / motora 5,4,3 / alerta=3
+  const emcMinus = [5,4,3,2].includes(vis) || [5,4,3].includes(mot) || ale===3;
+
+  let cat, detalle, bg, color;
+  if(!completo){
+    cat = 'Evaluación incompleta';
+    detalle = `${llenos.length}/6 subescalas completadas`;
+    bg='var(--amber-50)'; color='var(--amber-700)';
+  } else if(emergencia){
+    cat = 'Emergencia de EMC';
+    detalle = 'Uso funcional de objetos y/o comunicación funcional adecuada';
+    bg='var(--teal-50)'; color='var(--teal-700)';
+  } else if(emcPlus){
+    cat = 'Estado de Mínima Conciencia Plus (EMC+)';
+    detalle = 'Presencia de respuestas complejas: comprensión de lenguaje';
+    bg='var(--blue-50)'; color='var(--blue-700)';
+  } else if(emcMinus){
+    cat = 'Estado de Mínima Conciencia Minus (EMC-)';
+    detalle = 'Conductas reflejas con cierto nivel de respuesta no refleja';
+    bg='var(--purple-50)'; color='var(--purple-700)';
+  } else {
+    cat = 'Síndrome de vigilia sin respuesta (SVSR / Estado vegetativo)';
+    detalle = 'Sin evidencia de respuestas indicativas de conciencia';
+    bg='var(--red-50)'; color='var(--red-700)';
+  }
+
+  const box = document.getElementById('ercResultBox');
+  box.style.display='block';
+  box.style.background=bg;
+  document.getElementById('ercTotalDisp').textContent = completo ? total : `${total}*`;
+  document.getElementById('ercTotalDisp').style.color = color;
+  document.getElementById('ercCategoria').textContent = cat;
+  document.getElementById('ercCategoria').style.color = color;
+  document.getElementById('ercDetalle').textContent = detalle;
+}
+
+function clasificarERC(){
+  const aud = parseInt(document.getElementById('ercAuditiva').value)||0;
+  const vis = parseInt(document.getElementById('ercVisual').value)||0;
+  const mot = parseInt(document.getElementById('ercMotora').value)||0;
+  const oro = parseInt(document.getElementById('ercOromotora').value)||0;
+  const com = parseInt(document.getElementById('ercComunicacion').value)||0;
+  const ale = parseInt(document.getElementById('ercAlerta').value)||0;
+  const total = aud+vis+mot+oro+com+ale;
+  const emergencia = mot===6 || com===2;
+  const emcPlus = aud===4 || aud===3 || oro===3 || com===1;
+  const emcMinus = [5,4,3,2].includes(vis) || [5,4,3].includes(mot) || ale===3;
+  let cat;
+  if(emergencia) cat='Emergencia de EMC';
+  else if(emcPlus) cat='EMC+';
+  else if(emcMinus) cat='EMC-';
+  else cat='SVSR / Estado vegetativo';
+  return { total, cat, aud, vis, mot, oro, com, ale };
+}
+
+function guardarERC(){
+  const r = clasificarERC();
+  const obs = document.getElementById('ercObs').value.trim();
+  const data = { ...r, obs, fecha: today(), kine: currentUser.name };
+
+  if(ercOrigen === 'ingreso'){
+    document.getElementById('fERCData').value = JSON.stringify(data);
+    document.getElementById('fERCResumenTxt').textContent = `${data.cat} — Puntaje total: ${data.total}/23 (${fmtDate(data.fecha)})`;
+    document.getElementById('fERCResumen').style.display = 'block';
+  }
+  closeModal('modalERC');
+  showToast('Evaluación ERC guardada','success');
 }
 
 function onSalaChange(sala){
@@ -5584,6 +5897,17 @@ function openEditPaciente(id){
     M('fNeuroFoco',p.grupoNeuroFoco||''); M('fNeuroFocoLoc',p.grupoNeuroFocoLoc||'');
     M('fNeuroTipo',p.grupoNeuroTipo||''); M('fNeuroHemi',p.grupoNeuroHemi||'');
     M('fNeuroConciencia',p.grupoNeuroConciencia||''); M('fNeuroLenguaje',p.grupoNeuroLenguaje||'');
+    M('fNeuroSospechaEMC', p.grupoSospechaEMC||'');
+    onSospechaEMCChange(p.grupoSospechaEMC||'');
+    if(p.grupoSospechaEMC==='No' && p.grupoGlasgow){
+      M('fGlasgowOcular',p.grupoGlasgow.ocular||''); M('fGlasgowVerbal',p.grupoGlasgow.verbal||''); M('fGlasgowMotora',p.grupoGlasgow.motora||'');
+      calcGlasgowIngreso();
+    }
+    if(p.grupoSospechaEMC==='Si' && p.grupoERC){
+      document.getElementById('fERCData').value = JSON.stringify(p.grupoERC);
+      document.getElementById('fERCResumenTxt').textContent = `${p.grupoERC.cat} — Puntaje total: ${p.grupoERC.total}/23 (${fmtDate(p.grupoERC.fecha)})`;
+      document.getElementById('fERCResumen').style.display = 'block';
+    }
   }
   if(p.tipoKine==='quemado'){
     M('fQuemSCQ',p.grupoQuemSCQ||''); M('fQuemGrado',p.grupoQuemGrado||'');
@@ -5639,6 +5963,13 @@ async function guardarPaciente(){
     grupoNeuroFoco:G('fNeuroFoco')||null, grupoNeuroFocoLoc:G('fNeuroFocoLoc')||null,
     grupoNeuroTipo:G('fNeuroTipo')||null, grupoNeuroHemi:G('fNeuroHemi')||null,
     grupoNeuroConciencia:G('fNeuroConciencia')||null, grupoNeuroLenguaje:G('fNeuroLenguaje')||null,
+    grupoSospechaEMC: G('fNeuroSospechaEMC')||null,
+    grupoGlasgow: G('fNeuroSospechaEMC')==='No' ? {
+      ocular:G('fGlasgowOcular')||null, verbal:G('fGlasgowVerbal')||null, motora:G('fGlasgowMotora')||null,
+      total: document.getElementById('fGlasgowScore')?.value ? parseInt(document.getElementById('fGlasgowScore').value) : null
+    } : null,
+    grupoERC: (G('fNeuroSospechaEMC')==='Si' && document.getElementById('fERCData')?.value)
+      ? JSON.parse(document.getElementById('fERCData').value) : null,
     grupoQuemSCQ:G('fQuemSCQ')||null, grupoQuemGrado:G('fQuemGrado')||null,
     grupoQuemAreas: ['Cara','Cuello','ToraxAnt','Dorso','Abdomen','MMSS_der','MMSS_izq','MMII_der','MMII_izq','Perine']
       .filter(a=>{ const el=document.getElementById('fQuem'+a); return el?.checked; })
