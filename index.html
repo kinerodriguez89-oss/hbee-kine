@@ -2052,44 +2052,56 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
     <hr class="sep">
     </div><!-- fin eGrupoBlock -->
 
-    <!-- Técnicas kinesiológicas -->
+    <!-- Técnicas kinésicas -->
     <div class="accordion-header" onclick="toggleAccordion('accTec')">
-      <span><i class="ti ti-list-check" style="margin-right:6px;color:var(--blue-400)"></i>Técnicas kinesiológicas realizadas</span>
+      <span><i class="ti ti-list-check" style="margin-right:6px;color:var(--blue-400)"></i>Técnicas Kinésicas realizadas</span>
       <i class="ti ti-chevron-down accordion-arrow" id="arrTec"></i>
     </div>
     <div class="accordion-body" id="accTec">
+
+      <!-- Cuidados generales VAA: solo si ARM (TET/TQT) o TQT espontáneo -->
+      <div id="eCuidadosVAABox" style="display:none">
+        <div class="form-group" style="margin-bottom:6px"><label style="margin-bottom:6px;">Cuidados generales VAA</label>
+          <div class="tag-group" id="tagsCuidadosVAA">
+            <span class="tag" onclick="toggleTag(this)">Control del balón de neumotaponamiento</span>
+            <span class="tag" onclick="toggleTag(this)">Aspiración del LOF</span>
+            <span class="tag" onclick="toggleTag(this)">Aspiración de VAA</span>
+            <span class="tag" onclick="toggleTag(this)">Cambio de HMEF</span>
+            <span class="tag" onclick="toggleTag(this)">Cambio de Filtro Viral/Bacteriano</span>
+            <span class="tag" onclick="toggleTag(this)">Higiene Oral</span>
+            <span class="tag" onclick="toggleTag(this)">Cambio de fijación</span>
+          </div>
+        </div>
+      </div>
+
       <div class="form-group" style="margin-bottom:6px"><label style="margin-bottom:6px;">Respiratorias</label>
         <div class="tag-group" id="tagsResp">
-          <span class="tag" onclick="toggleTag(this)">Aspiración del LOF</span>
-          <span class="tag" onclick="toggleTag(this)">Aspiración de VAA</span>
-          <span class="tag" onclick="toggleTag(this)">Vibromovilización</span>
           <span class="tag" onclick="toggleTag(this)">Aceleración del flujo espiratorio</span>
           <span class="tag" onclick="toggleTag(this)">Tos asistida</span>
           <span class="tag" onclick="toggleTag(this)">Tos dirigida</span>
           <span class="tag" onclick="toggleTag(this)">PPI (Presión positiva intermitente)</span>
-          <span class="tag" onclick="toggleTag(this)">Higiene de la cavidad oral</span>
-          <span class="tag" onclick="toggleTag(this)">Control del balón de neumotaponamiento</span>
-          <span class="tag" onclick="toggleTag(this)">Cambios posturales</span>
+          <span class="tag" onclick="toggleTag(this)">Ciclo activo</span>
           <span class="tag" onclick="toggleTag(this)">Aerosolterapia</span>
         </div>
       </div>
+
       <div class="form-group" style="margin-bottom:6px"><label style="margin-bottom:6px;">Movilización</label>
         <div class="tag-group" id="tagsMovil">
-          <span class="tag" onclick="toggleTag(this)">Movilización pasiva MMSS</span>
-          <span class="tag" onclick="toggleTag(this)">Movilización pasiva MMII</span>
-          <span class="tag" onclick="toggleTag(this)">Movilización activo asistida MMSS</span>
-          <span class="tag" onclick="toggleTag(this)">Movilización activo asistida MMII</span>
-          <span class="tag" onclick="toggleTag(this)">Movilización activa MMSS</span>
-          <span class="tag" onclick="toggleTag(this)">Movilización activa MMII</span>
+          <span class="tag" onclick="toggleTag(this)">Movilización pasiva</span>
+          <span class="tag" onclick="toggleTag(this)">Movilización activo-asistida</span>
+          <span class="tag" onclick="toggleTag(this)">Movilización activa</span>
+          <span class="tag" onclick="toggleTag(this)">Rolados</span>
+          <span class="tag" onclick="toggleTag(this)">Transferencias</span>
           <span class="tag" onclick="toggleTag(this)">Sedestación al borde de la cama</span>
           <span class="tag" onclick="toggleTag(this)">Bipedestación</span>
-          <span class="tag" onclick="toggleTag(this)">Ejercicios de pre-marcha</span>
-          <span class="tag" onclick="toggleTag(this)">Equilibrio en sedestación</span>
-          <span class="tag" onclick="toggleTag(this)">Equilibrio en bipedestación</span>
+          <span class="tag" onclick="toggleTag(this)">Equilibrio</span>
+          <span class="tag" onclick="toggleTag(this)">Premarcha</span>
+          <span class="tag" onclick="toggleTag(this)">Fortalecimiento</span>
           <span class="tag" onclick="toggleTag(this)">Marcha en habitación</span>
           <span class="tag" onclick="toggleTag(this)">Sedestación en silla</span>
         </div>
       </div>
+
       <div class="form-group" style="margin-bottom:6px"><label style="margin-bottom:6px;">Prestaciones específicas</label>
         <div class="tag-group" id="tagsDest">
           <span class="tag" onclick="toggleTag(this)">Traslado a TAC</span>
@@ -5233,6 +5245,7 @@ function setARMStatus(enARM){
     // Esconder TQT block hasta que elija interfaz con TQT
     document.getElementById('tqtBlock').style.display = 'none';
   }
+  actualizarCuidadosVAA();
 }
 
 function setInterfazEsp(tipo){
@@ -5250,6 +5263,22 @@ function setInterfazEsp(tipo){
   document.getElementById('eInterfazPrincipal').value = mapaInterfaz[tipo] || tipo;
   if(!esTQT){
     document.querySelectorAll('#eSubVANO2 .dec-btn').forEach(b=>b.classList.remove('dec-sel'));
+  }
+  actualizarCuidadosVAA();
+}
+
+// Cuidados generales VAA: visible si ARM (TET/TQT) o TQT espontáneo (con o sin O2)
+function actualizarCuidadosVAA(){
+  const box = document.getElementById('eCuidadosVAABox');
+  if(!box) return;
+  const enARM = document.getElementById('eBtnArmSi')?.classList.contains('dec-arm-si');
+  const iface = document.getElementById('eInterfazPrincipal')?.value || '';
+  const esTQTespontaneo = iface.includes('TQT espontáneo');
+  const mostrar = enARM || esTQTespontaneo;
+  box.style.display = mostrar ? 'block' : 'none';
+  if(!mostrar){
+    // Destildar tags si se oculta
+    document.querySelectorAll('#tagsCuidadosVAA .tag.active').forEach(t=>t.classList.remove('active'));
   }
 }
 
@@ -6581,6 +6610,7 @@ function openEvolucion(patientId){
   document.getElementById('tqtBlock').style.display = 'none';
   document.getElementById('eSubVANO2').style.display = 'none';
   document.getElementById('eSubCNAF').style.display = 'none';
+  document.getElementById('eCuidadosVAABox').style.display = 'none';
   document.getElementById('eSubARMdiametro').style.display = 'none';
   const diamEl = document.getElementById('eARMdiametro'); if(diamEl) diamEl.value = '';
   const adsEl = document.getElementById('eTETads'); if(adsEl) adsEl.value = '';
