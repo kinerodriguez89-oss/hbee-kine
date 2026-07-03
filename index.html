@@ -827,6 +827,7 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
           <option value="quemado">🔥 Quemado</option>
           <option value="post_uti">🏥 Post UTI</option>
           <option value="otro">📋 Otro</option>
+          <option value="crm">🫀 POP CRM (Cirugía de Revascularización Miocárdica)</option>
         </select>
       </div>
 
@@ -1053,6 +1054,24 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
                   <option value="no">No</option>
                 </select>
               </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- POP CRM -->
+        <div id="fGrupoCRM" style="display:none">
+          <div class="form-group">
+            <label>¿Se realizó con circulación extracorpórea (CEC)?</label>
+            <select id="fCRMcec" onchange="onCRMcecChange(this.value)">
+              <option value="">-</option>
+              <option value="Si">Sí — Con CEC</option>
+              <option value="No">No — Sin CEC (OPCAB / Off-pump)</option>
+            </select>
+          </div>
+          <div id="fCRMtiempoBox" style="display:none">
+            <div class="form-group">
+              <label>Tiempo de CEC (minutos)</label>
+              <input type="number" id="fCRMtiempo" inputmode="numeric" placeholder="ej: 90">
             </div>
           </div>
         </div>
@@ -1735,7 +1754,7 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
     <div class="accordion-body" id="accVent">
       <div class="form-row three" style="margin-top:8px">
         <div class="form-group"><label>Modo ventilatorio</label>
-          <select id="eModo">
+          <select id="eModo" onchange="onModoChange(this.value)">
             <option value="">-</option>
             <option>VC-CMV</option><option>PC-CMV</option><option>SIMV-VC</option><option>SIMV-PC</option>
             <option>PS/CPAP</option><option>BIPAP</option><option>APRV</option>
@@ -1764,11 +1783,35 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
         <div class="form-group"><label>Flujo pico (L/min)</label><input type="number" id="eFlujo" inputmode="decimal"></div>
       </div>
       <div class="form-row three">
-        <div class="form-group"><label>Mec. Power (J/min)</label><input type="number" id="eMP" inputmode="decimal"><div class="form-hint">Potencia mecánica</div></div>
+        <div class="form-group"><label>Mec. Power (J/min)</label><input type="number" id="eMP" inputmode="decimal" readonly style="background:var(--teal-50);color:var(--teal-800);font-weight:600"><div class="form-hint">Auto: 0.098 × VT × FR × (Ppico + PEEP + DP/2)</div></div>
         <div class="form-group"><label>Elastic Ratio</label><input type="number" id="eER" inputmode="decimal" step="0.1"><div class="form-hint">(4×DP) + FR</div></div>
         <div class="form-group"><label>Cte. tiempo (seg)</label><input type="number" id="eCT" inputmode="decimal" step="0.01"><div class="form-hint">Crs × Rinsp / 1000</div></div>
       </div>
       <div id="ctMultiplesBox" style="display:none;gap:8px;margin-top:8px;flex-wrap:wrap"></div>
+      <!-- Ventilatory Ratio -->
+      <div class="form-row" style="margin-top:8px">
+        <div class="form-group">
+          <label>Ventilatory Ratio (VR)</label>
+          <input type="text" id="eVR" readonly style="background:var(--amber-50);color:var(--amber-800);font-weight:600">
+          <div class="form-hint" id="eVRInterp">FR × VT × PaCO₂ / (PCP × 100 × 37.5)</div>
+        </div>
+      </div>
+      <!-- P0.1 y DeltaPocc: solo cuando modo = PC-CSV -->
+      <div id="ePCCSVBox" style="display:none;margin-top:8px;padding:10px 12px;background:var(--purple-50);border:1px solid var(--purple-200);border-radius:8px">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--purple-700);margin-bottom:8px">Parámetros PC-CSV</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>P0.1 (cmH₂O)</label>
+            <input type="number" id="eP01" inputmode="decimal" step="0.1" placeholder="Valor negativo, ej: -2.5">
+            <div class="form-hint">Presión de oclusión 0.1 seg</div>
+          </div>
+          <div class="form-group">
+            <label>ΔPocc (cmH₂O)</label>
+            <input type="number" id="eDeltaPocc" inputmode="decimal" placeholder="ej: 15">
+            <div class="form-hint">Delta de presión de oclusión</div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <hr class="sep">
@@ -1788,6 +1831,22 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
       <div class="form-row">
         <div class="form-group"><label>SpO₂ (%)</label><input type="number" id="eSpO2" inputmode="numeric" max="100"></div>
         <div class="form-group"><label>PAFI</label><input type="number" id="ePAFI" inputmode="decimal"><div class="form-hint">PO₂ / FiO₂</div></div>
+      </div>
+      <div class="form-row four">
+        <div class="form-group">
+          <label>Gradiente A-a (mmHg)</label>
+          <input type="text" id="eAAGrad" readonly style="background:var(--amber-50);color:var(--amber-800);font-weight:600">
+          <div class="form-hint">PAO₂ − PaO₂</div>
+        </div>
+        <div class="form-group">
+          <label>Relación a/A</label>
+          <input type="text" id="eAaRatio" readonly style="background:var(--amber-50);color:var(--amber-800);font-weight:600">
+          <div class="form-hint">PaO₂ / PAO₂</div>
+        </div>
+        <div class="form-group">
+          <label>Ácido láctico (mmol/L)</label>
+          <input type="number" id="eLactato" inputmode="decimal" step="0.1" placeholder="ej: 1.2">
+        </div>
       </div>
     </div>
 
@@ -1815,9 +1874,8 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
         <div class="form-group"><label>Calidad LOF</label>
           <select id="eSecLOFcal">
             <option value="">-</option>
-            <option>Mucoso</option>
-            <option>Mucopurulento</option>
-            <option>Mucohemático</option>
+            <option>Mucoso/Saliva</option>
+            <option>Purulento</option>
             <option>Hemático</option>
             <option>Con restos de alimento</option>
           </select>
@@ -1926,10 +1984,12 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
             <label>Duración</label>
             <select id="ePVEtmin">
               <option value="">-</option>
+              <option value="<30">Menos de 30 min</option>
               <option value="30">30 min</option>
               <option value="60">60 min</option>
               <option value="90">90 min</option>
               <option value="120">120 min</option>
+              <option value=">120">Más de 120 min</option>
             </select>
           </div>
           <div class="form-group">
@@ -5156,9 +5216,42 @@ function autoCalculate(){
     setF('eER', ((4 * dp) + fr).toFixed(1));
   }
 
+  // ── Mechanical Power = 0.098 × (VT/1000) × FR × (Ppico + PEEP + DP/2) ──
+  const peep   = get('ePEEP');
+  const peepFinal = peept ?? peep;
+  if(vt !== null && fr !== null && ppico !== null && peepFinal !== null && dp !== null){
+    const mp = 0.098 * (vt / 1000) * fr * (ppico + peepFinal + dp / 2);
+    setF('eMP', mp.toFixed(2));
+  }
+
+  // ── Ventilatory Ratio = (FR × VT_mL × PaCO₂) / (PCP × 100 × 37.5) ──
+  const pco2 = get('ePCO2');
+  const p2 = patients.find(x=>x.id===currentEvoPacId);
+  const pcpVR = p2 ? (p2.pcp || calcPCP(p2.talla, p2.genero)) : null;
+  if(fr !== null && vt !== null && pco2 !== null && pcpVR && pcpVR > 0){
+    const vr = (fr * vt * pco2) / (pcpVR * 100 * 37.5);
+    setF('eVR', vr.toFixed(2));
+    const vrEl = document.getElementById('eVRInterp');
+    if(vrEl){
+      if(vr < 1.5) vrEl.textContent = 'Normal';
+      else if(vr < 2) vrEl.textContent = 'Espacio muerto aumentado';
+      else vrEl.textContent = 'Espacio muerto significativo (peor pronóstico)';
+    }
+  }
+
   // ── PAFI = PO₂ / (FiO₂/100) ─────────────────────────
   if(po2 !== null && fio2 !== null && fio2 > 0){
     setF('ePAFI', Math.round(po2 / (fio2 / 100)));
+  }
+
+  // ── Gradiente A-a y relación a/A ─────────────────────
+  const paco2 = get('ePCO2');
+  if(po2 !== null && fio2 !== null && paco2 !== null){
+    const pao2 = (fio2 / 100) * (760 - 47) - (paco2 / 0.8);
+    const aaGrad = pao2 - po2;
+    const aA = po2 / pao2;
+    setF('eAAGrad', aaGrad.toFixed(1));
+    setF('eAaRatio', aA.toFixed(2));
   }
 }
 
@@ -5289,12 +5382,12 @@ function onGrupoChange(grupo){
   const bloques = {
     respiratorio:'fGrupoResp', neurologico:'fGrupoNeuro',
     quemado:'fGrupoQuemado', amputado:'fGrupoAmputado',
-    post_uti:'fGrupoPostUTI', pre_qx:'fGrupoQx', post_qx:'fGrupoQx'
+    post_uti:'fGrupoPostUTI', pre_qx:'fGrupoQx', post_qx:'fGrupoQx', crm:'fGrupoCRM'
   };
   const wrapper = document.getElementById('fGrupoEspecifico');
   const hayBloque = !!bloques[grupo];
   wrapper.style.display = hayBloque ? 'block' : 'none';
-  ['fGrupoResp','fGrupoNeuro','fGrupoQuemado','fGrupoAmputado','fGrupoPostUTI','fGrupoQx'].forEach(id => {
+  ['fGrupoResp','fGrupoNeuro','fGrupoQuemado','fGrupoAmputado','fGrupoPostUTI','fGrupoQx','fGrupoCRM'].forEach(id => {
     const el = document.getElementById(id);
     if(el) el.style.display = 'none';
   });
@@ -5361,6 +5454,19 @@ function calcTCTEvo(){
   document.getElementById('eTCTResultBox').style.display = 'flex';
 }
 
+function onModoChange(val){
+  const box = document.getElementById('ePCCSVBox');
+  if(box) box.style.display = val==='PC-CSV' ? 'block' : 'none';
+  if(val!=='PC-CSV'){
+    ['eP01','eDeltaPocc'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  }
+}
+
+function onCRMcecChange(val){
+  document.getElementById('fCRMtiempoBox').style.display = val==='Si' ? 'block' : 'none';
+  if(val!=='Si'){ const el=document.getElementById('fCRMtiempo'); if(el) el.value=''; }
+}
+
 function onQxServicioChange(val){
   document.getElementById('fQxOtroBox').style.display = val==='otro' ? 'block' : 'none';
   document.getElementById('fQxTraumaBox').style.display = val==='traumatologia' ? 'block' : 'none';
@@ -5418,6 +5524,9 @@ function resetGrupoFields(){
   document.getElementById('fERCBox').style.display='none';
   document.getElementById('fERCResumen').style.display='none';
   document.getElementById('fERCData').value='';
+  // Campos CRM
+  ['fCRMcec','fCRMtiempo'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});
+  const crmT=document.getElementById('fCRMtiempoBox'); if(crmT) crmT.style.display='none';
   // Campos pre/post quirúrgico
   ['fQxServicio','fQxOtroTexto','fQxTraumaRegion','fQxCarga'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   document.getElementById('fQxOtroBox').style.display='none';
@@ -5436,7 +5545,7 @@ function resetGrupoFields(){
   ['fAmpNivel','fAmpMotivo','fAmpCausa'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   // Ocultar wrapper
   const w=document.getElementById('fGrupoEspecifico'); if(w) w.style.display='none';
-  ['fGrupoResp','fGrupoNeuro','fGrupoQuemado','fGrupoAmputado','fGrupoPostUTI'].forEach(id=>{
+  ['fGrupoResp','fGrupoNeuro','fGrupoQuemado','fGrupoAmputado','fGrupoPostUTI','fGrupoCRM'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.style.display='none';
   });
 }
@@ -6831,6 +6940,9 @@ function openEditPaciente(id){
       if(chk){ chk.checked=areas.includes(chk.value); chk.closest('.ant-chip')?.classList.toggle('is-checked',chk.checked); }
     });
   }
+  if(p.tipoKine==='crm'){
+    M('fCRMcec',p.grupoCRMcec||''); onCRMcecChange(p.grupoCRMcec||''); M('fCRMtiempo',p.grupoCRMtiempo||'');
+  }
   if(p.tipoKine==='pre_qx' || p.tipoKine==='post_qx'){
     M('fQxServicio', p.grupoQxServicio||'');
     onQxServicioChange(p.grupoQxServicio||'');
@@ -6901,6 +7013,7 @@ async function guardarPaciente(){
       .filter(a=>{ const el=document.getElementById('fQuem'+a); return el?.checked; })
       .map(a=>{ const el=document.getElementById('fQuem'+a); return el?.value; }),
     grupoAmpNivel:G('fAmpNivel')||null, grupoAmpMotivo:G('fAmpMotivo')||null, grupoAmpCausa:G('fAmpCausa')||null,
+    grupoCRMcec:G('fCRMcec')||null, grupoCRMtiempo:G('fCRMtiempo')||null,
     grupoQxServicio:G('fQxServicio')||null, grupoQxOtro:G('fQxOtroTexto')||null,
     grupoQxRegion:G('fQxTraumaRegion')||null, grupoQxCarga:G('fQxCarga')||null,
     grupoMRC: MRC_CAMPOS.reduce((obj,id)=>{ obj[id]=document.getElementById(id)?.value||null; return obj; },{}),
@@ -7120,7 +7233,8 @@ function openEvolucion(patientId){
     'eAmpNivel','eAmpMunon','eAmpVendaje',
     'eQemZona','eQemEstado','eQemContractura','eQemPosicion',
     'eCNAFflujo','eCNAFfio2',
-    'eObs','eInterfazPrincipal','eInterfazEsp'];
+    'eObs','eInterfazPrincipal','eInterfazEsp',
+    'eVR','eAAGrad','eAaRatio','eLactato','eP01','eDeltaPocc'];
   nFields.forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   document.querySelectorAll('.tag.active').forEach(t=>t.classList.remove('active'));
   ['msSedacion','msAnalgesia','msBNM','msVasoact'].forEach(resetMultiselect);
@@ -7353,6 +7467,8 @@ async function guardarEvolucion(){
     modo:G('eModo'), vt:GN('eVT'), vtkg:GN('eVTkg'), fr:GN('eFR'), peep:GN('ePEEP'),
     fc:GN('eFC'), tas:GN('eTAS'), tad:GN('eTAD'), tam:G('eTAM'), spo2Mon:GN('eSpO2Mon'), frMon:GN('eFRMon'), pic:GN('ePIC'), etco2:GN('eEtCO2'),
     fio2:GN('eFiO2'), ti:GN('eTi'), pc:GN('ePC'),
+    vr:GN('eVR'), aaGrad:GN('eAAGrad'), aaRatio:GN('eAaRatio'), lactato:GN('eLactato'),
+    p01:GN('eP01'), deltaPocc:GN('eDeltaPocc'),
     ppico:GN('ePpico'), pplat:GN('ePplat'), peept:GN('ePEEPt'),
     dp:GN('eDP'), crs:GN('eCrs'), rinsp:GN('eRinsp'), flujo:GN('eFlujo'),
     mp:GN('eMP'), er:GN('eER'), ct:GN('eCT'),
