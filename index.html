@@ -4461,7 +4461,7 @@ function launchApp(){
     badge.style.display = 'none';
   }
   // Control de acceso a Indicadores: solo usuarios autorizados
-  const INDICADORES_USERS = ['Rodríguez Daniel','Santana Andrés','Petre Mauricio'];
+  const INDICADORES_USERS = ['Rodriguez Daniel','Santana Andres','Petre Mauricio'];
   const puedeVerIndicadores = INDICADORES_USERS.some(u=>currentUser.name.toLowerCase().includes(u.split(' ')[0].toLowerCase()));
   ['tab-indicadores','btab-indicadores'].forEach(id=>{
     const el = document.getElementById(id);
