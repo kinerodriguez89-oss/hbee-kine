@@ -2431,6 +2431,8 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
 
       <div class="form-group" style="margin-bottom:6px"><label style="margin-bottom:6px;">Respiratorias</label>
         <div class="tag-group" id="tagsResp">
+          <span class="tag" id="tagAspLOFresp" onclick="toggleTag(this)" style="display:none">Aspiración del LOF</span>
+          <span class="tag" id="tagAspNasofaringea" onclick="toggleTag(this)" style="display:none">Aspiración nasofaríngea</span>
           <span class="tag" onclick="toggleTag(this)">Aceleración del flujo espiratorio</span>
           <span class="tag" onclick="toggleTag(this)">Tos asistida</span>
           <span class="tag" onclick="toggleTag(this)">Tos dirigida</span>
@@ -5954,13 +5956,22 @@ function actualizarCuidadosVAA(){
   if(!box) return;
   const enARM = document.getElementById('eBtnArmSi')?.classList.contains('dec-arm-si');
   const iface = document.getElementById('eInterfazPrincipal')?.value || '';
-  const esTQTespontaneo = iface.includes('TQT espontáneo');
-  const mostrar = enARM || esTQTespontaneo;
+  const esTQT = iface.includes('TQT'); // cubre 'TQT' (en ARM) y 'TQT espontáneo'
+  const mostrar = enARM || esTQT;
   box.style.display = mostrar ? 'block' : 'none';
   if(!mostrar){
     // Destildar tags si se oculta
     document.querySelectorAll('#tagsCuidadosVAA .tag.active').forEach(t=>t.classList.remove('active'));
   }
+
+  // Aspiración del LOF / Aspiración nasofaríngea: solo si NO está en ARM y NO tiene TQT
+  const mostrarAspNoARM = !enARM && !esTQT;
+  ['tagAspLOFresp','tagAspNasofaringea'].forEach(id=>{
+    const t = document.getElementById(id);
+    if(!t) return;
+    t.style.display = mostrarAspNoARM ? 'inline-flex' : 'none';
+    if(!mostrarAspNoARM) t.classList.remove('active');
+  });
 }
 
 function setVANO2tipo(tipo){
@@ -7455,6 +7466,9 @@ function openEvolucion(patientId){
     setARMStatus(false);
     setInterfazEsp('TQT_AA');
   }
+  // Asegura que los tags dependientes de ARM/TQT (incl. Aspiración del LOF / nasofaríngea)
+  // queden correctamente mostrados u ocultos incluso si no se disparó ninguno de los branches previos
+  actualizarCuidadosVAA();
 
   // ── PCP ──
   const pcpBox = document.getElementById('pcpBox');
@@ -7643,6 +7657,7 @@ function precargarCamposEvolucion(evo){
     const el = document.getElementById(id);
     if(el && interfazVal) el.value = interfazVal;
   });
+  actualizarCuidadosVAA(); // refresca cuidados VAA + tags de aspiración según ARM/interfaz cargados
 
   Object.keys(EVO_FIELD_MAP).forEach(key=>{
     const val = evo[key];
