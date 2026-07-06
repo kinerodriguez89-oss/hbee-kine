@@ -2431,6 +2431,8 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
 
       <div class="form-group" style="margin-bottom:6px"><label style="margin-bottom:6px;">Respiratorias</label>
         <div class="tag-group" id="tagsResp">
+          <span class="tag tag-noarm" onclick="toggleTag(this)" style="display:none">Aspiración del LOF</span>
+          <span class="tag tag-noarm" onclick="toggleTag(this)" style="display:none">Aspiración nasotraqueal</span>
           <span class="tag" onclick="toggleTag(this)">Aceleración del flujo espiratorio</span>
           <span class="tag" onclick="toggleTag(this)">Tos asistida</span>
           <span class="tag" onclick="toggleTag(this)">Tos dirigida</span>
@@ -3654,15 +3656,18 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
       <div class="form-group"><label>Conclusiones y recomendaciones</label><textarea id="neuroConclusiones" rows="2"></textarea></div>
     </div>
 
+    <!-- Historial de fichas previas -->
+    <div id="fichaNeuroHistorial" style="display:none;margin:0 16px 12px">
+      <div class="deg-section-title">Fichas neurológicas anteriores</div>
+      <div id="fichaNeuroHistorialList"></div>
+    </div>
+
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('modalNeuro')">Cancelar</button>
+      <button class="btn btn-ghost" onclick="verHistorialFichasNeuro()"><i class="ti ti-history"></i> Fichas anteriores</button>
       <button class="btn btn-ghost" onclick="exportarFichaNeuro()"><i class="ti ti-printer"></i>Imprimir / PDF</button>
       <button class="btn btn-success" onclick="guardarFichaNeuro()"><i class="ti ti-device-floppy"></i>Guardar ficha</button>
     </div>
-  </div>
-</div>
-
-<!-- ════ MODAL EVOLUCIÓN MÍNIMOS ════ -->
 <div class="modal-overlay" id="modalEvoMin">
   <div class="modal">
     <div class="modal-header">
@@ -4289,6 +4294,7 @@ let currentUser = null;
 let currentSector = null; // null = todos (admin), string = sector del kine
 let editPacId = null;
 let currentEvoPacId = null;
+let editingEvoId = null; // null = nueva evolución, number = editar existente
 
 // ════════════════════════════════════════════════════════
 //  ASSET: MEMBRETE HBEE (logo institucional en base64)
@@ -5522,12 +5528,36 @@ function calcTCTEvo(){
   document.getElementById('eTCTResultBox').style.display = 'flex';
 }
 
-function onModoChange(val){
-  const box = document.getElementById('ePCCSVBox');
-  if(box) box.style.display = val==='PC-CSV' ? 'block' : 'none';
-  if(val!=='PC-CSV'){
-    ['eP01','eDeltaPocc'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+function verHistorialFichasNeuro(){
+  const p = patients.find(x=>x.id===neuroEditPacId);
+  if(!p) return;
+  const fichas = (p.fichasNeuro||[]).slice(1);
+  const box = document.getElementById('fichaNeuroHistorial');
+  const list = document.getElementById('fichaNeuroHistorialList');
+  if(!fichas.length){
+    list.innerHTML='<div style="font-size:12px;color:var(--text-muted);padding:8px 0">No hay fichas anteriores</div>';
+    box.style.display='block'; return;
   }
+  list.innerHTML = fichas.map(f=>`
+    <div style="background:var(--gray-50);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <span style="font-size:12px;font-weight:700">${fmtDate(f.fecha)} — ${f.kine||'—'}</span>
+        <span style="font-size:11px;color:var(--text-muted)">${f.tipo||''}</span>
+      </div>
+      ${f.barthelAct!=null?`<div style="font-size:11px"><b>Barthel actual:</b> ${f.barthelAct}/100</div>`:''}
+      ${f.facAct!=null?`<div style="font-size:11px"><b>FAC actual:</b> ${f.facAct}</div>`:''}
+      ${f.pfeiffer!=null?`<div style="font-size:11px"><b>Pfeiffer errores:</b> ${f.pfeiffer}/10</div>`:''}
+      ${f.tct!=null?`<div style="font-size:11px"><b>TCT:</b> ${f.tct}/100</div>`:''}
+      ${f.conclusiones?`<div style="font-size:11px;margin-top:4px;color:var(--text-muted)">${f.conclusiones}</div>`:''}
+    </div>`).join('');
+  box.style.display = box.style.display==='none' ? 'block' : 'none';
+}
+
+function actualizarTagsNoARM(enARM){
+  document.querySelectorAll('.tag.tag-noarm').forEach(t=>{
+    t.style.display = enARM ? 'none' : '';
+    if(enARM) t.classList.remove('active');
+  });
 }
 
 function onModoChange(val){
@@ -5894,6 +5924,7 @@ function setARMStatus(enARM){
     document.getElementById('tqtBlock').style.display = 'none';
   }
   actualizarCuidadosVAA();
+  actualizarTagsNoARM(enARM);
 }
 
 function setInterfazEsp(tipo){
@@ -6862,8 +6893,10 @@ function _OLD_renderDashboard_REPLACED(){ // placeholder
           <span class="evo-count">${nEvo}</span>
         </button>
         <button class="btn btn-icon btn-sm" onclick="openEditPaciente(${p.id})" title="Editar"><i class="ti ti-pencil"></i></button>
+        <button class="btn btn-icon btn-sm" onclick="toggleTimeline(${p.id},this)" title="Ver evoluciones" style="color:var(--blue-500)"><i class="ti ti-history"></i><i class="ti ti-chevron-down" style="font-size:10px;margin-left:1px"></i></button>
       </div>
-    </div>`;
+    </div>
+    <div id="timeline-${p.id}" style="display:none;border-top:1px solid var(--border);padding:10px 12px;background:var(--gray-50);border-radius:0 0 10px 10px"></div>`;
   }).join('');
 }
 
@@ -7318,6 +7351,7 @@ function openEvolucion(patientId){
   const p = patients.find(x=>x.id===patientId);
   if(!p) return;
   currentEvoPacId = patientId;
+  editingEvoId = null; // siempre reset al abrir fresh
   const todayStr = today();
 
   // Header del modal
@@ -7515,7 +7549,6 @@ function openEvolucion(patientId){
     }
   }
 
-  renderTimeline(patientId);
   openModal('modalEvo');
 }
 
@@ -7656,11 +7689,17 @@ async function guardarEvolucion(){
       pft:G('eMusPFT'), pfe:G('eMusPFE')
     } : null,
   };
-  evoluciones.unshift(evo);
+  // Editar o crear
+  if(editingEvoId !== null){
+    const idx = evoluciones.findIndex(e=>e.id===editingEvoId);
+    if(idx>=0){ evo.id = editingEvoId; evoluciones[idx]=evo; }
+    editingEvoId = null;
+    showToast('Evolución actualizada','success');
+  } else {
+    evoluciones.unshift(evo);
+    showToast('Evolución guardada','success');
+  }
   await persistAll();
-  const p = patients.find(x=>x.id===currentEvoPacId);
-  addLog('evolve',`Evolución de ${p?.apellido}, ${p?.nombre} (${fmtDate(date)} — ${evo.turno})`);
-  showToast('Evolución guardada','success');
   // Reset
   const nFields = ['eVT','eVTkg','eFR','ePEEP','eFiO2','eTi','ePC','ePpico','ePplat','ePEEPt','eDP','eCrs','eRinsp','eFlujo',
     'eMP','eER','eCT','ePH','ePCO2','ePO2','eHCO3','eSpO2','ePAFI',
@@ -7680,17 +7719,76 @@ async function guardarEvolucion(){
   if(stat){ stat.classList.remove('show'); stat.innerHTML=''; }
   const chps = document.getElementById('ocrChips');
   if(chps) chps.innerHTML='';
-  renderTimeline(currentEvoPacId);
+  // Refresh timeline si está abierta en la tarjeta
+  const tlEl = document.getElementById(`timeline-${currentEvoPacId}`);
+  if(tlEl && tlEl.style.display!=='none') renderTimeline(currentEvoPacId, `timeline-${currentEvoPacId}`);
   renderAll();
 }
 
 // ════════════════════════════════════════════════════════
 //  TIMELINE
 // ════════════════════════════════════════════════════════
-function renderTimeline(patientId){
+// ── Editar evolución existente ────────────────────────────
+function editarEvolucion(evoId){
+  const evo = evoluciones.find(e=>e.id===evoId);
+  if(!evo) return;
+  // Solo el creador puede editar
+  if(evo.kine !== currentUser.name){ showToast('Solo puede editar quien la creó','error'); return; }
+  editingEvoId = evoId;
+  // Abrir el formulario normalmente (limpia y pre-selecciona ARM)
+  openEvolucion(evo.patientId);
+  // Pre-rellenar todos los campos después de que openEvolucion los limpió
+  setTimeout(()=>{
+    const G2 = (id,v) => { const el=document.getElementById(id); if(el&&v!=null&&v!=='') el.value=v; };
+    G2('eDate',evo.date); G2('eHora',evo.hora); G2('eTurno',evo.turno);
+    G2('eFC',evo.fc); G2('eTAS',evo.tas); G2('eTAD',evo.tad); G2('eSpO2Mon',evo.spo2Mon); G2('eFRMon',evo.frMon); G2('ePIC',evo.pic); G2('eEtCO2',evo.etco2);
+    G2('eModo',evo.modo); G2('eVT',evo.vt); G2('eFR',evo.fr); G2('ePEEP',evo.peep); G2('eFiO2',evo.fio2); G2('eTi',evo.ti);
+    G2('ePpico',evo.ppico); G2('ePplat',evo.pplat); G2('ePEEPt',evo.peept); G2('ePC',evo.pc);
+    G2('eDP',evo.dp); G2('eCrs',evo.crs); G2('eRinsp',evo.rinsp); G2('eFlujo',evo.flujo);
+    G2('eMP',evo.mp); G2('eER',evo.er); G2('eCT',evo.ct); G2('eVR',evo.vr);
+    G2('ePH',evo.ph); G2('ePCO2',evo.pco2); G2('ePO2',evo.po2); G2('eHCO3',evo.hco3); G2('eSpO2',evo.spo2); G2('ePAFI',evo.pafi);
+    G2('eAAGrad',evo.aaGrad); G2('eAaRatio',evo.aaRatio); G2('eLactato',evo.lactato);
+    G2('eRASS',evo.rass); G2('eCPOT',evo.cpot); G2('eCAMICU',evo.camicu); G2('eOtrosFarmacos',evo.otrosFarmacos);
+    G2('eAKM1',evo.akm1); G2('eMRC',evo.mrc);
+    G2('ePVE',evo.pve);
+    if(evo.pve) { onPVEChange(evo.pve); G2('ePVEtmin',evo.pveMin); G2('ePVETipo',evo.pveTipo); G2('ePVEresult',evo.pveResult); if(evo.pveResult) onPVEResultChange(evo.pveResult); G2('eInterfazPE',evo.interfazPE); }
+    G2('eCuffM',evo.cuffM); G2('eCuffT',evo.cuffT); G2('eCuffN',evo.cuffN); G2('eCuffLeak',evo.cuffLeak);
+    G2('eSecLOFcant',evo.secLOFcant); G2('eSecLOFcal',evo.secLOFcal); G2('eSecVAAcant',evo.secVAAcant); G2('eSecVAAcal',evo.secVAAcal);
+    G2('eNeuroConciencia',evo.neuroConciencia); G2('eNeuroFAC',evo.neuroFAC);
+    G2('eTCT1',evo.tct1); G2('eTCT2',evo.tct2); G2('eTCT3',evo.tct3); G2('eTCT4',evo.tct4);
+    G2('eQxDiaPOP',evo.qxDiaPOP); G2('eQxCarga',evo.qxCarga); G2('eQxHerida',evo.qxHerida);
+    G2('eAmpNivel',evo.ampNivel); G2('eAmpMunon',evo.ampMunon); G2('eAmpVendaje',evo.ampVendaje);
+    G2('eObs',evo.obs);
+    // Técnicas: reactivar tags
+    if(evo.tecnicas?.length){
+      document.querySelectorAll('.tag-group .tag').forEach(t=>{
+        if(evo.tecnicas.includes(t.textContent.trim())) t.classList.add('active');
+      });
+    }
+    // Indicador visual de modo edición
+    const title = document.getElementById('evoModalTitle');
+    if(title) title.textContent += ' ✏️ (editando)';
+    if(evo.modo) onModoChange(evo.modo);
+    if(evo.pveResult) onPVEResultChange(evo.pveResult);
+    calcTCTEvo();
+  }, 100);
+}
+
+function toggleTimeline(patientId, btn){
+  const el = document.getElementById(`timeline-${patientId}`);
+  if(!el) return;
+  const visible = el.style.display !== 'none';
+  el.style.display = visible ? 'none' : 'block';
+  const chevron = btn.querySelector('.ti-chevron-down,.ti-chevron-up');
+  if(chevron){ chevron.className = visible ? 'ti ti-chevron-down' : 'ti ti-chevron-up'; chevron.style.fontSize='10px'; chevron.style.marginLeft='1px'; }
+  if(!visible) renderTimeline(patientId, `timeline-${patientId}`);
+}
+
+function renderTimeline(patientId, targetId){
   const evos = evoluciones.filter(e=>e.patientId===patientId)
     .sort((a,b)=>b.date.localeCompare(a.date)||b.id-a.id);
-  const el = document.getElementById('evoTimeline');
+  const elId = targetId || 'evoTimeline';
+  const el = document.getElementById(elId);
   if(!evos.length){
     el.innerHTML='<div class="empty" style="padding:1rem 0"><i class="ti ti-notes-off"></i><p>Sin evoluciones registradas</p></div>';
     return;
@@ -7736,6 +7834,7 @@ function renderTimeline(patientId){
         ${e.pve==='Sí' ? `<div class="evo-section-subtitle">PVE</div><div class="evo-grid"><div class="evo-item"><div class="k">Tipo</div><div class="v">${e.pveTipo||'—'}</div></div><div class="evo-item"><div class="k">Duración</div><div class="v">${e.pveMin||'—'} min</div></div><div class="evo-item"><div class="k">Resultado</div><div class="v">${e.pveResult||'—'}</div></div></div>` : ''}
         ${tags ? `<div style="margin-top:6px;margin-bottom:2px">${tags}</div>` : ''}
         ${e.obs ? `<div class="evo-obs">${e.obs}</div>` : ''}
+        ${(!e.tipo && currentUser && e.kine===currentUser.name) ? `<div style="margin-top:8px;text-align:right"><button class="btn btn-ghost btn-sm" style="font-size:11px;color:var(--blue-600)" onclick="editarEvolucion(${e.id})"><i class="ti ti-pencil"></i> Editar</button></div>` : ''}
       </div>
     </div>`;
   }).join('') + '</div>';
