@@ -1107,6 +1107,7 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
               <label class="ant-chip"><input type="checkbox" id="fQuemMMII_der" value="mmii_der">MMII derecho</label>
               <label class="ant-chip"><input type="checkbox" id="fQuemMMII_izq" value="mmii_izq">MMII izquierdo</label>
               <label class="ant-chip"><input type="checkbox" id="fQuemPerine" value="perine">Periné</label>
+              <label class="ant-chip"><input type="checkbox" id="fQuemViaAerea" value="via_aerea">Quemadura de vía aérea</label>
             </div>
           </div>
         </div>
@@ -1121,6 +1122,7 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
                 <option>Transtibial</option>
                 <option>Transfemoral</option>
                 <option>Transmetatarsiana</option>
+                <option>Amputación de dedo del pie</option>
                 <option>Desarticulación de rodilla</option>
                 <option>Desarticulación de cadera</option>
                 <option>MMSS — radio-carpiana</option>
@@ -5687,7 +5689,7 @@ function resetGrupoFields(){
   const rO2=document.getElementById('fRespO2Dep'); if(rO2) rO2.value='';
   // Campos quemado
   ['fQuemSCQ','fQuemGrado'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
-  ['fQuemCara','fQuemCuello','fQuemToraxAnt','fQuemDorso','fQuemAbdomen','fQuemMMSS_der','fQuemMMSS_izq','fQuemMMII_der','fQuemMMII_izq','fQuemPerine'].forEach(id=>{
+  ['fQuemCara','fQuemCuello','fQuemToraxAnt','fQuemDorso','fQuemAbdomen','fQuemMMSS_der','fQuemMMSS_izq','fQuemMMII_der','fQuemMMII_izq','fQuemPerine','fQuemViaAerea'].forEach(id=>{
     const el=document.getElementById(id);
     if(el){ el.checked=false; el.closest('.ant-chip')?.classList.remove('is-checked'); }
   });
@@ -7088,7 +7090,7 @@ function openEditPaciente(id){
   if(p.tipoKine==='quemado'){
     M('fQuemSCQ',p.grupoQuemSCQ||''); M('fQuemGrado',p.grupoQuemGrado||'');
     const areas = Array.isArray(p.grupoQuemAreas) ? p.grupoQuemAreas : [];
-    ['Cara','Cuello','ToraxAnt','Dorso','Abdomen','MMSS_der','MMSS_izq','MMII_der','MMII_izq','Perine'].forEach(a=>{
+    ['Cara','Cuello','ToraxAnt','Dorso','Abdomen','MMSS_der','MMSS_izq','MMII_der','MMII_izq','Perine','ViaAerea'].forEach(a=>{
       const chk=document.getElementById('fQuem'+a);
       if(chk){ chk.checked=areas.includes(chk.value); chk.closest('.ant-chip')?.classList.toggle('is-checked',chk.checked); }
     });
@@ -7162,7 +7164,7 @@ async function guardarPaciente(){
     grupoERC: (G('fNeuroSospechaEMC')==='Si' && document.getElementById('fERCData')?.value)
       ? JSON.parse(document.getElementById('fERCData').value) : null,
     grupoQuemSCQ:G('fQuemSCQ')||null, grupoQuemGrado:G('fQuemGrado')||null,
-    grupoQuemAreas: ['Cara','Cuello','ToraxAnt','Dorso','Abdomen','MMSS_der','MMSS_izq','MMII_der','MMII_izq','Perine']
+    grupoQuemAreas: ['Cara','Cuello','ToraxAnt','Dorso','Abdomen','MMSS_der','MMSS_izq','MMII_der','MMII_izq','Perine','ViaAerea']
       .filter(a=>{ const el=document.getElementById('fQuem'+a); return el?.checked; })
       .map(a=>{ const el=document.getElementById('fQuem'+a); return el?.value; }),
     grupoAmpNivel:G('fAmpNivel')||null, grupoAmpMotivo:G('fAmpMotivo')||null, grupoAmpCausa:G('fAmpCausa')||null,
