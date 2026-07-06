@@ -1107,6 +1107,7 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
               <label class="ant-chip"><input type="checkbox" id="fQuemMMII_der" value="mmii_der">MMII derecho</label>
               <label class="ant-chip"><input type="checkbox" id="fQuemMMII_izq" value="mmii_izq">MMII izquierdo</label>
               <label class="ant-chip"><input type="checkbox" id="fQuemPerine" value="perine">Periné</label>
+              <label class="ant-chip"><input type="checkbox" id="fQuemViaAerea" value="via_aerea">Quemadura de vía aérea</label>
             </div>
           </div>
         </div>
@@ -1118,10 +1119,11 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
               <label>Nivel de amputación</label>
               <select id="fAmpNivel">
                 <option value="">-</option>
-                <option>Transtibial</option>
-                <option>Transfemoral</option>
+                <option>Amputación de dedo/s del pie</option>
                 <option>Transmetatarsiana</option>
+                <option>Transtibial</option>
                 <option>Desarticulación de rodilla</option>
+                <option>Transfemoral</option>
                 <option>Desarticulación de cadera</option>
                 <option>MMSS — radio-carpiana</option>
                 <option>MMSS — transradial</option>
@@ -2109,6 +2111,30 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
                   <option>Máscara reservorio</option>
                   <option>VNI preventiva</option>
                   <option>CAFO preventiva</option>
+                </select>
+              </div>
+            </div>
+            <!-- ¿Falló la extubación? reIOT -->
+            <div class="form-row">
+              <div class="form-group">
+                <label>¿Se reIOT?</label>
+                <select id="ePVEExitReIOT" onchange="onReIOTChange('pveExit',this.value)">
+                  <option value="">-</option>
+                  <option value="Si">Sí</option>
+                  <option value="No">No</option>
+                </select>
+              </div>
+            </div>
+            <div id="pveExitReIOTMotivo" style="display:none">
+              <div class="form-group">
+                <label>Motivo de reintubación</label>
+                <select id="ePVEExitReIOTMotivo">
+                  <option value="">-</option>
+                  <option>IRA</option>
+                  <option>Estridor</option>
+                  <option>Mal manejo de secreciones</option>
+                  <option>Shock</option>
+                  <option>Deterioro de la consciencia</option>
                 </select>
               </div>
             </div>
@@ -5477,7 +5503,7 @@ function onPVEChange(val){
     document.getElementById('pveSinPVEReIOTMotivo').style.display='none';
   }
   if(val!=='Si'){
-    ['ePVEtmin','ePVETipo','ePVEresult','ePVEExitExtub','ePVEExtubTipo','eInterfazPE','ePVEFallidaExtub'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+    ['ePVEtmin','ePVETipo','ePVEresult','ePVEExitExtub','ePVEExtubTipo','eInterfazPE','ePVEFallidaExtub','ePVEExitReIOT','ePVEExitReIOTMotivo'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
     document.getElementById('pveExitosa').style.display='none';
     document.getElementById('pveFallida').style.display='none';
     document.getElementById('pveExitExtubDetalle').style.display='none';
@@ -5485,24 +5511,30 @@ function onPVEChange(val){
 }
 
 function onReIOTChange(context, val){
-  const box = document.getElementById('pveSinPVEReIOTMotivo');
+  const boxId = context==='pveExit' ? 'pveExitReIOTMotivo' : 'pveSinPVEReIOTMotivo';
+  const motiId = context==='pveExit' ? 'ePVEExitReIOTMotivo' : 'ePVENoReIOTMotivo';
+  const box = document.getElementById(boxId);
   if(box) box.style.display = val==='Si' ? 'block' : 'none';
-  if(val!=='Si'){ const el=document.getElementById('ePVENoReIOTMotivo'); if(el)el.value=''; }
+  if(val!=='Si'){ const el=document.getElementById(motiId); if(el)el.value=''; }
 }
 
 function onPVEResultChange(val){
   document.getElementById('pveExitosa').style.display = val==='Exitosa' ? 'block' : 'none';
   document.getElementById('pveFallida').style.display = val==='Fallida' ? 'block' : 'none';
   if(val!=='Exitosa'){
-    ['ePVEExitExtub','ePVEExtubTipo','eInterfazPE'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+    ['ePVEExitExtub','ePVEExtubTipo','eInterfazPE','ePVEExitReIOT','ePVEExitReIOTMotivo'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
     document.getElementById('pveExitExtubDetalle').style.display='none';
+    document.getElementById('pveExitReIOTMotivo').style.display='none';
   }
   if(val!=='Fallida'){ const el=document.getElementById('ePVEFallidaExtub');if(el)el.value=''; }
 }
 
 function onPVEExitExtubChange(val){
   document.getElementById('pveExitExtubDetalle').style.display = val==='Si' ? 'block' : 'none';
-  if(val!=='Si'){['ePVEExtubTipo','eInterfazPE'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});}
+  if(val!=='Si'){
+    ['ePVEExtubTipo','eInterfazPE','ePVEExitReIOT','ePVEExitReIOTMotivo'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+    const rm=document.getElementById('pveExitReIOTMotivo'); if(rm) rm.style.display='none';
+  }
 }
 
 function calcTCTEvo(){
@@ -7407,7 +7439,7 @@ function openEvolucion(patientId){
   { const ct=document.getElementById('ctMultiplesBox2'); if(ct){ct.style.display='none';ct.innerHTML='';} }
   { const pc=document.getElementById('ePCCSVBox2'); if(pc) pc.style.display='none'; }
   // Reset paneles PVE
-  ['pveSinPVE','pveConPVE','pveExitosa','pveFallida','pveExitExtubDetalle','pveSinPVEReIOTMotivo'].forEach(id=>{
+  ['pveSinPVE','pveConPVE','pveExitosa','pveFallida','pveExitExtubDetalle','pveSinPVEReIOTMotivo','pveExitReIOTMotivo'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.style.display='none';
   });
 
@@ -7652,6 +7684,7 @@ async function guardarEvolucion(){
     pveNoExtubTipo:G('ePVENoExtubTipo'), pveNoInterfaz:G('ePVENoInterfaz'),
     pveNoReIOT:G('ePVENoReIOT'), pveNoReIOTMotivo:G('ePVENoReIOTMotivo'),
     pveExitExtub:G('ePVEExitExtub'), pveExtubTipo:G('ePVEExtubTipo'),
+    pveExitReIOT:G('ePVEExitReIOT'), pveExitReIOTMotivo:G('ePVEExitReIOTMotivo'),
     pveFallidaExtub:G('ePVEFallidaExtub'),
     extubacion: (() => {
       const pve = G('ePVE');
