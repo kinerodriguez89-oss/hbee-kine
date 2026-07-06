@@ -4184,8 +4184,8 @@ async function loadFromSupabase(){
       supaFetch('/rest/v1/evoluciones?select=id,patient_id,data&order=created_at.desc'),
     ]);
     if(pacs && pacs.length > 0){
-      patients = pacs.map(r => ({ ...r.data, id:r.id }));
-      evoluciones = evos ? evos.map(r => ({ ...r.data, id:r.id, patientId:r.patient_id })) : [];
+      patients = pacs.map(r => ({ ...r.data, id:Number(r.id) }));
+      evoluciones = evos ? evos.map(r => ({ ...r.data, id:Number(r.id), patientId:Number(r.patient_id) })) : [];
       savePacientes(); saveEvos();
     }
     setSyncStatus('ok');
