@@ -2538,7 +2538,7 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
 
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('modalEvo')">Cerrar</button>
-      <button class="btn btn-success" onclick="guardarEvolucion()"><i class="ti ti-device-floppy"></i>Guardar evolución</button>
+      <button class="btn btn-success" id="btnGuardarEvo" onclick="guardarEvolucion()"><i class="ti ti-device-floppy"></i>Guardar evolución</button>
     </div>
   </div>
 </div>
@@ -4289,6 +4289,7 @@ let currentUser = null;
 let currentSector = null; // null = todos (admin), string = sector del kine
 let editPacId = null;
 let currentEvoPacId = null;
+let editingEvoId = null; // id de la evolución que se está editando (null = carga nueva)
 
 // ════════════════════════════════════════════════════════
 //  ASSET: MEMBRETE HBEE (logo institucional en base64)
@@ -6622,7 +6623,7 @@ function openHistorialRapido(patientId){
             ${e.tolerancia?`<span class="badge ${e.tolerancia==='Buena'?'badge-teal':e.tolerancia==='Regular'?'badge-amber':'badge-red'}" style="font-size:9px">${e.tolerancia}</span>`:''}
             ${e.armDia?`<span class="badge badge-amber" style="font-size:9px">ARM d${e.armDia}</span>`:''}
           </div>
-          <span class="evo-kine">${e.kine||'—'}</span>
+          <span class="evo-kine">${e.kine||'—'}${puedeEditarEvolucion(e) ? ` <button class="btn btn-icon btn-sm" onclick="editarEvolucion(${e.id})" title="Editar (disponible hasta 24 hs después de la carga)"><i class="ti ti-pencil"></i></button>` : ''}</span>
         </div>
         ${items.length?`<div class="evo-grid">${items.map(([k,v])=>`<div class="evo-item"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('')}</div>`:''}
         ${tags?`<div style="margin-top:5px">${tags}</div>`:''}
@@ -7318,6 +7319,9 @@ function openEvolucion(patientId){
   const p = patients.find(x=>x.id===patientId);
   if(!p) return;
   currentEvoPacId = patientId;
+  editingEvoId = null;
+  const btnGuardarEvo = document.getElementById('btnGuardarEvo');
+  if(btnGuardarEvo) btnGuardarEvo.innerHTML = '<i class="ti ti-device-floppy"></i>Guardar evolución';
   const todayStr = today();
 
   // Header del modal
@@ -7567,6 +7571,140 @@ function currentShift(){
   return 'Noche';
 }
 
+// ════════════════════════════════════════════════════════
+//  EDICIÓN DE EVOLUCIONES
+//  Regla: solo el kinesiólogo que la cargó puede editarla,
+//  y únicamente dentro de las 24 hs posteriores a la carga.
+// ════════════════════════════════════════════════════════
+const VENTANA_EDICION_EVO_MS = 24 * 60 * 60 * 1000;
+
+function puedeEditarEvolucion(evo){
+  if(!evo || !currentUser) return false;
+  if(evo.tipo === 'traslado' || evo.tipo === 'alta' || evo.tipo === 'obito') return false;
+  const esAutor = evo.kineUser
+    ? evo.kineUser === currentUser.user
+    : (evo.kine || '') === currentUser.name;
+  if(!esAutor) return false;
+  return (Date.now() - evo.id) <= VENTANA_EDICION_EVO_MS;
+}
+
+// Mapa clave-del-objeto-evolución → id de campo en el formulario.
+// Se usa para precargar el formulario al editar una evolución existente.
+const EVO_FIELD_MAP = {
+  hora:'eHora', turno:'eTurno', armDia:'eARM', utiDia:'eUTI',
+  interfazEsp:'eInterfazEsp', armDiametro:'eARMdiametro', tetADS:'eTETads',
+  posicionARM:'ePosicionARM', pronoCiclo:'ePronoCiclo', cuffLeak:'eCuffLeak',
+  cnFlujo:'eCNflujo', mvFio2:'eMVfio2', mrFlujo:'eMRflujo',
+  cnafFlujo:'eCNAFflujo', cnafFio2:'eCNAFfio2',
+  modo:'eModo', vt:'eVT', vtkg:'eVTkg', fr:'eFR', peep:'ePEEP',
+  fc:'eFC', tas:'eTAS', tad:'eTAD', tam:'eTAM', spo2Mon:'eSpO2Mon', frMon:'eFRMon',
+  pic:'ePIC', etco2:'eEtCO2', fio2:'eFiO2', ti:'eTi', pc:'ePC',
+  vr:'eVR', aaGrad:'eAAGrad', aaRatio:'eAaRatio', lactato:'eLactato',
+  p01:'eP01', deltaPocc:'eDeltaPocc',
+  ppico:'ePpico', pplat:'ePplat', peept:'ePEEPt', dp:'eDP', crs:'eCrs',
+  rinsp:'eRinsp', flujo:'eFlujo', mp:'eMP', er:'eER', ct:'eCT',
+  ph:'ePH', pco2:'ePCO2', po2:'ePO2', hco3:'eHCO3', spo2:'eSpO2', pafi:'ePAFI',
+  diasHosp:'eDiasHosp',
+  rass:'eRASS', cpot:'eCPOT', camicu:'eCAMICU', ventSed:'eVentSed',
+  dolorAuto:'eDolorAuto', dolorEscala:'eDolorEscala', otrosFarmacos:'eOtrosFarmacos',
+  akm1:'eAKM1', mrc:'eMRC',
+  modo2:'eModo2', vt2:'eVT2', vtkg2:'eVTkg2', fr2:'eFR2', peep2:'ePEEP2',
+  fio22:'eFiO22', ti2:'eTi2', pc2:'ePC2', ppico2:'ePpico2', pplat2:'ePplat2',
+  peept2:'ePEEPt2', dp2:'eDP2', crs2:'eCrs2', rinsp2:'eRinsp2', flujo2:'eFlujo2',
+  mp2:'eMP2', er2:'eER2', ct2:'eCT2', p012:'eP012', deltaPocc2:'eDeltaPocc2',
+  pve:'ePVE', pveTipo:'ePVETipo', pveMin:'ePVEtmin', pveResult:'ePVEresult',
+  pveNoExtubTipo:'ePVENoExtubTipo', pveNoInterfaz:'ePVENoInterfaz',
+  pveNoReIOT:'ePVENoReIOT', pveNoReIOTMotivo:'ePVENoReIOTMotivo',
+  pveExitExtub:'ePVEExitExtub', pveExtubTipo:'ePVEExtubTipo', pveFallidaExtub:'ePVEFallidaExtub',
+  interfazPE:'eInterfazPE',
+  cuffM:'eCuffM', cuffT:'eCuffT', cuffN:'eCuffN',
+  oclusionCanula:'eOclusionCanula', deglusion:'eDeglusion',
+  tipoCan:'eTipoCan', canDI:'eCanDI', canDE:'eCanDE', estadoBajon:'eEstadoBajon',
+  ostoma:'eOstoma', secTrqCant:'eSecTrqCant', secTrqCal:'eSecTrqCal', lof:'eLOF',
+  secLOFcant:'eSecLOFcant', secLOFcal:'eSecLOFcal',
+  secVAAcant:'eSecVAAcant', secVAAcal:'eSecVAAcal',
+  tolDesinf:'eTolDesinf', tolOclusion:'eTolOclusion', tolValvula:'eTolValvula',
+  blueTest:'eBlueTest', calidadVoz:'eCalidadVoz',
+  auscult:'eAuscult', tos:'eTos', spo2Reposo:'eSpO2Reposo', frResp:'eFRResp',
+  neuroConciencia:'eNeuroConciencia', neuroFAC:'eNeuroFAC',
+  tct1:'eTCT1', tct2:'eTCT2', tct3:'eTCT3', tct4:'eTCT4', tctScore:'eTCTScore',
+  qxDiaPOP:'eQxDiaPOP', qxCarga:'eQxCarga', qxHerida:'eQxHerida',
+  ampNivel:'eAmpNivel', ampMunon:'eAmpMunon', ampVendaje:'eAmpVendaje',
+  qemSCQ:'eQemSCQ', qemZona:'eQemZona', qemEstado:'eQemEstado',
+  qemContractura:'eQemContractura', qemPosicion:'eQemPosicion',
+  obs:'eObs',
+};
+
+function precargarCamposEvolucion(evo){
+  // Fecha / interfaz principal (ids con múltiples posibles destinos)
+  const eDate = document.getElementById('eDate'); if(eDate && evo.date) eDate.value = evo.date;
+  const interfazVal = evo.interfaz || '';
+  ['eInterfazPrincipal','eInterfaz'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el && interfazVal) el.value = interfazVal;
+  });
+
+  Object.keys(EVO_FIELD_MAP).forEach(key=>{
+    const val = evo[key];
+    if(val===undefined || val===null || val==='') return;
+    const el = document.getElementById(EVO_FIELD_MAP[key]);
+    if(el) el.value = val;
+  });
+
+  // Multiselects
+  setMultiselectValues('msSedacion', evo.sedacion);
+  setMultiselectValues('msAnalgesia', evo.analgesia);
+  setMultiselectValues('msBNM', evo.bnm);
+  setMultiselectValues('msVasoact', evo.vasoact);
+
+  // Técnicas / prestaciones (tags .tag activables en toda la pestaña)
+  if(evo.tecnicas && evo.tecnicas.length){
+    document.querySelectorAll('.tag').forEach(t=>{
+      if(evo.tecnicas.includes(t.textContent.trim())) t.classList.add('active');
+    });
+  }
+
+  // Setting ventilatorio modificado (sub-bloque 2)
+  if(evo.modSetting){
+    const tagMS = document.getElementById('tagModSetting');
+    if(tagMS && !tagMS.classList.contains('active')) toggleModSetting(tagMS);
+  }
+
+  // Evaluación de músculos respiratorios
+  if(evo.musResp){
+    const tagMR = document.getElementById('tagMusRespTag');
+    if(tagMR && !tagMR.classList.contains('active')) toggleTagMusResp(tagMR);
+    const mr = evo.musResp;
+    const setVal = (id,v)=>{ const el=document.getElementById(id); if(el && v!==undefined && v!==null && v!=='') el.value=v; };
+    setVal('eMusPImax', mr.pimax); setVal('eMusPEmax', mr.pemax);
+    setVal('eMusCV', mr.cv); setVal('eMusCVpcp', mr.cvPCP);
+    setVal('eMusPFT', mr.pft); setVal('eMusPFE', mr.pfe);
+  }
+
+  // Recalcular displays dependientes
+  const npveDisp = document.getElementById('eNPVEDisplay');
+  if(npveDisp && evo.nPVE!==undefined && evo.nPVE!=='') npveDisp.value = evo.nPVE;
+  const dolorRow = document.getElementById('eDolorEscalaRow');
+  if(dolorRow) dolorRow.style.display = (evo.dolorAuto==='Sí') ? 'block' : 'none';
+}
+
+function editarEvolucion(evoId){
+  const evo = evoluciones.find(e=>e.id===evoId);
+  if(!evo) return;
+  if(!puedeEditarEvolucion(evo)){
+    showToast('Esta evolución ya no se puede editar (solo el autor, dentro de las 24 hs de la carga)','error');
+    return;
+  }
+  closeModal('modalHistRapido');
+  openEvolucion(evo.patientId); // arma el formulario según el tipo de paciente
+  editingEvoId = evo.id;
+  precargarCamposEvolucion(evo);
+  document.getElementById('evoModalTitle').textContent = `Editar evolución — ${document.getElementById('evoModalTitle').textContent}`;
+  const btnGuardarEvo = document.getElementById('btnGuardarEvo');
+  if(btnGuardarEvo) btnGuardarEvo.innerHTML = '<i class="ti ti-device-floppy"></i>Guardar cambios';
+  showToast('Editando evolución del ' + fmtDate(evo.date), 'info');
+}
+
 async function guardarEvolucion(){
   const date = document.getElementById('eDate').value;
   if(!date){ showToast('Ingresá la fecha','error'); return; }
@@ -7580,7 +7718,7 @@ async function guardarEvolucion(){
   if(pveActual && pveActual!=='No') nPVE += 1;
 
   const evo = {
-    id: Date.now(), patientId: currentEvoPacId, date, hora:G('eHora'), turno:G('eTurno'), kine:G('eKine'),
+    id: Date.now(), patientId: currentEvoPacId, date, hora:G('eHora'), turno:G('eTurno'), kine:G('eKine'), kineUser: currentUser?.user,
     armDia:GN('eARM'), utiDia:GN('eUTI'),
     interfaz:G('eInterfazPrincipal') || G('eInterfaz'),
     interfazEsp:G('eInterfazEsp'),
@@ -7656,9 +7794,37 @@ async function guardarEvolucion(){
       pft:G('eMusPFT'), pfe:G('eMusPFE')
     } : null,
   };
-  evoluciones.unshift(evo);
+
+  const editandoId = editingEvoId;
+  if(editandoId){
+    // Edición de una evolución existente: se valida de nuevo la autoría/ventana horaria
+    const original = evoluciones.find(x=>x.id===editandoId);
+    if(!original || !puedeEditarEvolucion(original)){
+      showToast('Esta evolución ya no se puede editar','error');
+      editingEvoId = null;
+      return;
+    }
+    evo.id = original.id;
+    evo.kine = original.kine;
+    evo.kineUser = original.kineUser;
+    evo.editedAt = Date.now();
+    evo.editedBy = currentUser?.name;
+    const idx = evoluciones.findIndex(x=>x.id===editandoId);
+    evoluciones[idx] = evo;
+  } else {
+    evoluciones.unshift(evo);
+  }
   await persistAll();
   const p = patients.find(x=>x.id===currentEvoPacId);
+  if(editandoId){
+    addLog('evolve_edit',`Edición de evolución de ${p?.apellido}, ${p?.nombre} (${fmtDate(date)} — ${evo.turno})`);
+    showToast('Evolución actualizada','success');
+    editingEvoId = null;
+    closeModal('modalEvo');
+    renderTimeline(currentEvoPacId);
+    renderAll();
+    return;
+  }
   addLog('evolve',`Evolución de ${p?.apellido}, ${p?.nombre} (${fmtDate(date)} — ${evo.turno})`);
   showToast('Evolución guardada','success');
   // Reset
@@ -7728,7 +7894,7 @@ function renderTimeline(patientId){
             ${tolBadge}
             ${e.armDia ? `<span class="badge badge-amber" style="font-size:9px">ARM día ${e.armDia}</span>` : ''}
           </div>
-          <span class="evo-kine"><i class="ti ti-user" style="font-size:10px"></i> ${e.kine||'—'}</span>
+          <span class="evo-kine"><i class="ti ti-user" style="font-size:10px"></i> ${e.kine||'—'}${puedeEditarEvolucion(e) ? ` <button class="btn btn-icon btn-sm" onclick="editarEvolucion(${e.id})" title="Editar (disponible hasta 24 hs después de la carga)"><i class="ti ti-pencil"></i></button>` : ''}</span>
         </div>
         ${VM.length ? `<div class="evo-section-subtitle">Mecánica ventilatoria</div><div class="evo-grid">${VM.map(([v,k])=>`<div class="evo-item"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('')}</div>` : ''}
         ${EAB.length ? `<div class="evo-section-subtitle">EAB</div><div class="evo-grid">${EAB.map(([v,k])=>`<div class="evo-item"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('')}</div>` : ''}
@@ -7798,7 +7964,7 @@ function buscarHistorial(){
             <span style="font-size:12px;font-weight:700;color:var(--blue-800)">${fmtDate(e.date)}</span>
             <span class="badge badge-gray" style="font-size:9px">${e.turno}</span>
             ${tolBadge}
-            <span style="font-size:10px;color:var(--text-muted);margin-left:auto">${e.kine}</span>
+            <span style="font-size:10px;color:var(--text-muted);margin-left:auto">${e.kine}${puedeEditarEvolucion(e) ? ` <button class="btn btn-icon btn-sm" onclick="editarEvolucion(${e.id})" title="Editar (disponible hasta 24 hs después de la carga)"><i class="ti ti-pencil"></i></button>` : ''}</span>
           </div>
           ${items.length ? `<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:5px">${items.map(([v,k])=>`<span style="font-size:11px;background:#fff;border:1px solid var(--border);padding:2px 7px;border-radius:5px"><b>${k}:</b> ${v}</span>`).join('')}</div>` : ''}
           ${tags ? `<div style="margin-bottom:4px">${tags}</div>` : ''}
