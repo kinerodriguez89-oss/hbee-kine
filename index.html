@@ -3155,6 +3155,14 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
       <button class="modal-close" onclick="closeModal('modalNeuro')">&times;</button>
     </div>
 
+    <div id="neuroFichasBarraHist" style="display:none;align-items:center;justify-content:space-between;gap:8px;background:var(--purple-50);border:1px solid var(--purple-100);border-radius:8px;padding:8px 12px;margin-bottom:12px">
+      <span style="font-size:12px;color:var(--purple-800)"><i class="ti ti-history"></i> <span id="neuroFichasHistTexto">Este paciente ya tiene fichas neurológicas previas</span></span>
+      <div style="display:flex;gap:6px">
+        <button type="button" class="btn btn-ghost btn-sm" onclick="mostrarFichasNeuroAnteriores()"><i class="ti ti-eye"></i> Ver fichas anteriores</button>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="nuevaFichaNeuroEnBlanco()" title="Empezar una evaluación nueva sin los datos de la última"><i class="ti ti-file-plus"></i> Nueva ficha en blanco</button>
+      </div>
+    </div>
+
     <div class="form-row">
       <div class="form-group"><label>Tipo de evaluación</label>
         <select id="neuroTipo">
@@ -3660,6 +3668,22 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
       <button class="btn btn-ghost" onclick="closeModal('modalNeuro')">Cancelar</button>
       <button class="btn btn-ghost" onclick="exportarFichaNeuro()"><i class="ti ti-printer"></i>Imprimir / PDF</button>
       <button class="btn btn-success" onclick="guardarFichaNeuro()"><i class="ti ti-device-floppy"></i>Guardar ficha</button>
+    </div>
+  </div></div>
+
+<!-- ════ MODAL FICHAS NEUROLÓGICAS ANTERIORES ════ -->
+<div class="modal-overlay" id="modalFichasNeuroHist">
+  <div class="modal" style="width:640px">
+    <div class="modal-header">
+      <div>
+        <h3>Fichas neurológicas anteriores</h3>
+        <div class="modal-subtitle" id="fichasNeuroHistSub"></div>
+      </div>
+      <button class="modal-close" onclick="closeModal('modalFichasNeuroHist')">&times;</button>
+    </div>
+    <div id="fichasNeuroHistList"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modalFichasNeuroHist')">Cerrar</button>
     </div>
   </div>
 </div>
@@ -6226,57 +6250,253 @@ function openFichaNeuro(patientId){
   document.getElementById('neuroFecha').value = today();
   document.getElementById('neuroKine').value = currentUser.name;
 
-  // Cargar datos previos si existen
+  // Barra de fichas anteriores (solo si ya existe al menos una)
+  const nFichas = (p.fichasNeuro||[]).length;
+  const barra = document.getElementById('neuroFichasBarraHist');
+  if(barra){
+    barra.style.display = nFichas ? 'flex' : 'none';
+    const txt = document.getElementById('neuroFichasHistTexto');
+    if(txt) txt.textContent = `Este paciente ya tiene ${nFichas} ficha${nFichas===1?'':'s'} neurológica${nFichas===1?'':'s'} anterior${nFichas===1?'':'es'}`;
+  }
+
+  // Cargar datos de la última ficha si existen (para no reescribir lo que no cambió);
+  // si el kine prefiere empezar de cero puede usar "Nueva ficha en blanco"
   const fichaExistente = (p.fichasNeuro||[])[0];
   if(fichaExistente){
-    const M=(id,v)=>{ const el=document.getElementById(id); if(el) el.value=v||''; };
-    M('neuroTipo', fichaExistente.tipo); M('neuroDx', fichaExistente.dx);
-    M('neuroHC', fichaExistente.hc); M('neuroAtc', fichaExistente.atc);
-    M('neuroExFisica', fichaExistente.exFisica); M('neuroHemi', fichaExistente.hemi);
-    M('neuroMotor', fichaExistente.motor); M('neuroTono', fichaExistente.tono);
-    // Barthel ítems
-    const bP = fichaExistente.barthelItems?.prev||{}, bA = fichaExistente.barthelItems?.act||{};
-    ['Alim','Baño','Aseo','Vest','Intest','Vesic','Inod','Tras','Deamb','Escal'].forEach(k=>{
-      M('nb'+k+'P', bP[k]||''); M('nb'+k+'A', bA[k]||'');
-    });
-    calcBarthelNeuro();
-    M('neuroFACPrev', fichaExistente.facPrev); M('neuroFACAct', fichaExistente.facAct);
-    // PASS ítems
-    const pass = fichaExistente.passItems||{};
-    for(let i=1;i<=12;i++){ M('nPASS'+i, pass['p'+i]||''); }
-    calcPASSNeuro();
-    M('neuroTCT', fichaExistente.tct); M('neuroSaludAP', fichaExistente.saludAP);
-    // MRC
-    if(fichaExistente.mrcD) fichaExistente.mrcD.forEach((v,i)=>{ const el=document.getElementById(`mrcD${i}`); if(el) el.value=v||''; });
-    if(fichaExistente.mrcI) fichaExistente.mrcI.forEach((v,i)=>{ const el=document.getElementById(`mrcI${i}`); if(el) el.value=v||''; });
-    calcMRCScore();
-    M('neuroConciencia', fichaExistente.conciencia); M('neuroLenguaje', fichaExistente.lenguaje);
-    M('neuroAtencion', fichaExistente.atencion); M('neuroMemoria', fichaExistente.memoria);
-    M('neuroPraxias', fichaExistente.praxias); M('neuroGnosias', fichaExistente.gnosias);
-    // Pfeiffer ítems
-    const pf = fichaExistente.pfeifferItems||{};
-    for(let i=1;i<=10;i++){ M('nPf'+i, pf['p'+i]!==undefined ? String(pf['p'+i]) : ''); }
-    calcPfeifferNeuro();
-    M('neuroDelirium', fichaExistente.delirium);
-    M('neuroObjetivos', fichaExistente.objetivos);
-    M('neuroHerramientas', fichaExistente.herramientas);
-    M('neuroConclusiones', fichaExistente.conclusiones);
+    precargarFichaNeuroEnFormulario(fichaExistente);
   } else {
-    // Prellenar con datos del paciente
-    document.getElementById('neuroDx').value = p.diagnostico||'';
-    document.getElementById('neuroAtc').value = [antecedentesTexto(p), p.otrosAnt||''].filter(Boolean).join(', ');
-    // Limpiar todos los campos
-    ['neuroHC','neuroExFisica','neuroObjetivos','neuroHerramientas','neuroConclusiones'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
-    ['neuroHemi','neuroMotor','neuroTono','neuroConciencia','neuroLenguaje','neuroAtencion','neuroMemoria','neuroPraxias','neuroGnosias','neuroDelirium','neuroTipo','neuroTCT','neuroSaludAP','neuroFACPrev','neuroFACAct'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
-    ['Alim','Baño','Aseo','Vest','Intest','Vesic','Inod','Tras','Deamb','Escal'].forEach(k=>{ ['nb'+k+'P','nb'+k+'A'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';}); });
-    for(let i=1;i<=12;i++){ const el=document.getElementById('nPASS'+i); if(el) el.value=''; }
-    for(let i=1;i<=10;i++){ const el=document.getElementById('nPf'+i); if(el) el.value=''; }
-    for(let i=0;i<10;i++){ const d=document.getElementById(`mrcD${i}`), ii=document.getElementById(`mrcI${i}`); if(d)d.value=''; if(ii)ii.value=''; }
-    calcBarthelNeuro(); calcPASSNeuro(); calcPfeifferNeuro(); calcMRCScore();
+    limpiarFormularioFichaNeuro(p);
   }
 
   calcMRCScore();
   openModal('modalNeuro');
+}
+
+// Precarga el formulario de ficha neurológica con los datos de una ficha ya guardada.
+function precargarFichaNeuroEnFormulario(fichaExistente){
+  const M=(id,v)=>{ const el=document.getElementById(id); if(el) el.value=v||''; };
+  M('neuroTipo', fichaExistente.tipo); M('neuroDx', fichaExistente.dx);
+  M('neuroHC', fichaExistente.hc); M('neuroAtc', fichaExistente.atc);
+  M('neuroExFisica', fichaExistente.exFisica); M('neuroHemi', fichaExistente.hemi);
+  M('neuroMotor', fichaExistente.motor); M('neuroTono', fichaExistente.tono);
+  // Barthel ítems
+  const bP = fichaExistente.barthelItems?.prev||{}, bA = fichaExistente.barthelItems?.act||{};
+  ['Alim','Baño','Aseo','Vest','Intest','Vesic','Inod','Tras','Deamb','Escal'].forEach(k=>{
+    M('nb'+k+'P', bP[k]||''); M('nb'+k+'A', bA[k]||'');
+  });
+  calcBarthelNeuro();
+  M('neuroFACPrev', fichaExistente.facPrev); M('neuroFACAct', fichaExistente.facAct);
+  // PASS ítems
+  const pass = fichaExistente.passItems||{};
+  for(let i=1;i<=12;i++){ M('nPASS'+i, pass['p'+i]||''); }
+  calcPASSNeuro();
+  M('neuroTCT', fichaExistente.tct); M('neuroSaludAP', fichaExistente.saludAP);
+  // MRC
+  if(fichaExistente.mrcD) fichaExistente.mrcD.forEach((v,i)=>{ const el=document.getElementById(`mrcD${i}`); if(el) el.value=v||''; });
+  if(fichaExistente.mrcI) fichaExistente.mrcI.forEach((v,i)=>{ const el=document.getElementById(`mrcI${i}`); if(el) el.value=v||''; });
+  calcMRCScore();
+  M('neuroConciencia', fichaExistente.conciencia); M('neuroLenguaje', fichaExistente.lenguaje);
+  M('neuroAtencion', fichaExistente.atencion); M('neuroMemoria', fichaExistente.memoria);
+  M('neuroPraxias', fichaExistente.praxias); M('neuroGnosias', fichaExistente.gnosias);
+  // Pfeiffer ítems
+  const pf = fichaExistente.pfeifferItems||{};
+  for(let i=1;i<=10;i++){ M('nPf'+i, pf['p'+i]!==undefined ? String(pf['p'+i]) : ''); }
+  calcPfeifferNeuro();
+  M('neuroDelirium', fichaExistente.delirium);
+  M('neuroObjetivos', fichaExistente.objetivos);
+  M('neuroHerramientas', fichaExistente.herramientas);
+  M('neuroConclusiones', fichaExistente.conclusiones);
+}
+
+// Deja el formulario de ficha neurológica en blanco (solo con Dx/antecedentes del paciente).
+function limpiarFormularioFichaNeuro(p){
+  document.getElementById('neuroDx').value = p.diagnostico||'';
+  document.getElementById('neuroAtc').value = [antecedentesTexto(p), p.otrosAnt||''].filter(Boolean).join(', ');
+  ['neuroHC','neuroExFisica','neuroObjetivos','neuroHerramientas','neuroConclusiones'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  ['neuroHemi','neuroMotor','neuroTono','neuroConciencia','neuroLenguaje','neuroAtencion','neuroMemoria','neuroPraxias','neuroGnosias','neuroDelirium','neuroTipo','neuroTCT','neuroSaludAP','neuroFACPrev','neuroFACAct'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  ['Alim','Baño','Aseo','Vest','Intest','Vesic','Inod','Tras','Deamb','Escal'].forEach(k=>{ ['nb'+k+'P','nb'+k+'A'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';}); });
+  for(let i=1;i<=12;i++){ const el=document.getElementById('nPASS'+i); if(el) el.value=''; }
+  for(let i=1;i<=10;i++){ const el=document.getElementById('nPf'+i); if(el) el.value=''; }
+  for(let i=0;i<10;i++){ const d=document.getElementById(`mrcD${i}`), ii=document.getElementById(`mrcI${i}`); if(d)d.value=''; if(ii)ii.value=''; }
+  calcBarthelNeuro(); calcPASSNeuro(); calcPfeifferNeuro(); calcMRCScore();
+}
+
+// Botón "Nueva ficha en blanco": permite cargar una evaluación nueva sin arrastrar
+// las respuestas de la última ficha guardada (útil para un control evolutivo real).
+function nuevaFichaNeuroEnBlanco(){
+  const p = patients.find(x=>x.id===neuroEditPacId);
+  if(!p) return;
+  document.getElementById('neuroFecha').value = today();
+  document.getElementById('neuroKine').value = currentUser.name;
+  limpiarFormularioFichaNeuro(p);
+  showToast('Formulario en blanco listo para una nueva evaluación','info');
+}
+
+// ── Historial de fichas neurológicas anteriores ──────────
+const TIPO_FICHA_NEURO_LABEL = { inicial:'Evaluación inicial', alta:'Evaluación de alta', control:'Control evolutivo' };
+
+function mostrarFichasNeuroAnteriores(){
+  const p = patients.find(x=>x.id===neuroEditPacId);
+  if(!p) return;
+  const fichas = p.fichasNeuro||[];
+  document.getElementById('fichasNeuroHistSub').textContent = `${p.apellido}, ${p.nombre}`;
+  const cont = document.getElementById('fichasNeuroHistList');
+  if(!fichas.length){
+    cont.innerHTML = '<div class="empty"><i class="ti ti-notes-off"></i><p>Todavía no hay fichas neurológicas guardadas para este paciente</p></div>';
+  } else {
+    cont.innerHTML = fichas.map(f=>{
+      const badges = [
+        f.barthelAct!=null && f.barthelAct!=='' ? `<span class="badge badge-blue" style="font-size:9px">Barthel ${f.barthelAct}/100</span>` : '',
+        f.facAct!=null && f.facAct!=='' ? `<span class="badge badge-teal" style="font-size:9px">FAC ${f.facAct}/5</span>` : '',
+        (f.sumMRC || f.sumMRC===0) ? `<span class="badge badge-amber" style="font-size:9px">MRC ${f.sumMRC}/60</span>` : '',
+        f.tct!=null && f.tct!=='' ? `<span class="badge badge-gray" style="font-size:9px">TCT ${f.tct}/100</span>` : '',
+      ].filter(Boolean).join(' ');
+      return `<div class="historial-card" style="margin-bottom:10px">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:8px">
+          <div>
+            <div class="historial-name">${fmtDate(f.fecha)} — ${TIPO_FICHA_NEURO_LABEL[f.tipo]||f.tipo||'Evaluación'}</div>
+            <div class="historial-meta"><i class="ti ti-user"></i> ${f.kine||'—'}</div>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="imprimirFichaNeuroGuardada(${f.id})"><i class="ti ti-printer"></i> Ver / Imprimir</button>
+        </div>
+        ${badges ? `<div style="margin-top:6px">${badges}</div>` : ''}
+        ${f.conclusiones ? `<div class="evo-obs" style="margin-top:6px">${f.conclusiones}</div>` : ''}
+      </div>`;
+    }).join('');
+  }
+  openModal('modalFichasNeuroHist');
+}
+
+// Genera e imprime/exporta el HTML de una ficha neurológica ya guardada (histórica),
+// sin necesidad de cargarla en el formulario actual.
+function imprimirFichaNeuroGuardada(fichaId){
+  const p = patients.find(x=>x.id===neuroEditPacId);
+  if(!p) return;
+  const ficha = (p.fichasNeuro||[]).find(f=>f.id===fichaId);
+  if(!ficha) return;
+
+  const V = (val, suf='') => (val===undefined || val===null || val==='') ? '—' : `${val}${suf}`;
+  const MRC_GRUPOS = ['Abd. hombro','Flex. codo','Ext. muñeca','Ext. codo','Ext. dedos','Flex. cadera','Ext. rodilla','Dorsifl. tobillo','Ext. hallux','Flex. plantar'];
+  const mrcRows = MRC_GRUPOS.map((g,i)=>`
+    <tr><td>${g}</td><td style="text-align:center">${V(ficha.mrcD?.[i])}</td><td style="text-align:center">${V(ficha.mrcI?.[i])}</td></tr>`).join('');
+  const bP = ficha.barthelItems?.prev||{}, bA = ficha.barthelItems?.act||{};
+  const pass = ficha.passItems||{};
+  const pf = ficha.pfeifferItems||{};
+
+  const html = `<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8">
+<title>Ficha Neurológica — ${p.apellido}, ${p.nombre}</title>
+<style>
+  @page { size: A4; margin: 15mm 18mm; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, sans-serif; font-size: 11px; color: #222; line-height: 1.5; }
+  .header { border-bottom:3px solid #185FA5; padding-bottom:10px; margin-bottom:14px; }
+  .membrete-img { width:100%; max-width:480px; display:block; margin-bottom:6px; }
+  .header-title { margin-top:6px; }
+  .header-title h2 { font-size:14px; color:#185FA5; font-weight:700; }
+  .header-title p { font-size:10px; color:#666; }
+  .patient-bar { background:#E6F1FB; padding:8px 12px; border-radius:6px; margin-bottom:12px; display:flex; gap:20px; flex-wrap:wrap; }
+  .patient-bar span { font-size:11px; } .patient-bar strong { color:#185FA5; }
+  h3 { font-size:11px; font-weight:700; color:#185FA5; text-transform:uppercase; letter-spacing:.5px; border-bottom:1px solid #B5D4F4; padding-bottom:3px; margin:12px 0 6px; }
+  table { width:100%; border-collapse:collapse; font-size:10.5px; margin-bottom:8px; }
+  th { background:#E6F1FB; padding:5px 8px; text-align:left; font-size:10px; color:#185FA5; }
+  td { padding:4px 8px; border-bottom:1px solid #eee; vertical-align:top; }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .grid3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }
+  .grid4 { display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:8px; }
+  .field { margin-bottom:5px; }
+  .field label { font-size:9px; color:#666; text-transform:uppercase; letter-spacing:.4px; display:block; }
+  .field span { font-size:11px; font-weight:600; }
+  .score-box { display:inline-flex; flex-direction:column; align-items:center; padding:6px 12px; border-radius:8px; background:#E6F1FB; margin:4px; }
+  .score-box .val { font-size:20px; font-weight:700; color:#185FA5; }
+  .score-box .lbl { font-size:9px; color:#666; text-transform:uppercase; }
+  .obs-box { background:#fffbf0; border-left:3px solid #BA7517; padding:6px 10px; border-radius:0 6px 6px 0; font-size:11px; margin-top:4px; }
+  .footer { margin-top:20px; border-top:1px solid #ccc; padding-top:10px; display:flex; justify-content:space-between; font-size:10px; color:#666; }
+  .firma { text-align:center; margin-top:40px; }
+  .firma-line { border-top:1px solid #333; width:200px; margin:0 auto 4px; }
+  @media print { body { -webkit-print-color-adjust:exact; print-color-adjust:exact; } }
+</style>
+</head><body>
+
+<div class="header">
+  <img src="${MEMBRETE_HBEE}" alt="Membrete HBEE" class="membrete-img">
+  <div class="header-title">
+    <h2>FICHA DE EVALUACIÓN NEUROLÓGICA KINÉSICA</h2>
+    <p>Fecha: ${fmtDate(ficha.fecha)} · ${TIPO_FICHA_NEURO_LABEL[ficha.tipo]||ficha.tipo||'Evaluación'}</p>
+  </div>
+</div>
+
+<div class="patient-bar">
+  <span><strong>Paciente:</strong> ${p.apellido}, ${p.nombre}</span>
+  <span><strong>DNI:</strong> ${p.dni||'—'}</span>
+  <span><strong>Edad:</strong> ${p.edad||'—'} años</span>
+  <span><strong>Sala:</strong> ${SALA_LABEL[p.sala]||p.sala} — Cama ${p.cama||'—'}</span>
+  <span><strong>Dx:</strong> ${ficha.dx||p.diagnostico||'—'}</span>
+  <span><strong>FI Hospital:</strong> ${fmtDate(p.fIHosp)}</span>
+</div>
+
+<h3>Resumen de Historia Clínica</h3>
+<p>${ficha.hc||'—'}</p>
+<div class="field" style="margin-top:5px"><label>Antecedentes</label><span>${ficha.atc||'—'}</span></div>
+
+<h3>Exploración Física</h3>
+<p>${ficha.exFisica||'—'}</p>
+<div class="grid3" style="margin-top:6px">
+  <div class="field"><label>Hemicuerpo afectado</label><span>${ficha.hemi||'—'}</span></div>
+  <div class="field"><label>Alteración motora</label><span>${ficha.motor||'—'}</span></div>
+  <div class="field"><label>Tono muscular</label><span>${ficha.tono||'—'}</span></div>
+</div>
+
+<h3>Escalas Funcionales</h3>
+<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px">
+  ${[['Barthel previo',V(ficha.barthelPrev)],['Barthel actual',V(ficha.barthelAct)],
+     ['FAC previo',V(ficha.facPrev)],['FAC actual',V(ficha.facAct)],
+     ['PASS movilidad',V(ficha.passMov)],['PASS equilibrio',V(ficha.passEq)],
+     ['TCT',V(ficha.tct)],['Salud autopercibida',V(ficha.saludAP)]
+  ].map(([l,v])=>`<div class="score-box"><div class="val">${v}</div><div class="lbl">${l}</div></div>`).join('')}
+</div>
+
+<h3>MRC — Fuerza Muscular por Grupos</h3>
+<table>
+  <thead><tr><th>Grupo muscular</th><th style="text-align:center">Derecho</th><th style="text-align:center">Izquierdo</th></tr></thead>
+  <tbody>${mrcRows}</tbody>
+  <tfoot><tr style="background:#E6F1FB;font-weight:700">
+    <td>MRC Sum Score</td>
+    <td colspan="2" style="text-align:center">${V(ficha.sumMRC)}/60</td>
+  </tr></tfoot>
+</table>
+
+<h3>Funciones Cerebrales Superiores</h3>
+<div class="grid4">
+  ${[['Conciencia',ficha.conciencia],['Lenguaje',ficha.lenguaje],['Atención',ficha.atencion],['Memoria',ficha.memoria],['Praxias',ficha.praxias],['Gnosias',ficha.gnosias],['Pfeiffer',V(ficha.pfeiffer)],['Delirium',ficha.delirium]].map(([l,v])=>`<div class="field"><label>${l}</label><span>${v||'—'}</span></div>`).join('')}
+</div>
+
+<h3>Objetivos de Rehabilitación</h3>
+<div class="obs-box">${ficha.objetivos||'—'}</div>
+
+<h3>Herramientas / Puntos Terapéuticos</h3>
+<div class="obs-box">${ficha.herramientas||'—'}</div>
+
+<h3>Conclusiones y Recomendaciones</h3>
+<div class="obs-box">${ficha.conclusiones||'—'}</div>
+
+<div class="firma">
+  <div class="firma-line"></div>
+  <div style="font-size:11px;font-weight:700">${ficha.kine || '—'}</div>
+  <div style="font-size:10px;color:#666">Kinesióloga/o · Servicio de Kinesiología HBEE</div>
+</div>
+
+<div class="footer">
+  <span>Hospital de Alta Complejidad del Bicentenario Esteban Echeverría</span>
+  <span>Pase de Kinesiología · ${new Date().getFullYear()} — Año de la Grandeza Argentina</span>
+</div>
+
+</body></html>`;
+
+  const w = window.open('', '_blank');
+  w.document.write(html);
+  w.document.close();
+  setTimeout(()=>w.print(), 600);
 }
 
 function calcMRCScore(){
