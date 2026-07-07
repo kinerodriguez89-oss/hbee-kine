@@ -198,6 +198,13 @@ tr:hover td{ background:var(--blue-50); }
 .tag.active{ background:var(--blue-50); border-color:var(--blue-400); color:var(--blue-800); }
 .tag.active-teal{ background:var(--teal-50); border-color:var(--teal-400); color:var(--teal-800); }
 
+/* ─── MOTIVO DE RECONEXIÓN A ARM (multi-select, NO cuenta como técnica) ─── */
+.mtag{ display:inline-flex; align-items:center; gap:4px; padding:4px 10px; border-radius:20px;
+  font-size:11px; font-weight:500; cursor:pointer; border:1px solid var(--border);
+  background:var(--gray-50); color:var(--gray-800); transition:all .12s; user-select:none; }
+.mtag:hover{ border-color:var(--amber-300); color:var(--amber-800); }
+.mtag.active{ background:var(--amber-50); border-color:var(--amber-400); color:var(--amber-800); }
+
 /* ─── TIMELINE ─── */
 .timeline{ padding-left:24px; position:relative; }
 .timeline::before{ content:''; position:absolute; left:7px; top:0; bottom:0; width:2px; background:var(--gray-100); }
@@ -1982,6 +1989,9 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
       <i class="ti ti-chevron-down accordion-arrow" id="arrPVE"></i>
     </div>
     <div class="accordion-body" id="accPVE">
+
+    <!-- Árbol PVE para TET -->
+    <div id="pveTETBlock">
       <div class="form-row" style="margin-top:8px">
         <div class="form-group">
           <label>¿Se realizó PVE?</label>
@@ -2127,9 +2137,70 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
           </div>
         </div>
       </div>
+    </div><!-- fin pveTETBlock -->
 
-      <!-- Cuff Leak Test: solo pacientes quemados -->
-      <div id="pveSubCuffLeak" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+    <!-- Árbol PVE para TQT: destete vía TQT/T (collar/tubo en T), no extubación -->
+    <div id="pveTQTBlock" style="display:none">
+      <div class="form-row" style="margin-top:8px">
+        <div class="form-group">
+          <label>¿Se colocó al paciente en TQT/T?</label>
+          <select id="ePVETQTColocado" onchange="onPVETQTColocadoChange(this.value)">
+            <option value="">-</option>
+            <option value="No">No</option>
+            <option value="Si">Sí</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="pveTQTDetalle" style="display:none">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Tiempo / plan</label>
+            <select id="ePVETQTDuracion" onchange="onPVETQTDuracionChange(this.value)">
+              <option value="">-</option>
+              <option value="<3h">Menos de 3 hs</option>
+              <option value="3-6h">De 3 a 6 hs</option>
+              <option value="6-12h">De 6 a 12 hs</option>
+              <option value="noche1">En plan de pasar primera noche</option>
+              <option value="noche2">En plan de pasar segunda noche</option>
+              <option value="noche3">En plan de pasar tercera noche</option>
+              <option value="noche4">En plan de pasar cuarta noche</option>
+              <option value="noche5">En plan de pasar quinta noche</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Solo para planes de noche: si se interrumpió antes de completar el objetivo -->
+        <div id="pveTQTNocheInterrupcion" style="display:none">
+          <div class="form-group" style="max-width:340px">
+            <label>¿Debió reconectarse a ARM antes de completar el objetivo?</label>
+            <select id="ePVETQTNocheReconexion" onchange="onPVETQTNocheReconexionChange(this.value)">
+              <option value="">-</option>
+              <option value="Si">Sí</option>
+              <option value="No">No — completó el objetivo</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Motivo de reconexión a ARM: multi-select (horas siempre, noches solo si se interrumpió) -->
+        <div id="pveTQTMotivo" style="display:none;margin-top:10px">
+          <div class="dec-label">Motivo de reconexión a ARM</div>
+          <div class="tag-group" id="tagsPVETQTMotivo">
+            <span class="mtag" onclick="toggleTag(this)">Taquipnea</span>
+            <span class="mtag" onclick="toggleTag(this)">Uso de músculos accesorios</span>
+            <span class="mtag" onclick="toggleTag(this)">Disnea</span>
+            <span class="mtag" onclick="toggleTag(this)">Shock</span>
+            <span class="mtag" onclick="toggleTag(this)">Hipoxemia</span>
+            <span class="mtag" onclick="toggleTag(this)">Hipertensión</span>
+            <span class="mtag" onclick="toggleTag(this)">Taquicardia</span>
+            <span class="mtag" onclick="toggleTag(this)">Electiva</span>
+          </div>
+        </div>
+      </div>
+    </div><!-- fin pveTQTBlock -->
+
+    <!-- Cuff Leak Test: solo pacientes quemados -->
+    <div id="pveSubCuffLeak" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
         <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--text-muted);margin-bottom:8px">Cuff Leak Test</div>
         <div class="form-group">
           <select id="eCuffLeak">
@@ -5526,6 +5597,78 @@ function onPVEExitExtubChange(val){
   if(val!=='Si'){['ePVEExtubTipo','eInterfazPE'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});}
 }
 
+// ── Árbol PVE — TQT/T (destete vía traqueostomía/tubo en T, no extubación) ──
+const PVE_TQT_DURACION_LABEL = {
+  '<3h':'Menos de 3 hs', '3-6h':'De 3 a 6 hs', '6-12h':'De 6 a 12 hs',
+  noche1:'Plan de pasar 1ra noche', noche2:'Plan de pasar 2da noche',
+  noche3:'Plan de pasar 3ra noche', noche4:'Plan de pasar 4ta noche',
+  noche5:'Plan de pasar 5ta noche'
+};
+
+function limpiarMotivoReconexionARM(){
+  document.querySelectorAll('#tagsPVETQTMotivo .mtag.active').forEach(t=>t.classList.remove('active'));
+}
+
+function onPVETQTColocadoChange(val){
+  document.getElementById('pveTQTDetalle').style.display = val==='Si' ? 'block' : 'none';
+  if(val!=='Si'){
+    ['ePVETQTDuracion','ePVETQTNocheReconexion'].forEach(id=>{const el=document.getElementById(id); if(el) el.value='';});
+    document.getElementById('pveTQTNocheInterrupcion').style.display = 'none';
+    document.getElementById('pveTQTMotivo').style.display = 'none';
+    limpiarMotivoReconexionARM();
+  }
+}
+
+function onPVETQTDuracionChange(val){
+  const horas = ['<3h','3-6h','6-12h'];
+  const noches = ['noche1','noche2','noche3','noche4','noche5'];
+  document.getElementById('pveTQTNocheInterrupcion').style.display = noches.includes(val) ? 'block' : 'none';
+  if(!noches.includes(val)){
+    const el = document.getElementById('ePVETQTNocheReconexion'); if(el) el.value='';
+  }
+  if(horas.includes(val)){
+    document.getElementById('pveTQTMotivo').style.display = 'block';
+  } else if(!noches.includes(val)){
+    document.getElementById('pveTQTMotivo').style.display = 'none';
+    limpiarMotivoReconexionARM();
+  } else {
+    // opción de noche recién elegida: el motivo depende de si hubo reconexión (ver onPVETQTNocheReconexionChange)
+    document.getElementById('pveTQTMotivo').style.display = 'none';
+    limpiarMotivoReconexionARM();
+  }
+}
+
+function onPVETQTNocheReconexionChange(val){
+  document.getElementById('pveTQTMotivo').style.display = val==='Si' ? 'block' : 'none';
+  if(val!=='Si') limpiarMotivoReconexionARM();
+}
+
+// Muestra el árbol PVE correspondiente (TET o TQT) según la interfaz elegida en ARM,
+// y limpia los campos del árbol que queda oculto para no arrastrar datos inconsistentes.
+function actualizarArbolPVEPorInterfaz(tipo){
+  const esTQT = tipo === 'TQT';
+  const tetBlock = document.getElementById('pveTETBlock');
+  const tqtBlock = document.getElementById('pveTQTBlock');
+  if(tetBlock) tetBlock.style.display = esTQT ? 'none' : 'block';
+  if(tqtBlock) tqtBlock.style.display = esTQT ? 'block' : 'none';
+  if(esTQT){
+    ['ePVE','ePVENoExtubTipo','ePVENoInterfaz','ePVENoReIOT','ePVENoReIOTMotivo',
+     'ePVEtmin','ePVETipo','ePVEresult','ePVEExitExtub','ePVEExtubTipo','eInterfazPE','ePVEFallidaExtub']
+      .forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+    ['pveSinPVE','pveConPVE','pveExitosa','pveFallida','pveExitExtubDetalle','pveSinPVEReIOTMotivo'].forEach(id=>{
+      const el = document.getElementById(id); if(el) el.style.display='none';
+    });
+  } else {
+    ['ePVETQTColocado','ePVETQTDuracion','ePVETQTNocheReconexion'].forEach(id=>{
+      const el=document.getElementById(id); if(el) el.value='';
+    });
+    ['pveTQTDetalle','pveTQTNocheInterrupcion','pveTQTMotivo'].forEach(id=>{
+      const el = document.getElementById(id); if(el) el.style.display='none';
+    });
+    limpiarMotivoReconexionARM();
+  }
+}
+
 function calcTCTEvo(){
   const vals = ['eTCT1','eTCT2','eTCT3','eTCT4'].map(id=>{
     const v = document.getElementById(id)?.value;
@@ -7576,6 +7719,7 @@ function openEvolucion(patientId){
     'ePVE','ePVETipo','ePVEtmin','ePVEresult','eInterfazPE',
     'ePVENoExtubTipo','ePVENoInterfaz','ePVENoReIOT','ePVENoReIOTMotivo',
     'ePVEExitExtub','ePVEExtubTipo','ePVEFallidaExtub',
+    'ePVETQTColocado','ePVETQTDuracion','ePVETQTNocheReconexion',
     'eCuffM','eCuffT','eCuffN','eOclusionCanula','eDeglusion',
     'eTipoCan','eCanDI','eCanDE','eEstadoBajon','eOstoma',
     'eTolDesinf','eTolOclusion','eTolValvula','eBlueTest','eCalidadVoz',
@@ -7607,10 +7751,17 @@ function openEvolucion(patientId){
   { const b=document.getElementById('accVent2Box'); if(b) b.style.display='none'; }
   { const ct=document.getElementById('ctMultiplesBox2'); if(ct){ct.style.display='none';ct.innerHTML='';} }
   { const pc=document.getElementById('ePCCSVBox2'); if(pc) pc.style.display='none'; }
-  // Reset paneles PVE
+  // Reset paneles PVE (TET)
   ['pveSinPVE','pveConPVE','pveExitosa','pveFallida','pveExitExtubDetalle','pveSinPVEReIOTMotivo'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.style.display='none';
   });
+  // Reset paneles PVE (TQT)
+  ['pveTQTDetalle','pveTQTNocheInterrupcion','pveTQTMotivo'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.style.display='none';
+  });
+  limpiarMotivoReconexionARM();
+  document.getElementById('pveTETBlock').style.display = 'block';
+  document.getElementById('pveTQTBlock').style.display = 'none';
 
   // Reset árbol de decisión ventilatoria
   document.getElementById('eBtnArmSi').className = 'dec-btn';
@@ -7788,6 +7939,9 @@ function selectInterfaz(tipo, visual=true){
   const posBox = document.getElementById('eSubARMposicion');
   if(posBox) posBox.style.display = ['TET','TQT'].includes(tipo) ? 'block' : 'none';
 
+  // Mostrar el árbol de PVE correcto (TET o TQT) según la interfaz elegida
+  if(['TET','TQT'].includes(tipo)) actualizarArbolPVEPorInterfaz(tipo);
+
   // Si es ARM, abrir acordeón de mecánica automáticamente
   if(visual && ['TET','TQT'].includes(tipo)){
     const accVent = document.getElementById('accVent');
@@ -7850,6 +8004,7 @@ const EVO_FIELD_MAP = {
   pveNoExtubTipo:'ePVENoExtubTipo', pveNoInterfaz:'ePVENoInterfaz',
   pveNoReIOT:'ePVENoReIOT', pveNoReIOTMotivo:'ePVENoReIOTMotivo',
   pveExitExtub:'ePVEExitExtub', pveExtubTipo:'ePVEExtubTipo', pveFallidaExtub:'ePVEFallidaExtub',
+  pveTQTColocado:'ePVETQTColocado', pveTQTDuracion:'ePVETQTDuracion', pveTQTNocheReconexion:'ePVETQTNocheReconexion',
   interfazPE:'eInterfazPE',
   cuffM:'eCuffM', cuffT:'eCuffT', cuffN:'eCuffN',
   oclusionCanula:'eOclusionCanula', deglusion:'eDeglusion',
@@ -7897,6 +8052,17 @@ function precargarCamposEvolucion(evo){
     document.querySelectorAll('.tag').forEach(t=>{
       if(evo.tecnicas.includes(t.textContent.trim())) t.classList.add('active');
     });
+  }
+
+  // Árbol PVE — TQT: mostrar sub-bloques según los valores cargados y marcar motivos de reconexión
+  onPVETQTColocadoChange(evo.pveTQTColocado||'');
+  onPVETQTDuracionChange(evo.pveTQTDuracion||'');
+  onPVETQTNocheReconexionChange(evo.pveTQTNocheReconexion||'');
+  if(evo.pveTQTMotivo && evo.pveTQTMotivo.length){
+    document.querySelectorAll('#tagsPVETQTMotivo .mtag').forEach(t=>{
+      if(evo.pveTQTMotivo.includes(t.textContent.trim())) t.classList.add('active');
+    });
+    document.getElementById('pveTQTMotivo').style.display = 'block';
   }
 
   // Setting ventilatorio modificado (sub-bloque 2)
@@ -7993,6 +8159,9 @@ async function guardarEvolucion(){
     pveNoReIOT:G('ePVENoReIOT'), pveNoReIOTMotivo:G('ePVENoReIOTMotivo'),
     pveExitExtub:G('ePVEExitExtub'), pveExtubTipo:G('ePVEExtubTipo'),
     pveFallidaExtub:G('ePVEFallidaExtub'),
+    pveTQTColocado:G('ePVETQTColocado'), pveTQTDuracion:G('ePVETQTDuracion'),
+    pveTQTNocheReconexion:G('ePVETQTNocheReconexion'),
+    pveTQTMotivo: [...document.querySelectorAll('#tagsPVETQTMotivo .mtag.active')].map(t=>t.textContent.trim()),
     extubacion: (() => {
       const pve = G('ePVE');
       if(pve==='No') return G('ePVENoExtubTipo')||'';
@@ -8135,6 +8304,7 @@ function renderTimeline(patientId){
         ${EAB.length ? `<div class="evo-section-subtitle">EAB</div><div class="evo-grid">${EAB.map(([v,k])=>`<div class="evo-item"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('')}</div>` : ''}
         ${NEURO.length ? `<div class="evo-section-subtitle">Neurológico / Sedación</div><div class="evo-grid">${NEURO.map(([v,k])=>`<div class="evo-item"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('')}</div>` : ''}
         ${e.pve==='Sí' ? `<div class="evo-section-subtitle">PVE</div><div class="evo-grid"><div class="evo-item"><div class="k">Tipo</div><div class="v">${e.pveTipo||'—'}</div></div><div class="evo-item"><div class="k">Duración</div><div class="v">${e.pveMin||'—'} min</div></div><div class="evo-item"><div class="k">Resultado</div><div class="v">${e.pveResult||'—'}</div></div></div>` : ''}
+        ${e.pveTQTColocado==='Si' ? `<div class="evo-section-subtitle">TQT/T</div><div class="evo-grid"><div class="evo-item"><div class="k">Duración/plan</div><div class="v">${PVE_TQT_DURACION_LABEL[e.pveTQTDuracion]||'—'}</div></div>${e.pveTQTNocheReconexion ? `<div class="evo-item"><div class="k">Reconexión</div><div class="v">${e.pveTQTNocheReconexion==='Si'?'Sí':'No'}</div></div>` : ''}${e.pveTQTMotivo && e.pveTQTMotivo.length ? `<div class="evo-item"><div class="k">Motivo reconexión</div><div class="v">${e.pveTQTMotivo.join(', ')}</div></div>` : ''}</div>` : (e.pveTQTColocado==='No' ? `<div class="evo-section-subtitle">TQT/T</div><div class="evo-grid"><div class="evo-item"><div class="k">Colocación</div><div class="v">No</div></div></div>` : '')}
         ${tags ? `<div style="margin-top:6px;margin-bottom:2px">${tags}</div>` : ''}
         ${e.obs ? `<div class="evo-obs">${e.obs}</div>` : ''}
       </div>
