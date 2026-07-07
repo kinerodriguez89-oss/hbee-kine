@@ -2291,11 +2291,41 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
         </div>
       </div><!-- fin canulaTQTBlock -->
 
-      <!-- Proceso de Decanulación: solo TQT sin ARM -->
-      <div id="decanulacionBlock" style="display:none">
-        <div class="form-section-title"><i class="ti ti-cut"></i> Proceso de Decanulación</div>
+      <div class="form-row">
+        <div class="form-group"><label>Ostoma / estoma</label>
+          <select id="eOstoma"><option value="">-</option><option>Sin particularidades</option><option>Tejido de granulación</option><option>Signos de infección</option><option>Secreción periostoma</option></select>
+        </div>
+      </div>
+      <div class="form-section-title"><i class="ti ti-droplets"></i> Secreciones traqueales</div>
+      <div class="form-row">
+        <div class="form-group"><label>Cantidad</label>
+          <select id="eSecTrqCant"><option value="">-</option><option>Nulas</option><option>Escasas</option><option>Moderadas</option><option>Abundantes</option></select>
+        </div>
+        <div class="form-group"><label>Calidad</label>
+          <select id="eSecTrqCal"><option value="">-</option><option>Mucosas</option><option>Mucopurulentas</option><option>Purulentas</option><option>Mucohemáticas</option><option>Hemáticas</option></select>
+        </div>
+      </div>
+      <div class="form-section-title"><i class="ti ti-mouth"></i> Lago orofaríngeo (LOF)</div>
+      <div class="form-row">
+        <div class="form-group"><label>Cantidad LOF</label>
+          <select id="eLOF"><option value="">-</option><option>Nulo</option><option>Escaso</option><option>Moderado</option><option>Abundante</option></select>
+        </div>
+        <div class="form-group"><label>Evaluación de deglución</label>
+          <select id="eDeglusion"><option value="">-</option><option>No realizada</option><option>Apta todas las consistencias</option><option>Apta semisólidos y líquidos</option><option>Apta semisólidos</option><option>Disfagia leve</option><option>Disfagia moderada</option><option>Disfagia severa — enteral</option></select>
+        </div>
+      </div>
+    </div>
+    <hr class="sep">
+    </div><!-- fin tqtBlock -->
 
-        <div class="dec-label">¿Tolera el desinflado del balón?</div>
+    <!-- Proceso de Decanulación: sección propia e independiente, solo TQT sin ARM -->
+    <div id="decanulacionSection" style="display:none">
+      <div class="accordion-header" onclick="toggleAccordion('accDecanulacion')">
+        <span><i class="ti ti-cut" style="margin-right:6px;color:var(--amber-400)"></i>Proceso de Decanulación</span>
+        <i class="ti ti-chevron-down accordion-arrow" id="arrDecanulacion"></i>
+      </div>
+      <div class="accordion-body" id="accDecanulacion">
+        <div class="dec-label" style="margin-top:8px">¿Tolera el desinflado del balón?</div>
         <div class="form-group" style="max-width:200px">
           <select id="eDecTolDesinf" onchange="onDecTolDesinfChange(this.value)">
             <option value="">-</option>
@@ -2400,34 +2430,9 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
             </div>
           </div>
         </div>
-      </div><!-- fin decanulacionBlock -->
-
-      <div class="form-row">
-        <div class="form-group"><label>Ostoma / estoma</label>
-          <select id="eOstoma"><option value="">-</option><option>Sin particularidades</option><option>Tejido de granulación</option><option>Signos de infección</option><option>Secreción periostoma</option></select>
-        </div>
-      </div>
-      <div class="form-section-title"><i class="ti ti-droplets"></i> Secreciones traqueales</div>
-      <div class="form-row">
-        <div class="form-group"><label>Cantidad</label>
-          <select id="eSecTrqCant"><option value="">-</option><option>Nulas</option><option>Escasas</option><option>Moderadas</option><option>Abundantes</option></select>
-        </div>
-        <div class="form-group"><label>Calidad</label>
-          <select id="eSecTrqCal"><option value="">-</option><option>Mucosas</option><option>Mucopurulentas</option><option>Purulentas</option><option>Mucohemáticas</option><option>Hemáticas</option></select>
-        </div>
-      </div>
-      <div class="form-section-title"><i class="ti ti-mouth"></i> Lago orofaríngeo (LOF)</div>
-      <div class="form-row">
-        <div class="form-group"><label>Cantidad LOF</label>
-          <select id="eLOF"><option value="">-</option><option>Nulo</option><option>Escaso</option><option>Moderado</option><option>Abundante</option></select>
-        </div>
-        <div class="form-group"><label>Evaluación de deglución</label>
-          <select id="eDeglusion"><option value="">-</option><option>No realizada</option><option>Apta todas las consistencias</option><option>Apta semisólidos y líquidos</option><option>Apta semisólidos</option><option>Disfagia leve</option><option>Disfagia moderada</option><option>Disfagia severa — enteral</option></select>
-        </div>
-      </div>
-    </div>
-    <hr class="sep">
-    </div><!-- fin tqtBlock -->
+      </div><!-- fin accDecanulacion -->
+      <hr class="sep">
+    </div><!-- fin decanulacionSection -->
 
     <!-- ══ Sección según Grupo ══ -->
     <div id="eGrupoBlock" style="display:none">
@@ -5791,19 +5796,23 @@ function limpiarTagsContainer(containerId){
   document.querySelectorAll('#'+containerId+' .mtag.active').forEach(t=>t.classList.remove('active'));
 }
 
-// Alterna entre el bloque "Cánula de traqueostomía" (ARM + TQT) y "Proceso de
-// Decanulación" (TQT sin ARM). Limpia los campos del árbol que queda oculto.
+// Muestra/oculta el sub-bloque "Cánula de traqueostomía" dentro de "Vía aérea / Presión
+// de cuff" (solo aplica con ARM+TQT). Limpia sus campos cuando queda oculto.
 function actualizarModoCanulaTQT(esARM){
   const canula = document.getElementById('canulaTQTBlock');
-  const decan = document.getElementById('decanulacionBlock');
   if(canula) canula.style.display = esARM ? 'block' : 'none';
-  if(decan) decan.style.display = esARM ? 'none' : 'block';
-  if(esARM){
-    resetProcesoDecanulacion();
-  } else {
+  if(!esARM){
     ['eTipoCan','eCanDI','eCanDE','eEstadoBajon','eOclusionCanula','eTolDesinf','eTolOclusion','eTolValvula','eBlueTest','eCalidadVoz']
       .forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   }
+}
+
+// Muestra/oculta la sección independiente "Proceso de Decanulación" (solo TQT sin ARM).
+// Limpia sus campos cuando se oculta, para no arrastrar datos de otra interfaz.
+function actualizarSeccionDecanulacion(mostrar){
+  const sec = document.getElementById('decanulacionSection');
+  if(sec) sec.style.display = mostrar ? 'block' : 'none';
+  if(!mostrar) resetProcesoDecanulacion();
 }
 
 function resetProcesoDecanulacion(){
@@ -6245,6 +6254,9 @@ function setARMStatus(enARM){
   document.getElementById('eSubArmSi').style.display = enARM ? 'block' : 'none';
   document.getElementById('eSubArmNo').style.display = !enARM ? 'block' : 'none';
   document.getElementById('armOnlyBlock').style.display = enARM ? 'block' : 'none';
+  // El Proceso de Decanulación solo aplica a TQT sin ARM: se oculta al tocar
+  // este botón y se vuelve a mostrar únicamente si eligen TQT en setInterfazEsp
+  actualizarSeccionDecanulacion(false);
   // Sección Neurológico (grupo): solo visible cuando NO está en ARM
   const grupoNeuro = document.getElementById('eGrupoNeuro');
   if(grupoNeuro) grupoNeuro.style.display = (!enARM && grupoNeuro.dataset.grupoActivo === '1') ? 'block' : 'none';
@@ -6280,7 +6292,12 @@ function setInterfazEsp(tipo){
   document.getElementById('eSubVANO2').style.display = tipo === 'VAN_O2' ? 'block' : 'none';
   document.getElementById('eSubCNAF').style.display = tipo === 'CNAF' ? 'block' : 'none';
   document.getElementById('tqtBlock').style.display = esTQT ? 'block' : 'none';
-  if(esTQT) actualizarModoCanulaTQT(false);
+  actualizarSeccionDecanulacion(esTQT);
+  if(esTQT){
+    actualizarModoCanulaTQT(false);
+    abrirAcordeon('accTQT');
+    abrirAcordeon('accDecanulacion');
+  }
   document.getElementById('eInterfazEsp').value = tipo;
   // Mapear a un valor de interfaz legible
   const mapaInterfaz = { VAN_AA:'Aire ambiente', VAN_O2:'VAN con O₂', CNAF:'CNAF', VNI:'VNI', TQT_O2:'TQT espontáneo + O₂', TQT_AA:'TQT espontáneo' };
@@ -7895,6 +7912,15 @@ function toggleAccordion(id){
   if(arr) arr.classList.toggle('open');
 }
 
+// Abre un acordeón de forma programática (idempotente, no lo cierra si ya está abierto)
+function abrirAcordeon(id){
+  const body = document.getElementById(id);
+  if(!body || body.classList.contains('open')) return;
+  body.classList.add('open');
+  const arrId = 'arr' + id.replace('acc','');
+  document.getElementById(arrId)?.classList.add('open');
+}
+
 function openEvolucion(patientId){
   const p = patients.find(x=>x.id===patientId);
   if(!p) return;
@@ -7973,7 +7999,7 @@ function openEvolucion(patientId){
   // Reset árbol Cánula TQT / Proceso de Decanulación
   resetProcesoDecanulacion();
   document.getElementById('canulaTQTBlock').style.display = 'block';
-  document.getElementById('decanulacionBlock').style.display = 'none';
+  document.getElementById('decanulacionSection').style.display = 'none';
 
   // Reset árbol de decisión ventilatoria
   document.getElementById('eBtnArmSi').className = 'dec-btn';
@@ -8158,7 +8184,7 @@ function selectInterfaz(tipo, visual=true){
   const tqtBlockEl = document.getElementById('tqtBlock');
   if(tqtBlockEl){
     tqtBlockEl.style.display = tipo === 'TQT' ? 'block' : 'none';
-    if(tipo === 'TQT') actualizarModoCanulaTQT(true);
+    if(tipo === 'TQT'){ actualizarModoCanulaTQT(true); abrirAcordeon('accTQT'); }
   }
 
   // Si es ARM, abrir acordeón de mecánica automáticamente
