@@ -2245,15 +2245,21 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
 
     <div id="tqtBlock" style="display:none">
     <div class="accordion-header" onclick="toggleAccordion('accTQT')">
-      <span><i class="ti ti-stethoscope" style="margin-right:6px;color:var(--amber-400)"></i>Vía aérea / Presión de cuff</span>
+      <span><i class="ti ti-stethoscope" style="margin-right:6px;color:var(--amber-400)"></i>Presión del cuff</span>
       <i class="ti ti-chevron-down accordion-arrow" id="arrTQT"></i>
     </div>
     <div class="accordion-body" id="accTQT">
       <div class="form-section-title" style="margin-top:8px"><i class="ti ti-gauge"></i> Presión de cuff (TET o TQT)</div>
       <div class="form-row three">
-        <div class="form-group"><label>P. cuff — Mañana (cmH₂O)</label><input type="number" id="eCuffM" inputmode="numeric"></div>
-        <div class="form-group"><label>P. cuff — Tarde (cmH₂O)</label><input type="number" id="eCuffT" inputmode="numeric"></div>
-        <div class="form-group"><label>P. cuff — Noche (cmH₂O)</label><input type="number" id="eCuffN" inputmode="numeric"></div>
+        <div class="form-group"><label>P. cuff — Mañana</label>
+          <select id="eCuffM"><option value="">-</option><option value="<20">Menos de 20 cmH₂O</option><option value="20-30">De 20 a 30 cmH₂O</option><option value=">30">Más de 30 cmH₂O</option></select>
+        </div>
+        <div class="form-group"><label>P. cuff — Tarde</label>
+          <select id="eCuffT"><option value="">-</option><option value="<20">Menos de 20 cmH₂O</option><option value="20-30">De 20 a 30 cmH₂O</option><option value=">30">Más de 30 cmH₂O</option></select>
+        </div>
+        <div class="form-group"><label>P. cuff — Noche</label>
+          <select id="eCuffN"><option value="">-</option><option value="<20">Menos de 20 cmH₂O</option><option value="20-30">De 20 a 30 cmH₂O</option><option value=">30">Más de 30 cmH₂O</option></select>
+        </div>
       </div>
       <div id="canulaTQTBlock">
         <div class="form-section-title"><i class="ti ti-cut"></i> Cánula de traqueostomía</div>
@@ -2291,11 +2297,6 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
         </div>
       </div><!-- fin canulaTQTBlock -->
 
-      <div class="form-row">
-        <div class="form-group"><label>Ostoma / estoma</label>
-          <select id="eOstoma"><option value="">-</option><option>Sin particularidades</option><option>Tejido de granulación</option><option>Signos de infección</option><option>Secreción periostoma</option></select>
-        </div>
-      </div>
       <div class="form-section-title"><i class="ti ti-droplets"></i> Secreciones traqueales</div>
       <div class="form-row">
         <div class="form-group"><label>Cantidad</label>
@@ -2365,6 +2366,44 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
               <span class="mtag" onclick="toggleTag(this)">Negativo tardío</span>
               <span class="mtag" onclick="toggleTag(this)">Positivo inmediato</span>
               <span class="mtag" onclick="toggleTag(this)">Positivo tardío</span>
+            </div>
+
+            <div class="form-row" style="margin-top:10px">
+              <div class="form-group">
+                <label>Tolerancia</label>
+                <select id="eDecTolerancia">
+                  <option value="">-</option>
+                  <option value="<3h">Menos de 3 hs</option>
+                  <option value="3-6h">De 3 a 6 hs</option>
+                  <option value="6-12h">De 6 a 12 hs</option>
+                  <option value="noche1">En plan de pasar primera noche</option>
+                  <option value="noche2">En plan de pasar segunda noche</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row" style="margin-top:10px">
+              <div class="form-group">
+                <label>¿Se decanuló?</label>
+                <select id="eDecDecanulado" onchange="onDecDecanuladoChange(this.value)">
+                  <option value="">-</option>
+                  <option value="Si">Sí</option>
+                  <option value="No">No</option>
+                </select>
+              </div>
+            </div>
+            <div id="decMotivoNoDecanulacionBox" style="display:none">
+              <div class="dec-label">Motivo</div>
+              <div class="tag-group" id="tagsDecMotivoNoDecanulacion">
+                <span class="mtag" onclick="toggleTag(this)">Taquipnea</span>
+                <span class="mtag" onclick="toggleTag(this)">Uso de músculos accesorios</span>
+                <span class="mtag" onclick="toggleTag(this)">Disnea</span>
+                <span class="mtag" onclick="toggleTag(this)">Shock</span>
+                <span class="mtag" onclick="toggleTag(this)">Hipoxemia</span>
+                <span class="mtag" onclick="toggleTag(this)">Hipertensión</span>
+                <span class="mtag" onclick="toggleTag(this)">Taquicardia</span>
+                <span class="mtag" onclick="toggleTag(this)">Electiva</span>
+              </div>
             </div>
           </div>
 
@@ -5816,13 +5855,20 @@ function actualizarSeccionDecanulacion(mostrar){
 }
 
 function resetProcesoDecanulacion(){
-  ['eDecTolDesinf','eDecMotivoDesinf','eDecTolOclusion','eDecTolValvula','eDecPlanAccion','eDecDiametroActual','eDecDiametroNuevo']
+  ['eDecTolDesinf','eDecMotivoDesinf','eDecTolOclusion','eDecTolValvula','eDecPlanAccion','eDecDiametroActual','eDecDiametroNuevo',
+   'eDecTolerancia','eDecDecanulado']
     .forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
-  ['decMotivoDesinfBox','decOclusionBox','decBlueTestBox','decNoOclusionBox','decMotivoValvulaBox','decDiametroBox']
+  ['decMotivoDesinfBox','decOclusionBox','decBlueTestBox','decNoOclusionBox','decMotivoValvulaBox','decDiametroBox','decMotivoNoDecanulacionBox']
     .forEach(id=>{ const el=document.getElementById(id); if(el) el.style.display='none'; });
   limpiarTagsContainer('tagsDecBlueTest');
   limpiarTagsContainer('tagsDecMotivoOclusion');
   limpiarTagsContainer('tagsDecMotivoValvula');
+  limpiarTagsContainer('tagsDecMotivoNoDecanulacion');
+}
+
+function onDecDecanuladoChange(val){
+  document.getElementById('decMotivoNoDecanulacionBox').style.display = val==='No' ? 'block' : 'none';
+  if(val!=='No') limpiarTagsContainer('tagsDecMotivoNoDecanulacion');
 }
 
 // Arma el resumen legible del Proceso de Decanulación para el timeline de evoluciones
@@ -5835,6 +5881,9 @@ function fmtDecanulacionResumen(e){
     items.push(`<div class="evo-item"><div class="k">Tolera oclusión</div><div class="v">${e.decTolOclusion==='Si'?'Sí':'No'}</div></div>`);
     if(e.decTolOclusion==='Si'){
       if(e.decBlueTest && e.decBlueTest.length) items.push(`<div class="evo-item"><div class="k">Blue test</div><div class="v">${e.decBlueTest.join(', ')}</div></div>`);
+      if(e.decTolerancia) items.push(`<div class="evo-item"><div class="k">Tolerancia</div><div class="v">${PVE_TQT_DURACION_LABEL[e.decTolerancia]||e.decTolerancia}</div></div>`);
+      if(e.decDecanulado) items.push(`<div class="evo-item"><div class="k">Se decanuló</div><div class="v">${e.decDecanulado==='Si'?'Sí':'No'}</div></div>`);
+      if(e.decDecanulado==='No' && e.decMotivoNoDecanulacion && e.decMotivoNoDecanulacion.length) items.push(`<div class="evo-item"><div class="k">Motivo</div><div class="v">${e.decMotivoNoDecanulacion.join(', ')}</div></div>`);
     } else if(e.decTolOclusion==='No'){
       if(e.decMotivoOclusion && e.decMotivoOclusion.length) items.push(`<div class="evo-item"><div class="k">Motivo no oclusión</div><div class="v">${e.decMotivoOclusion.join(', ')}</div></div>`);
       if(e.decTolValvula) items.push(`<div class="evo-item"><div class="k">Tolera válvula fonatoria</div><div class="v">${e.decTolValvula==='Si'?'Sí':'No'}</div></div>`);
@@ -5859,7 +5908,12 @@ function onDecTolDesinfChange(val){
 function onDecTolOclusionChange(val){
   document.getElementById('decBlueTestBox').style.display = val==='Si' ? 'block' : 'none';
   document.getElementById('decNoOclusionBox').style.display = val==='No' ? 'block' : 'none';
-  if(val!=='Si') limpiarTagsContainer('tagsDecBlueTest');
+  if(val!=='Si'){
+    limpiarTagsContainer('tagsDecBlueTest');
+    const elT = document.getElementById('eDecTolerancia'); if(elT) elT.value='';
+    const elD = document.getElementById('eDecDecanulado'); if(elD) elD.value='';
+    onDecDecanuladoChange('');
+  }
   if(val!=='No'){
     limpiarTagsContainer('tagsDecMotivoOclusion');
     const elV = document.getElementById('eDecTolValvula'); if(elV) elV.value='';
@@ -7953,7 +8007,7 @@ function openEvolucion(patientId){
     'ePVEExitExtub','ePVEExtubTipo','ePVEFallidaExtub',
     'ePVETQTColocado','ePVETQTDuracion','ePVETQTNocheReconexion',
     'eCuffM','eCuffT','eCuffN','eOclusionCanula','eDeglusion',
-    'eTipoCan','eCanDI','eCanDE','eEstadoBajon','eOstoma',
+    'eTipoCan','eCanDI','eCanDE','eEstadoBajon',
     'eTolDesinf','eTolOclusion','eTolValvula','eBlueTest','eCalidadVoz',
     'eDecTolDesinf','eDecMotivoDesinf','eDecTolOclusion','eDecTolValvula',
     'eDecPlanAccion','eDecDiametroActual','eDecDiametroNuevo',
@@ -8254,7 +8308,7 @@ const EVO_FIELD_MAP = {
   cuffM:'eCuffM', cuffT:'eCuffT', cuffN:'eCuffN',
   oclusionCanula:'eOclusionCanula', deglusion:'eDeglusion',
   tipoCan:'eTipoCan', canDI:'eCanDI', canDE:'eCanDE', estadoBajon:'eEstadoBajon',
-  ostoma:'eOstoma', secTrqCant:'eSecTrqCant', secTrqCal:'eSecTrqCal', lof:'eLOF',
+  secTrqCant:'eSecTrqCant', secTrqCal:'eSecTrqCal', lof:'eLOF',
   secLOFcant:'eSecLOFcant', secLOFcal:'eSecLOFcal',
   secVAAcant:'eSecVAAcant', secVAAcal:'eSecVAAcal',
   tolDesinf:'eTolDesinf', tolOclusion:'eTolOclusion', tolValvula:'eTolValvula',
@@ -8262,6 +8316,7 @@ const EVO_FIELD_MAP = {
   decTolDesinf:'eDecTolDesinf', decMotivoDesinf:'eDecMotivoDesinf',
   decTolOclusion:'eDecTolOclusion', decTolValvula:'eDecTolValvula',
   decPlanAccion:'eDecPlanAccion', decDiametroActual:'eDecDiametroActual', decDiametroNuevo:'eDecDiametroNuevo',
+  decTolerancia:'eDecTolerancia', decDecanulado:'eDecDecanulado',
   auscult:'eAuscult', tos:'eTos', spo2Reposo:'eSpO2Reposo', frResp:'eFRResp',
   neuroConciencia:'eNeuroConciencia', neuroFAC:'eNeuroFAC',
   tct1:'eTCT1', tct2:'eTCT2', tct3:'eTCT3', tct4:'eTCT4', tctScore:'eTCTScore',
@@ -8318,6 +8373,7 @@ function precargarCamposEvolucion(evo){
   onDecTolOclusionChange(evo.decTolOclusion||'');
   onDecTolValvulaChange(evo.decTolValvula||'');
   onDecPlanAccionChange(evo.decPlanAccion||'');
+  onDecDecanuladoChange(evo.decDecanulado||'');
   const cargarTagsDec = (containerId, valores) => {
     if(!valores || !valores.length) return;
     document.querySelectorAll('#'+containerId+' .mtag').forEach(t=>{
@@ -8328,6 +8384,7 @@ function precargarCamposEvolucion(evo){
   cargarTagsDec('tagsDecBlueTest', evo.decBlueTest);
   cargarTagsDec('tagsDecMotivoOclusion', evo.decMotivoOclusion);
   cargarTagsDec('tagsDecMotivoValvula', evo.decMotivoValvula);
+  cargarTagsDec('tagsDecMotivoNoDecanulacion', evo.decMotivoNoDecanulacion);
 
   // Setting ventilatorio modificado (sub-bloque 2)
   if(evo.modSetting){
@@ -8434,10 +8491,10 @@ async function guardarEvolucion(){
       return '';
     })(),
     interfazPE:G('eInterfazPE'), nPVE: nPVE>0 ? nPVE : '',
-    cuffM:GN('eCuffM'), cuffT:GN('eCuffT'), cuffN:GN('eCuffN'),
+    cuffM:G('eCuffM'), cuffT:G('eCuffT'), cuffN:G('eCuffN'),
     oclusionCanula:G('eOclusionCanula'), deglusion:G('eDeglusion'),
     tipoCan:G('eTipoCan'), canDI:G('eCanDI'), canDE:G('eCanDE'), estadoBajon:G('eEstadoBajon'),
-    ostoma:G('eOstoma'), secTrqCant:G('eSecTrqCant'), secTrqCal:G('eSecTrqCal'), lof:G('eLOF'),
+    secTrqCant:G('eSecTrqCant'), secTrqCal:G('eSecTrqCal'), lof:G('eLOF'),
     secLOFcant:G('eSecLOFcant'), secLOFcal:G('eSecLOFcal'),
     secVAAcant:G('eSecVAAcant'), secVAAcal:G('eSecVAAcal'),
     tolDesinf:G('eTolDesinf'), tolOclusion:G('eTolOclusion'), tolValvula:G('eTolValvula'),
@@ -8446,9 +8503,11 @@ async function guardarEvolucion(){
     decTolDesinf:G('eDecTolDesinf'), decMotivoDesinf:G('eDecMotivoDesinf'),
     decTolOclusion:G('eDecTolOclusion'), decTolValvula:G('eDecTolValvula'),
     decPlanAccion:G('eDecPlanAccion'), decDiametroActual:G('eDecDiametroActual'), decDiametroNuevo:G('eDecDiametroNuevo'),
+    decTolerancia:G('eDecTolerancia'), decDecanulado:G('eDecDecanulado'),
     decBlueTest: [...document.querySelectorAll('#tagsDecBlueTest .mtag.active')].map(t=>t.textContent.trim()),
     decMotivoOclusion: [...document.querySelectorAll('#tagsDecMotivoOclusion .mtag.active')].map(t=>t.textContent.trim()),
     decMotivoValvula: [...document.querySelectorAll('#tagsDecMotivoValvula .mtag.active')].map(t=>t.textContent.trim()),
+    decMotivoNoDecanulacion: [...document.querySelectorAll('#tagsDecMotivoNoDecanulacion .mtag.active')].map(t=>t.textContent.trim()),
     // Grupo: respiratorio
     auscult:G('eAuscult'), tos:G('eTos'), spo2Reposo:GN('eSpO2Reposo'), frResp:GN('eFRResp'),
     // Grupo: neuro
@@ -8509,7 +8568,7 @@ async function guardarEvolucion(){
     'eFC','eTAS','eTAD','eTAM','eSpO2Mon','eFRMon','ePIC','eEtCO2','eDolorEscala'];
   nFields.forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   ['eModo','eInterfaz','eRASS','eCPOT','eCAMICU','eVentSed','eDolorAuto','eAKM1','eMRC',
-   'ePVE','ePVETipo','ePVEresult','eExtubacion','eInterfazPE','eOclusionCanula','eDeglusion','eTipoCan','eEstadoBajon','eOstoma','eSecTrqCant','eSecTrqCal','eLOF',
+   'ePVE','ePVETipo','ePVEresult','eExtubacion','eInterfazPE','eOclusionCanula','eDeglusion','eTipoCan','eEstadoBajon','eSecTrqCant','eSecTrqCal','eLOF',
    'eSecCant','eSecChar'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   resetProcesoDecanulacion();
   ['msSedacion','msAnalgesia','msBNM','msVasoact'].forEach(resetMultiselect);
