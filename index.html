@@ -2255,38 +2255,154 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
         <div class="form-group"><label>P. cuff — Tarde (cmH₂O)</label><input type="number" id="eCuffT" inputmode="numeric"></div>
         <div class="form-group"><label>P. cuff — Noche (cmH₂O)</label><input type="number" id="eCuffN" inputmode="numeric"></div>
       </div>
-      <div class="form-section-title"><i class="ti ti-cut"></i> Cánula de traqueostomía</div>
-      <div class="form-row four">
-        <div class="form-group"><label>Tipo de cánula</label>
-          <select id="eTipoCan"><option value="">-</option><option>Con balón</option><option>Con balón + puerto subglótico</option><option>Sin balón</option><option>Fenestrada</option></select>
+      <div id="canulaTQTBlock">
+        <div class="form-section-title"><i class="ti ti-cut"></i> Cánula de traqueostomía</div>
+        <div class="form-row four">
+          <div class="form-group"><label>Tipo de cánula</label>
+            <select id="eTipoCan"><option value="">-</option><option>Con balón</option><option>Con balón + puerto subglótico</option><option>Sin balón</option><option>Fenestrada</option></select>
+          </div>
+          <div class="form-group"><label>Ø interno (mm)</label><input type="number" id="eCanDI" inputmode="decimal" step="0.5"></div>
+          <div class="form-group"><label>Ø externo (mm)</label><input type="number" id="eCanDE" inputmode="decimal" step="0.5"></div>
+          <div class="form-group"><label>Estado del balón</label>
+            <select id="eEstadoBajon"><option value="">-</option><option>Inflado</option><option>Desinflado</option><option>No aplica (sin balón)</option></select>
+          </div>
         </div>
-        <div class="form-group"><label>Ø interno (mm)</label><input type="number" id="eCanDI" inputmode="decimal" step="0.5"></div>
-        <div class="form-group"><label>Ø externo (mm)</label><input type="number" id="eCanDE" inputmode="decimal" step="0.5"></div>
-        <div class="form-group"><label>Estado del balón</label>
-          <select id="eEstadoBajon"><option value="">-</option><option>Inflado</option><option>Desinflado</option><option>No aplica (sin balón)</option></select>
+        <div class="form-row">
+          <div class="form-group"><label>Oclusión de cánula</label>
+            <select id="eOclusionCanula"><option value="">-</option><option>Sí — tolerada</option><option>Sí — no tolerada</option><option>No</option></select>
+          </div>
+          <div class="form-group"><label>Tolera desinflado del balón</label>
+            <select id="eTolDesinf"><option value="">-</option><option>Sí</option><option>No</option><option>No aplica (sin balón)</option></select>
+          </div>
+          <div class="form-group"><label>Tolera oclusión</label>
+            <select id="eTolOclusion"><option value="">-</option><option>Sí</option><option>No</option></select>
+          </div>
+          <div class="form-group"><label>Tolera válvula fonatoria</label>
+            <select id="eTolValvula"><option value="">-</option><option>Sí</option><option>No</option><option>No evaluada</option></select>
+          </div>
         </div>
-      </div>
+        <div class="form-row">
+          <div class="form-group"><label>Blue test</label>
+            <select id="eBlueTest"><option value="">-</option><option>Positivo</option><option>Negativo</option><option>No realizado</option></select>
+          </div>
+          <div class="form-group"><label>Calidad de la voz</label>
+            <select id="eCalidadVoz"><option value="">-</option><option>Húmeda</option><option>Clara</option><option>Afonía</option><option>No aplica</option></select>
+          </div>
+        </div>
+      </div><!-- fin canulaTQTBlock -->
+
+      <!-- Proceso de Decanulación: solo TQT sin ARM -->
+      <div id="decanulacionBlock" style="display:none">
+        <div class="form-section-title"><i class="ti ti-cut"></i> Proceso de Decanulación</div>
+
+        <div class="dec-label">¿Tolera el desinflado del balón?</div>
+        <div class="form-group" style="max-width:200px">
+          <select id="eDecTolDesinf" onchange="onDecTolDesinfChange(this.value)">
+            <option value="">-</option>
+            <option value="Si">Sí</option>
+            <option value="No">No</option>
+          </select>
+        </div>
+
+        <!-- No tolera desinflado -->
+        <div id="decMotivoDesinfBox" style="display:none" class="dec-sublevel">
+          <div class="form-group">
+            <label>Motivo</label>
+            <select id="eDecMotivoDesinf">
+              <option value="">-</option>
+              <option>Tos irritativa</option>
+              <option>Abundantes secreciones</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Sí tolera desinflado -->
+        <div id="decOclusionBox" style="display:none" class="dec-sublevel">
+          <div class="dec-label">¿Tolera la oclusión de la cánula?</div>
+          <div class="form-group" style="max-width:200px">
+            <select id="eDecTolOclusion" onchange="onDecTolOclusionChange(this.value)">
+              <option value="">-</option>
+              <option value="Si">Sí</option>
+              <option value="No">No</option>
+            </select>
+          </div>
+
+          <!-- Tolera oclusión -->
+          <div id="decBlueTestBox" style="display:none" class="dec-sublevel">
+            <div class="dec-label">Blue test</div>
+            <div class="tag-group" id="tagsDecBlueTest">
+              <span class="mtag" onclick="toggleTag(this)">Negativo inmediato</span>
+              <span class="mtag" onclick="toggleTag(this)">Negativo tardío</span>
+              <span class="mtag" onclick="toggleTag(this)">Positivo inmediato</span>
+              <span class="mtag" onclick="toggleTag(this)">Positivo tardío</span>
+            </div>
+          </div>
+
+          <!-- No tolera oclusión -->
+          <div id="decNoOclusionBox" style="display:none" class="dec-sublevel">
+            <div class="dec-label">Motivo de no tolerancia a la oclusión</div>
+            <div class="tag-group" id="tagsDecMotivoOclusion">
+              <span class="mtag" onclick="toggleTag(this)">Estridor franco</span>
+              <span class="mtag" onclick="toggleTag(this)">Flujo turbulento</span>
+              <span class="mtag" onclick="toggleTag(this)">Taquipnea</span>
+              <span class="mtag" onclick="toggleTag(this)">Disnea</span>
+              <span class="mtag" onclick="toggleTag(this)">Uso de músculos accesorios</span>
+            </div>
+
+            <div class="form-row" style="margin-top:10px">
+              <div class="form-group">
+                <label>¿Tolera válvula fonatoria?</label>
+                <select id="eDecTolValvula" onchange="onDecTolValvulaChange(this.value)">
+                  <option value="">-</option>
+                  <option value="Si">Sí</option>
+                  <option value="No">No</option>
+                </select>
+              </div>
+            </div>
+            <div id="decMotivoValvulaBox" style="display:none">
+              <div class="dec-label">Motivo de no tolerancia a la válvula fonatoria</div>
+              <div class="tag-group" id="tagsDecMotivoValvula">
+                <span class="mtag" onclick="toggleTag(this)">Estridor franco</span>
+                <span class="mtag" onclick="toggleTag(this)">Flujo turbulento</span>
+                <span class="mtag" onclick="toggleTag(this)">Taquipnea</span>
+                <span class="mtag" onclick="toggleTag(this)">Disnea</span>
+                <span class="mtag" onclick="toggleTag(this)">Uso de músculos accesorios</span>
+              </div>
+            </div>
+
+            <div class="form-row" style="margin-top:10px">
+              <div class="form-group">
+                <label>Plan de acción</label>
+                <select id="eDecPlanAccion" onchange="onDecPlanAccionChange(this.value)">
+                  <option value="">-</option>
+                  <option value="descenso">Se desciende diámetro de la cánula</option>
+                  <option value="fbc">Se realizó fibrobroncoscopía</option>
+                </select>
+              </div>
+            </div>
+            <div id="decDiametroBox" style="display:none">
+              <div class="form-row">
+                <div class="form-group"><label>ID actual (mm)</label>
+                  <select id="eDecDiametroActual">
+                    <option value="">-</option>
+                    <option value="6">6 mm</option><option value="6.5">6.5 mm</option><option value="7">7 mm</option>
+                    <option value="7.5">7.5 mm</option><option value="8">8 mm</option><option value="8.5">8.5 mm</option><option value="9">9 mm</option>
+                  </select>
+                </div>
+                <div class="form-group"><label>ID al que se pasó (mm)</label>
+                  <select id="eDecDiametroNuevo">
+                    <option value="">-</option>
+                    <option value="6">6 mm</option><option value="6.5">6.5 mm</option><option value="7">7 mm</option>
+                    <option value="7.5">7.5 mm</option><option value="8">8 mm</option><option value="8.5">8.5 mm</option><option value="9">9 mm</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div><!-- fin decanulacionBlock -->
+
       <div class="form-row">
-        <div class="form-group"><label>Oclusión de cánula</label>
-          <select id="eOclusionCanula"><option value="">-</option><option>Sí — tolerada</option><option>Sí — no tolerada</option><option>No</option></select>
-        </div>
-        <div class="form-group"><label>Tolera desinflado del balón</label>
-          <select id="eTolDesinf"><option value="">-</option><option>Sí</option><option>No</option><option>No aplica (sin balón)</option></select>
-        </div>
-        <div class="form-group"><label>Tolera oclusión</label>
-          <select id="eTolOclusion"><option value="">-</option><option>Sí</option><option>No</option></select>
-        </div>
-        <div class="form-group"><label>Tolera válvula fonatoria</label>
-          <select id="eTolValvula"><option value="">-</option><option>Sí</option><option>No</option><option>No evaluada</option></select>
-        </div>
-      </div>
-      <div class="form-row three">
-        <div class="form-group"><label>Blue test</label>
-          <select id="eBlueTest"><option value="">-</option><option>Positivo</option><option>Negativo</option><option>No realizado</option></select>
-        </div>
-        <div class="form-group"><label>Calidad de la voz</label>
-          <select id="eCalidadVoz"><option value="">-</option><option>Húmeda</option><option>Clara</option><option>Afonía</option><option>No aplica</option></select>
-        </div>
         <div class="form-group"><label>Ostoma / estoma</label>
           <select id="eOstoma"><option value="">-</option><option>Sin particularidades</option><option>Tejido de granulación</option><option>Signos de infección</option><option>Secreción periostoma</option></select>
         </div>
@@ -2496,6 +2612,7 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
             <span class="tag" onclick="toggleTag(this)">Cambio de Filtro Viral/Bacteriano</span>
             <span class="tag" onclick="toggleTag(this)">Higiene Oral</span>
             <span class="tag" onclick="toggleTag(this)">Cambio de fijación</span>
+            <span class="tag" onclick="toggleTag(this)">Estimulación con aire por puerto subglótico</span>
           </div>
         </div>
       </div>
@@ -5669,7 +5786,91 @@ function actualizarArbolPVEPorInterfaz(tipo){
   }
 }
 
-function calcTCTEvo(){
+// ── Árbol Cánula TQT / Proceso de Decanulación (TQT sin ARM) ──
+function limpiarTagsContainer(containerId){
+  document.querySelectorAll('#'+containerId+' .mtag.active').forEach(t=>t.classList.remove('active'));
+}
+
+// Alterna entre el bloque "Cánula de traqueostomía" (ARM + TQT) y "Proceso de
+// Decanulación" (TQT sin ARM). Limpia los campos del árbol que queda oculto.
+function actualizarModoCanulaTQT(esARM){
+  const canula = document.getElementById('canulaTQTBlock');
+  const decan = document.getElementById('decanulacionBlock');
+  if(canula) canula.style.display = esARM ? 'block' : 'none';
+  if(decan) decan.style.display = esARM ? 'none' : 'block';
+  if(esARM){
+    resetProcesoDecanulacion();
+  } else {
+    ['eTipoCan','eCanDI','eCanDE','eEstadoBajon','eOclusionCanula','eTolDesinf','eTolOclusion','eTolValvula','eBlueTest','eCalidadVoz']
+      .forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  }
+}
+
+function resetProcesoDecanulacion(){
+  ['eDecTolDesinf','eDecMotivoDesinf','eDecTolOclusion','eDecTolValvula','eDecPlanAccion','eDecDiametroActual','eDecDiametroNuevo']
+    .forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  ['decMotivoDesinfBox','decOclusionBox','decBlueTestBox','decNoOclusionBox','decMotivoValvulaBox','decDiametroBox']
+    .forEach(id=>{ const el=document.getElementById(id); if(el) el.style.display='none'; });
+  limpiarTagsContainer('tagsDecBlueTest');
+  limpiarTagsContainer('tagsDecMotivoOclusion');
+  limpiarTagsContainer('tagsDecMotivoValvula');
+}
+
+// Arma el resumen legible del Proceso de Decanulación para el timeline de evoluciones
+function fmtDecanulacionResumen(e){
+  if(!e.decTolDesinf) return '';
+  const items = [`<div class="evo-item"><div class="k">Tolera desinflado balón</div><div class="v">${e.decTolDesinf==='Si'?'Sí':'No'}</div></div>`];
+  if(e.decTolDesinf==='No'){
+    if(e.decMotivoDesinf) items.push(`<div class="evo-item"><div class="k">Motivo</div><div class="v">${e.decMotivoDesinf}</div></div>`);
+  } else if(e.decTolOclusion){
+    items.push(`<div class="evo-item"><div class="k">Tolera oclusión</div><div class="v">${e.decTolOclusion==='Si'?'Sí':'No'}</div></div>`);
+    if(e.decTolOclusion==='Si'){
+      if(e.decBlueTest && e.decBlueTest.length) items.push(`<div class="evo-item"><div class="k">Blue test</div><div class="v">${e.decBlueTest.join(', ')}</div></div>`);
+    } else if(e.decTolOclusion==='No'){
+      if(e.decMotivoOclusion && e.decMotivoOclusion.length) items.push(`<div class="evo-item"><div class="k">Motivo no oclusión</div><div class="v">${e.decMotivoOclusion.join(', ')}</div></div>`);
+      if(e.decTolValvula) items.push(`<div class="evo-item"><div class="k">Tolera válvula fonatoria</div><div class="v">${e.decTolValvula==='Si'?'Sí':'No'}</div></div>`);
+      if(e.decTolValvula==='No' && e.decMotivoValvula && e.decMotivoValvula.length) items.push(`<div class="evo-item"><div class="k">Motivo no válvula</div><div class="v">${e.decMotivoValvula.join(', ')}</div></div>`);
+      if(e.decPlanAccion==='descenso') items.push(`<div class="evo-item"><div class="k">Plan de acción</div><div class="v">Descenso de diámetro (${e.decDiametroActual||'—'} → ${e.decDiametroNuevo||'—'} mm)</div></div>`);
+      else if(e.decPlanAccion==='fbc') items.push(`<div class="evo-item"><div class="k">Plan de acción</div><div class="v">Fibrobroncoscopía realizada</div></div>`);
+    }
+  }
+  return `<div class="evo-section-subtitle">Proceso de Decanulación</div><div class="evo-grid">${items.join('')}</div>`;
+}
+
+function onDecTolDesinfChange(val){
+  document.getElementById('decMotivoDesinfBox').style.display = val==='No' ? 'block' : 'none';
+  document.getElementById('decOclusionBox').style.display = val==='Si' ? 'block' : 'none';
+  if(val!=='No'){ const el=document.getElementById('eDecMotivoDesinf'); if(el) el.value=''; }
+  if(val!=='Si'){
+    const el=document.getElementById('eDecTolOclusion'); if(el) el.value='';
+    onDecTolOclusionChange('');
+  }
+}
+
+function onDecTolOclusionChange(val){
+  document.getElementById('decBlueTestBox').style.display = val==='Si' ? 'block' : 'none';
+  document.getElementById('decNoOclusionBox').style.display = val==='No' ? 'block' : 'none';
+  if(val!=='Si') limpiarTagsContainer('tagsDecBlueTest');
+  if(val!=='No'){
+    limpiarTagsContainer('tagsDecMotivoOclusion');
+    const elV = document.getElementById('eDecTolValvula'); if(elV) elV.value='';
+    onDecTolValvulaChange('');
+    const elP = document.getElementById('eDecPlanAccion'); if(elP) elP.value='';
+    onDecPlanAccionChange('');
+  }
+}
+
+function onDecTolValvulaChange(val){
+  document.getElementById('decMotivoValvulaBox').style.display = val==='No' ? 'block' : 'none';
+  if(val!=='No') limpiarTagsContainer('tagsDecMotivoValvula');
+}
+
+function onDecPlanAccionChange(val){
+  document.getElementById('decDiametroBox').style.display = val==='descenso' ? 'block' : 'none';
+  if(val!=='descenso'){
+    ['eDecDiametroActual','eDecDiametroNuevo'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  }
+}
   const vals = ['eTCT1','eTCT2','eTCT3','eTCT4'].map(id=>{
     const v = document.getElementById(id)?.value;
     return v===''||v===undefined ? null : parseInt(v);
@@ -6057,7 +6258,9 @@ function setARMStatus(enARM){
     document.getElementById('eInterfazEsp').value = '';
     // Mostrar TQT block si la interfaz ARM ya tiene TQT seleccionado
     const iface = document.getElementById('eInterfazPrincipal').value;
-    document.getElementById('tqtBlock').style.display = iface === 'TQT' ? 'block' : 'none';
+    const esTQTarm = iface === 'TQT';
+    document.getElementById('tqtBlock').style.display = esTQTarm ? 'block' : 'none';
+    if(esTQTarm) actualizarModoCanulaTQT(true);
   }
   if(!enARM){
     // Esconder TQT block hasta que elija interfaz con TQT
@@ -6075,6 +6278,7 @@ function setInterfazEsp(tipo){
   document.getElementById('eSubVANO2').style.display = tipo === 'VAN_O2' ? 'block' : 'none';
   document.getElementById('eSubCNAF').style.display = tipo === 'CNAF' ? 'block' : 'none';
   document.getElementById('tqtBlock').style.display = esTQT ? 'block' : 'none';
+  if(esTQT) actualizarModoCanulaTQT(false);
   document.getElementById('eInterfazEsp').value = tipo;
   // Mapear a un valor de interfaz legible
   const mapaInterfaz = { VAN_AA:'Aire ambiente', VAN_O2:'VAN con O₂', CNAF:'CNAF', VNI:'VNI', TQT_O2:'TQT espontáneo + O₂', TQT_AA:'TQT espontáneo' };
@@ -7723,6 +7927,8 @@ function openEvolucion(patientId){
     'eCuffM','eCuffT','eCuffN','eOclusionCanula','eDeglusion',
     'eTipoCan','eCanDI','eCanDE','eEstadoBajon','eOstoma',
     'eTolDesinf','eTolOclusion','eTolValvula','eBlueTest','eCalidadVoz',
+    'eDecTolDesinf','eDecMotivoDesinf','eDecTolOclusion','eDecTolValvula',
+    'eDecPlanAccion','eDecDiametroActual','eDecDiametroNuevo',
     'eSecTrqCant','eSecTrqCal','eLOF',
     'eSecLOFcant','eSecLOFcal','eSecVAAcant','eSecVAAcal',
     'eAuscult','eTos','eSpO2Reposo','eFRResp',
@@ -7762,6 +7968,10 @@ function openEvolucion(patientId){
   limpiarMotivoReconexionARM();
   document.getElementById('pveTETBlock').style.display = 'block';
   document.getElementById('pveTQTBlock').style.display = 'none';
+  // Reset árbol Cánula TQT / Proceso de Decanulación
+  resetProcesoDecanulacion();
+  document.getElementById('canulaTQTBlock').style.display = 'block';
+  document.getElementById('decanulacionBlock').style.display = 'none';
 
   // Reset árbol de decisión ventilatoria
   document.getElementById('eBtnArmSi').className = 'dec-btn';
@@ -7942,6 +8152,13 @@ function selectInterfaz(tipo, visual=true){
   // Mostrar el árbol de PVE correcto (TET o TQT) según la interfaz elegida
   if(['TET','TQT'].includes(tipo)) actualizarArbolPVEPorInterfaz(tipo);
 
+  // Mostrar/ocultar bloque de vía aérea TQT (presión de cuff + cánula/decanulación)
+  const tqtBlockEl = document.getElementById('tqtBlock');
+  if(tqtBlockEl){
+    tqtBlockEl.style.display = tipo === 'TQT' ? 'block' : 'none';
+    if(tipo === 'TQT') actualizarModoCanulaTQT(true);
+  }
+
   // Si es ARM, abrir acordeón de mecánica automáticamente
   if(visual && ['TET','TQT'].includes(tipo)){
     const accVent = document.getElementById('accVent');
@@ -8014,6 +8231,9 @@ const EVO_FIELD_MAP = {
   secVAAcant:'eSecVAAcant', secVAAcal:'eSecVAAcal',
   tolDesinf:'eTolDesinf', tolOclusion:'eTolOclusion', tolValvula:'eTolValvula',
   blueTest:'eBlueTest', calidadVoz:'eCalidadVoz',
+  decTolDesinf:'eDecTolDesinf', decMotivoDesinf:'eDecMotivoDesinf',
+  decTolOclusion:'eDecTolOclusion', decTolValvula:'eDecTolValvula',
+  decPlanAccion:'eDecPlanAccion', decDiametroActual:'eDecDiametroActual', decDiametroNuevo:'eDecDiametroNuevo',
   auscult:'eAuscult', tos:'eTos', spo2Reposo:'eSpO2Reposo', frResp:'eFRResp',
   neuroConciencia:'eNeuroConciencia', neuroFAC:'eNeuroFAC',
   tct1:'eTCT1', tct2:'eTCT2', tct3:'eTCT3', tct4:'eTCT4', tctScore:'eTCTScore',
@@ -8064,6 +8284,22 @@ function precargarCamposEvolucion(evo){
     });
     document.getElementById('pveTQTMotivo').style.display = 'block';
   }
+
+  // Proceso de Decanulación (TQT sin ARM): mostrar sub-bloques y marcar tags multi-select
+  onDecTolDesinfChange(evo.decTolDesinf||'');
+  onDecTolOclusionChange(evo.decTolOclusion||'');
+  onDecTolValvulaChange(evo.decTolValvula||'');
+  onDecPlanAccionChange(evo.decPlanAccion||'');
+  const cargarTagsDec = (containerId, valores) => {
+    if(!valores || !valores.length) return;
+    document.querySelectorAll('#'+containerId+' .mtag').forEach(t=>{
+      if(valores.includes(t.textContent.trim())) t.classList.add('active');
+    });
+    document.getElementById(containerId).closest('[id^="dec"]').style.display = 'block';
+  };
+  cargarTagsDec('tagsDecBlueTest', evo.decBlueTest);
+  cargarTagsDec('tagsDecMotivoOclusion', evo.decMotivoOclusion);
+  cargarTagsDec('tagsDecMotivoValvula', evo.decMotivoValvula);
 
   // Setting ventilatorio modificado (sub-bloque 2)
   if(evo.modSetting){
@@ -8178,6 +8414,13 @@ async function guardarEvolucion(){
     secVAAcant:G('eSecVAAcant'), secVAAcal:G('eSecVAAcal'),
     tolDesinf:G('eTolDesinf'), tolOclusion:G('eTolOclusion'), tolValvula:G('eTolValvula'),
     blueTest:G('eBlueTest'), calidadVoz:G('eCalidadVoz'),
+    // Proceso de Decanulación (TQT sin ARM)
+    decTolDesinf:G('eDecTolDesinf'), decMotivoDesinf:G('eDecMotivoDesinf'),
+    decTolOclusion:G('eDecTolOclusion'), decTolValvula:G('eDecTolValvula'),
+    decPlanAccion:G('eDecPlanAccion'), decDiametroActual:G('eDecDiametroActual'), decDiametroNuevo:G('eDecDiametroNuevo'),
+    decBlueTest: [...document.querySelectorAll('#tagsDecBlueTest .mtag.active')].map(t=>t.textContent.trim()),
+    decMotivoOclusion: [...document.querySelectorAll('#tagsDecMotivoOclusion .mtag.active')].map(t=>t.textContent.trim()),
+    decMotivoValvula: [...document.querySelectorAll('#tagsDecMotivoValvula .mtag.active')].map(t=>t.textContent.trim()),
     // Grupo: respiratorio
     auscult:G('eAuscult'), tos:G('eTos'), spo2Reposo:GN('eSpO2Reposo'), frResp:GN('eFRResp'),
     // Grupo: neuro
@@ -8240,6 +8483,7 @@ async function guardarEvolucion(){
   ['eModo','eInterfaz','eRASS','eCPOT','eCAMICU','eVentSed','eDolorAuto','eAKM1','eMRC',
    'ePVE','ePVETipo','ePVEresult','eExtubacion','eInterfazPE','eOclusionCanula','eDeglusion','eTipoCan','eEstadoBajon','eOstoma','eSecTrqCant','eSecTrqCal','eLOF',
    'eSecCant','eSecChar'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  resetProcesoDecanulacion();
   ['msSedacion','msAnalgesia','msBNM','msVasoact'].forEach(resetMultiselect);
   document.getElementById('eDolorEscalaRow').style.display = 'none';
   document.querySelectorAll('.tag.active').forEach(t=>t.classList.remove('active'));
@@ -8305,6 +8549,7 @@ function renderTimeline(patientId){
         ${NEURO.length ? `<div class="evo-section-subtitle">Neurológico / Sedación</div><div class="evo-grid">${NEURO.map(([v,k])=>`<div class="evo-item"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('')}</div>` : ''}
         ${e.pve==='Sí' ? `<div class="evo-section-subtitle">PVE</div><div class="evo-grid"><div class="evo-item"><div class="k">Tipo</div><div class="v">${e.pveTipo||'—'}</div></div><div class="evo-item"><div class="k">Duración</div><div class="v">${e.pveMin||'—'} min</div></div><div class="evo-item"><div class="k">Resultado</div><div class="v">${e.pveResult||'—'}</div></div></div>` : ''}
         ${e.pveTQTColocado==='Si' ? `<div class="evo-section-subtitle">TQT/T</div><div class="evo-grid"><div class="evo-item"><div class="k">Duración/plan</div><div class="v">${PVE_TQT_DURACION_LABEL[e.pveTQTDuracion]||'—'}</div></div>${e.pveTQTNocheReconexion ? `<div class="evo-item"><div class="k">Reconexión</div><div class="v">${e.pveTQTNocheReconexion==='Si'?'Sí':'No'}</div></div>` : ''}${e.pveTQTMotivo && e.pveTQTMotivo.length ? `<div class="evo-item"><div class="k">Motivo reconexión</div><div class="v">${e.pveTQTMotivo.join(', ')}</div></div>` : ''}</div>` : (e.pveTQTColocado==='No' ? `<div class="evo-section-subtitle">TQT/T</div><div class="evo-grid"><div class="evo-item"><div class="k">Colocación</div><div class="v">No</div></div></div>` : '')}
+        ${fmtDecanulacionResumen(e)}
         ${tags ? `<div style="margin-top:6px;margin-bottom:2px">${tags}</div>` : ''}
         ${e.obs ? `<div class="evo-obs">${e.obs}</div>` : ''}
       </div>
