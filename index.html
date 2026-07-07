@@ -5871,6 +5871,8 @@ function onDecPlanAccionChange(val){
     ['eDecDiametroActual','eDecDiametroNuevo'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   }
 }
+
+function calcTCTEvo(){
   const vals = ['eTCT1','eTCT2','eTCT3','eTCT4'].map(id=>{
     const v = document.getElementById(id)?.value;
     return v===''||v===undefined ? null : parseInt(v);
