@@ -1382,23 +1382,10 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
       </div>
       <!-- Contador de días automáticos -->
       <div id="evoDayCounters" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:.8rem"></div>
-      <div class="form-row three">
-        <div class="form-group">
-          <label>Día de internación (hosp.)</label>
-          <input type="number" id="eDiasHosp" inputmode="numeric" readonly style="background:var(--gray-50);color:var(--blue-800);font-weight:600">
-          <div class="form-hint">Calculado desde ingreso hospital</div>
-        </div>
-        <div class="form-group">
-          <label>Día en el sector</label>
-          <input type="number" id="eUTI" inputmode="numeric" readonly style="background:var(--gray-50);color:var(--blue-800);font-weight:600">
-          <div class="form-hint">Calculado desde ingreso al sector</div>
-        </div>
-        <div class="form-group">
-          <label>Día de ARM</label>
-          <input type="number" id="eARM" inputmode="numeric" readonly style="background:var(--gray-50);color:var(--blue-800);font-weight:600">
-          <div class="form-hint">Calculado desde IOT — 0 si no está en ARM</div>
-        </div>
-      </div>
+      <!-- Días calculados (ocultos: se muestran en las fichas de arriba, pero alimentan el guardado y el CSV) -->
+      <input type="hidden" id="eDiasHosp">
+      <input type="hidden" id="eUTI">
+      <input type="hidden" id="eARM">
     </div>
 
     <!-- ══ Signos vitales ══ -->
