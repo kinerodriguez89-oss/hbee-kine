@@ -25,7 +25,7 @@
   --shadow: 0 4px 12px rgba(0,0,0,.10);
   --shadow-lg: 0 8px 30px rgba(0,0,0,.14);
 }
-body { font-family:var(--font); background:var(--bg); color:var(--text); font-size:14px; min-height:100vh; -webkit-font-smoothing:antialiased; }
+body { font-family:var(--font); background:var(--bg); color:var(--text); font-size:15px; min-height:100vh; -webkit-font-smoothing:antialiased; }
 
 /* ─── SCROLLBAR ─── */
 ::-webkit-scrollbar{width:5px;height:5px}
@@ -53,11 +53,11 @@ body { font-family:var(--font); background:var(--bg); color:var(--text); font-si
 
 /* ─── FORMS (global) ─── */
 .form-group{ margin-bottom:.9rem; }
-.form-group label{ display:block; font-size:11px; font-weight:600; color:var(--text-muted);
+.form-group label{ display:block; font-size:12px; font-weight:600; color:var(--text-muted);
   margin-bottom:4px; text-transform:uppercase; letter-spacing:.5px; }
 .form-group input, .form-group select, .form-group textarea{
   width:100%; padding:9px 11px; border:1px solid var(--border); border-radius:var(--radius);
-  font-size:13px; font-family:var(--font); color:var(--text); background:#fff; transition:border .15s;
+  font-size:14px; font-family:var(--font); color:var(--text); background:#fff; transition:border .15s;
   -webkit-appearance:none; appearance:none; }
 .form-group input:focus,.form-group select:focus,.form-group textarea:focus{
   outline:none; border-color:var(--primary); box-shadow:0 0 0 3px rgba(24,95,165,.1); }
@@ -68,14 +68,14 @@ body { font-family:var(--font); background:var(--bg); color:var(--text); font-si
 .form-row.three{ grid-template-columns:1fr 1fr 1fr; }
 .form-row.four{ grid-template-columns:1fr 1fr 1fr 1fr; }
 .form-section{ margin-bottom:1.2rem; }
-.form-section-title{ font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.7px;
+.form-section-title{ font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.7px;
   color:var(--blue-600); padding-bottom:6px; border-bottom:2px solid var(--blue-50); margin-bottom:10px;
   display:flex; align-items:center; gap:6px; }
-.form-hint{ font-size:10px; color:var(--text-light); margin-top:3px; }
+.form-hint{ font-size:11px; color:var(--text-light); margin-top:3px; }
 
 /* ─── BUTTONS ─── */
 .btn{ display:inline-flex; align-items:center; gap:6px; padding:9px 16px; border-radius:var(--radius);
-  font-size:13px; font-weight:500; cursor:pointer; border:none; transition:all .15s; font-family:var(--font); }
+  font-size:14px; font-weight:500; cursor:pointer; border:none; transition:all .15s; font-family:var(--font); }
 .btn-primary{ background:var(--primary); color:#fff; }
 .btn-primary:hover{ background:var(--primary-hover); }
 .btn-success{ background:var(--teal-600); color:#fff; }
@@ -154,8 +154,8 @@ main{ flex:1; padding:1.2rem; max-width:1200px; margin:0 auto; width:100%; paddi
 
 /* ─── TABLA ─── */
 .table-wrap{ overflow-x:auto; }
-table{ width:100%; border-collapse:collapse; font-size:12px; }
-th{ background:var(--gray-50); padding:9px 12px; text-align:left; font-weight:600; font-size:10px;
+table{ width:100%; border-collapse:collapse; font-size:13px; }
+th{ background:var(--gray-50); padding:9px 12px; text-align:left; font-weight:600; font-size:11px;
   text-transform:uppercase; letter-spacing:.5px; color:var(--gray-600); border-bottom:1px solid var(--border); white-space:nowrap; }
 td{ padding:10px 12px; border-bottom:1px solid rgba(0,0,0,.045); vertical-align:middle; }
 tr:last-child td{ border-bottom:none; }
@@ -164,7 +164,7 @@ tr:hover td{ background:var(--blue-50); }
 .table-toolbar input{ flex:1; max-width:260px; }
 
 /* ─── BADGES ─── */
-.badge{ display:inline-flex; align-items:center; padding:2px 8px; border-radius:20px; font-size:10px; font-weight:600; white-space:nowrap; }
+.badge{ display:inline-flex; align-items:center; padding:2px 8px; border-radius:20px; font-size:11px; font-weight:600; white-space:nowrap; }
 .badge-blue{ background:var(--blue-50); color:var(--blue-800); }
 .badge-teal{ background:var(--teal-50); color:var(--teal-800); }
 .badge-amber{ background:var(--amber-50); color:var(--amber-800); }
@@ -181,8 +181,8 @@ tr:hover td{ background:var(--blue-50); }
   width:720px; max-width:100%; margin:auto; box-shadow:var(--shadow-lg); }
 .modal-sm{ width:460px; }
 .modal-header{ display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:1.2rem; }
-.modal-header h3{ font-size:16px; font-weight:700; color:var(--blue-900); }
-.modal-subtitle{ font-size:12px; color:var(--text-muted); margin-top:3px; }
+.modal-header h3{ font-size:17px; font-weight:700; color:var(--blue-900); }
+.modal-subtitle{ font-size:13px; color:var(--text-muted); margin-top:3px; }
 .modal-close{ background:none; border:none; cursor:pointer; color:var(--text-muted);
   font-size:22px; line-height:1; padding:2px; flex-shrink:0; margin-left:8px; }
 .modal-close:hover{ color:var(--text); }
@@ -209,35 +209,47 @@ tr:hover td{ background:var(--blue-50); }
 .timeline{ padding-left:24px; position:relative; }
 .timeline::before{ content:''; position:absolute; left:7px; top:0; bottom:0; width:2px; background:var(--gray-100); }
 .evo-entry{ position:relative; margin-bottom:14px; }
+/* Botón "Ver evoluciones anteriores" dentro de los modales de evolución */
+.btn-hist-previas{ display:flex; align-items:center; gap:8px; width:100%; padding:11px 14px;
+  background:var(--gray-50); border:1px dashed var(--border); border-radius:var(--radius);
+  font-family:var(--font); font-size:13px; font-weight:600; color:var(--blue-700); cursor:pointer;
+  transition:background .15s, border-color .15s; }
+.btn-hist-previas:hover{ background:var(--blue-50, #eff6ff); border-color:var(--blue-300, #93c5fd); }
+.btn-hist-previas i{ font-size:17px; color:var(--purple-400); }
+/* Historial rápido se apila por encima de los modales de evolución */
+#modalHistRapido{ z-index:300; }
 .evo-entry::before{ content:''; position:absolute; left:-21px; top:7px; width:10px; height:10px;
   border-radius:50%; background:var(--blue-400); border:2px solid #fff; box-shadow:0 0 0 2px var(--blue-100); }
 .evo-entry.latest::before{ background:var(--teal-400); box-shadow:0 0 0 2px var(--teal-100); }
-.evo-card{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:10px 14px; }
-.evo-card-header{ display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; flex-wrap:wrap; gap:4px; }
-.evo-date{ font-size:12px; font-weight:700; color:var(--blue-800); }
-.evo-kine{ font-size:10px; color:var(--text-muted); }
-.evo-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(110px,1fr)); gap:5px; margin-bottom:7px; }
+.evo-card{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:12px 15px; box-shadow:0 1px 2px rgba(15,40,80,.04); }
+.evo-entry.latest .evo-card{ border-color:var(--teal-200, #99f6e4); background:linear-gradient(180deg,#f7fdfc 0%,var(--surface) 40%); }
+.evo-card-header{ display:flex; align-items:center; justify-content:space-between; margin-bottom:9px; flex-wrap:wrap; gap:4px;
+  padding-bottom:7px; border-bottom:1px solid var(--gray-100); }
+.evo-date{ font-size:13px; font-weight:700; color:var(--blue-800); }
+.evo-kine{ font-size:11px; font-weight:600; color:var(--text-muted); display:inline-flex; align-items:center; gap:3px; }
+.evo-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(112px,1fr)); gap:5px; margin-bottom:7px; }
 .evo-item{ background:var(--gray-50); border-radius:6px; padding:5px 8px; }
-.evo-item .k{ font-size:9px; text-transform:uppercase; letter-spacing:.4px; color:var(--text-light); }
-.evo-item .v{ font-size:12px; font-weight:600; color:var(--text); margin-top:1px; }
-.evo-obs{ font-size:12px; color:var(--text); background:#fffbf0;
-  border-left:3px solid var(--amber-400); padding:6px 10px; border-radius:0 6px 6px 0; margin-top:7px; line-height:1.55; }
-.evo-section-subtitle{ font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px;
-  color:var(--blue-600); margin:8px 0 5px; }
+.evo-item .k{ font-size:10px; text-transform:uppercase; letter-spacing:.4px; color:var(--text-light); }
+.evo-item .v{ font-size:13px; font-weight:600; color:var(--text); margin-top:1px; }
+.evo-obs{ font-size:13px; color:var(--text); background:#fffbf0;
+  border-left:3px solid var(--amber-400); padding:7px 11px; border-radius:0 6px 6px 0; margin-top:7px; line-height:1.55; }
+.evo-section-subtitle{ font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.5px;
+  color:var(--blue-600); margin:9px 0 5px; display:flex; align-items:center; gap:5px; }
+.evo-section-subtitle::after{ content:''; flex:1; height:1px; background:var(--gray-100); }
 
 /* ─── PATIENT LIST CARD ─── */
 .patient-row{ display:flex; align-items:center; justify-content:space-between; gap:10px;
   padding:10px 14px; border-bottom:1px solid rgba(0,0,0,.045); }
 .patient-row:last-child{ border-bottom:none; }
 .patient-row:hover{ background:var(--blue-50); }
-.p-name{ font-size:13px; font-weight:600; color:var(--blue-900); }
-.p-meta{ font-size:11px; color:var(--text-muted); margin-top:2px; }
+.p-name{ font-size:14px; font-weight:600; color:var(--blue-900); }
+.p-meta{ font-size:12px; color:var(--text-muted); margin-top:2px; }
 .p-actions{ display:flex; gap:6px; flex-shrink:0; }
 
 /* ─── EVOLVE BUTTON ─── */
 .btn-evolve{ display:inline-flex; align-items:center; gap:4px; padding:5px 10px;
   background:var(--blue-50); color:var(--blue-800); border:1px solid var(--blue-100);
-  border-radius:7px; font-size:11px; font-weight:600; cursor:pointer; transition:all .12s; white-space:nowrap; }
+  border-radius:7px; font-size:12px; font-weight:600; cursor:pointer; transition:all .12s; white-space:nowrap; }
 .btn-evolve:hover{ background:var(--blue-100); }
 .evo-count{ display:inline-flex; align-items:center; justify-content:center;
   min-width:17px; height:17px; border-radius:9px; background:var(--blue-600);
@@ -2772,12 +2784,13 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
       </div>
     </div>
 
-    <!-- Timeline -->
+    <!-- Acceso a evoluciones anteriores -->
     <hr class="sep">
-    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--blue-600);margin-bottom:10px;display:flex;align-items:center;gap:6px;">
-      <i class="ti ti-history"></i> Evoluciones anteriores
-    </div>
-    <div id="evoTimeline"></div>
+    <button type="button" class="btn-hist-previas" onclick="openHistorialRapido(currentEvoPacId, true)">
+      <i class="ti ti-history"></i>
+      <span>Ver evoluciones anteriores</span>
+      <span class="badge badge-purple" id="evoHistCount" style="display:none"></span>
+    </button>
 
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('modalEvo')">Cerrar</button>
@@ -4207,12 +4220,13 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
       <div class="form-group"><textarea id="emObs" rows="3" placeholder="Estado general, respuesta al tratamiento, novedades, pautas dadas a familiar…"></textarea></div>
     </div>
 
-    <!-- Timeline -->
+    <!-- Acceso a evoluciones anteriores -->
     <hr class="sep">
-    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--blue-600);margin-bottom:8px">
-      <i class="ti ti-history"></i> Evoluciones anteriores
-    </div>
-    <div id="evoMinTimeline"></div>
+    <button type="button" class="btn-hist-previas" onclick="openHistorialRapido(currentEvoMinPacId, true)">
+      <i class="ti ti-history"></i>
+      <span>Ver evoluciones anteriores</span>
+      <span class="badge badge-purple" id="evoMinHistCount" style="display:none"></span>
+    </button>
 
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('modalEvoMin')">Cerrar</button>
@@ -4282,7 +4296,7 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
     <div id="histRapContent" style="max-height:70vh;overflow-y:auto;padding-right:4px"></div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('modalHistRapido')">Cerrar</button>
-      <button class="btn btn-primary" onclick="closeModal('modalHistRapido');openEvolucion(currentEvoPacId||0)">
+      <button class="btn btn-primary" id="histRapBtnNueva" onclick="closeModal('modalHistRapido');abrirEvolucionDesdeHistorial()">
         <i class="ti ti-stethoscope"></i>Nueva evolución
       </button>
     </div>
@@ -4698,9 +4712,9 @@ function launchApp(){
   } else {
     badge.style.display = 'none';
   }
-  // Control de acceso a Indicadores: solo usuarios autorizados
-  const INDICADORES_USERS = ['Rodríguez Daniel','Santana Andrés','Petre Mauricio'];
-  const puedeVerIndicadores = INDICADORES_USERS.some(u=>currentUser.name.toLowerCase().includes(u.split(' ')[0].toLowerCase()));
+  // Control de acceso a Indicadores: solo usuarios autorizados (por username, evita problemas de tildes)
+  const INDICADORES_USERS = ['rodriguezd','santanam','petrem'];
+  const puedeVerIndicadores = INDICADORES_USERS.includes((currentUser.user||'').toLowerCase());
   ['tab-indicadores','btab-indicadores'].forEach(id=>{
     const el = document.getElementById(id);
     if(el) el.style.display = puedeVerIndicadores ? '' : 'none';
@@ -6311,7 +6325,7 @@ function openEvolucionMin(patientId){
   // Prefill frecuencia desde el paciente
   if(p.frecuencia) document.getElementById('emFrecuencia').value = p.frecuencia;
 
-  renderEvoMinTimeline(patientId);
+  actualizarContadorHistorial('evoMinHistCount', patientId);
   openModal('modalEvoMin');
 }
 
@@ -6349,43 +6363,8 @@ async function guardarEvoMin(){
   const p = patients.find(x=>x.id===currentEvoMinPacId);
   addLog('evolve',`Evo Min: ${p?.apellido} (${fmtDate(date)})`);
   showToast('Evolución guardada','success');
-  renderEvoMinTimeline(currentEvoMinPacId);
+  actualizarContadorHistorial('evoMinHistCount', currentEvoMinPacId);
   renderAll();
-}
-
-function renderEvoMinTimeline(patientId){
-  const evos = evoluciones.filter(e=>e.patientId===patientId)
-    .sort((a,b)=>b.date.localeCompare(a.date)||b.id-a.id);
-  const el = document.getElementById('evoMinTimeline');
-  if(!evos.length){ el.innerHTML='<div class="empty"><i class="ti ti-notes-off"></i><p>Sin evoluciones</p></div>'; return; }
-  el.innerHTML='<div class="timeline">'+evos.slice(0,10).map((e,i)=>{
-    if(e.tipo==='traslado'||e.tipo==='alta'||e.tipo==='obito'){
-      const cm={traslado:'var(--blue-400)',alta:'var(--teal-400)',obito:'var(--red-400)'};
-      const im={traslado:'ti-arrows-transfer-up',alta:'ti-home-check',obito:'ti-heart-off'};
-      return `<div class="evo-entry"><div class="evo-card" style="border-left:3px solid ${cm[e.tipo]}">
-        <div class="evo-card-header"><span class="evo-date">${fmtDate(e.date)}</span><span class="evo-kine">${e.kine||''}</span></div>
-        <div style="font-size:12px;font-weight:500">${escapeHTML(e.obs||'')}</div>
-      </div></div>`;
-    }
-    const logrosHtml = e.logros?.length ? e.logros.map(l=>`<span class="badge badge-teal" style="font-size:9px;margin:1px">${l}</span>`).join('') : '';
-    return `<div class="evo-entry ${i===0?'latest':''}"><div class="evo-card">
-      <div class="evo-card-header">
-        <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
-          <span class="evo-date">${fmtDate(e.date)}</span>
-          <span class="badge badge-gray" style="font-size:9px">${e.turno||''}</span>
-          ${e.fac?`<span class="badge badge-blue" style="font-size:9px">FAC ${e.fac.split(' ')[0]}</span>`:''}
-          ${e.tolerancia?`<span class="badge ${e.tolerancia.startsWith('Buena')?'badge-teal':e.tolerancia.startsWith('Regular')?'badge-amber':'badge-red'}" style="font-size:9px">${e.tolerancia.split(' ')[0]}</span>`:''}
-          ${e.frecuencia?`<span class="badge badge-purple" style="font-size:9px">${e.frecuencia==='manana'?'Mañana':e.frecuencia==='cada3'?'Cada 3d':e.frecuencia==='cada5'?'Cada 5d':'Sin criterio'}</span>`:''}
-        </div>
-        <span class="evo-kine">${e.kine||'—'}</span>
-      </div>
-      ${e.conciencia?`<div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">${e.conciencia}${e.orientacion?'. '+e.orientacion:''}</div>`:''}
-      ${e.noAtencion && e.noAtencion!=='Sí se realizó atención'?`<div style="font-size:11px;color:var(--amber-600);font-weight:600">⚠ ${e.noAtencion}</div>`:''}
-      ${e.interfazO2?`<div style="font-size:11px;color:var(--blue-700);margin-bottom:3px"><i class="ti ti-lungs"></i> ${e.interfazO2}${e.flujoO2?' — '+e.flujoO2:''}${e.spo2?' · SpO₂ '+e.spo2+'%':''}</div>`:''}
-      ${logrosHtml?`<div style="margin:4px 0">${logrosHtml}</div>`:''}
-      ${e.obs?`<div class="evo-obs">${escapeHTML(e.obs)}</div>`:''}
-    </div></div>`;
-  }).join('')+'</div>';
 }
 
 function openFichaNeuroFromEvo(){
@@ -7026,9 +7005,60 @@ async function confirmarEgreso(){
 // ════════════════════════════════════════════════════════
 //  HISTORIAL RÁPIDO
 // ════════════════════════════════════════════════════════
-function openHistorialRapido(patientId){
+let histRapPacId = null;
+
+function evoCardHTML(e, i){
+  // Eventos especiales (traslado, alta, óbito)
+  if(e.tipo==='traslado'||e.tipo==='alta'||e.tipo==='obito'){
+    const cm={traslado:'var(--blue-400)',alta:'var(--teal-400)',obito:'var(--red-400)'};
+    const im={traslado:'ti-arrows-transfer-up',alta:'ti-home-check',obito:'ti-heart-off'};
+    return `<div class="evo-entry"><div class="evo-card" style="border-left:3px solid ${cm[e.tipo]}">
+      <div class="evo-card-header"><div style="display:flex;align-items:center;gap:6px">
+        <i class="ti ${im[e.tipo]}" style="color:${cm[e.tipo]};font-size:16px"></i>
+        <span class="evo-date">${fmtDate(e.date)}</span>
+        ${e.turno?`<span class="badge badge-gray" style="font-size:10px">${e.turno}</span>`:''}
+      </div><span class="evo-kine">${e.kine||'—'}</span></div>
+      <div style="font-size:13px;font-weight:500">${escapeHTML(e.obs||'')}</div>
+    </div></div>`;
+  }
+  const tolBadge = e.tolerancia ? `<span class="badge ${e.tolerancia.startsWith('Buena')?'badge-teal':e.tolerancia.startsWith('Regular')?'badge-amber':'badge-red'}" style="font-size:10px">${e.tolerancia.split(' ')[0]}</span>` : '';
+  const tags = e.tecnicas?.length ? e.tecnicas.map(t=>`<span class="badge badge-blue" style="font-size:10px;margin-right:2px;margin-bottom:2px">${t}</span>`).join('') : '';
+  const logros = e.logros?.length ? e.logros.map(l=>`<span class="badge badge-teal" style="font-size:10px;margin:1px">${l}</span>`).join('') : '';
+  const VM = [[e.modo,'Modo'],[e.vt,'VT (ml)'],[e.vtkg,'ml/kg'],[e.fr,'FR'],[e.peep,'PEEP'],[e.fio2,'FiO₂%'],[e.ppico,'Ppico'],[e.pplat,'Pplat'],[e.dp,'DP'],[e.crs,'Crs']].filter(([v])=>v!==''&&v!==undefined&&v!==null);
+  const EAB = [[e.ph,'pH'],[e.pco2,'pCO₂'],[e.po2,'pO₂'],[e.spo2,'SpO₂%'],[e.pafi,'PAFI']].filter(([v])=>v!==''&&v!==undefined&&v!==null);
+  const NEURO = [[e.rass,'RASS'],[e.cpot,'CPOT'],[e.camicu,'CAM-ICU'],[e.akm1,'AKM'],[e.fac?e.fac.split(' ')[0]:'','FAC'],[e.eva,'EVA']].filter(([v])=>v!==''&&v!==undefined&&v!==null);
+  return `<div class="evo-entry ${i===0?'latest':''}">
+    <div class="evo-card">
+      <div class="evo-card-header">
+        <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
+          <span class="evo-date">${fmtDate(e.date)}</span>
+          <span class="badge badge-gray" style="font-size:10px">${e.turno||''}</span>
+          ${tolBadge}
+          ${e.armDia ? `<span class="badge badge-amber" style="font-size:10px">ARM día ${e.armDia}</span>` : ''}
+          ${e.frecuencia?`<span class="badge badge-purple" style="font-size:10px">${e.frecuencia==='manana'?'Mañana':e.frecuencia==='cada3'?'Cada 3d':e.frecuencia==='cada5'?'Cada 5d':'Sin criterio'}</span>`:''}
+        </div>
+        <span class="evo-kine"><i class="ti ti-user" style="font-size:11px"></i> ${e.kine||'—'}${puedeEditarEvolucion(e) ? ` <button class="btn btn-icon btn-sm" onclick="editarEvolucion(${e.id})" title="Editar (disponible hasta 24 hs después de la carga)"><i class="ti ti-pencil"></i></button>` : ''}</span>
+      </div>
+      ${e.noAtencion && e.noAtencion!=='Sí se realizó atención' ? `<div style="font-size:12px;color:var(--amber-600);font-weight:600;margin-bottom:4px">⚠ ${e.noAtencion}</div>` : ''}
+      ${e.conciencia ? `<div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">${e.conciencia}${e.orientacion?'. '+e.orientacion:''}</div>` : ''}
+      ${e.interfazO2 ? `<div style="font-size:12px;color:var(--blue-700);margin-bottom:4px"><i class="ti ti-lungs"></i> ${e.interfazO2}${e.flujoO2?' — '+e.flujoO2:''}${e.spo2&&!EAB.length?' · SpO₂ '+e.spo2+'%':''}</div>` : ''}
+      ${VM.length ? `<div class="evo-section-subtitle">Mecánica ventilatoria</div><div class="evo-grid">${VM.map(([v,k])=>`<div class="evo-item"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('')}</div>` : ''}
+      ${EAB.length ? `<div class="evo-section-subtitle">EAB</div><div class="evo-grid">${EAB.map(([v,k])=>`<div class="evo-item"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('')}</div>` : ''}
+      ${NEURO.length ? `<div class="evo-section-subtitle">Neurológico / Sedación</div><div class="evo-grid">${NEURO.map(([v,k])=>`<div class="evo-item"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('')}</div>` : ''}
+      ${(e.pve==='Sí'||e.pve==='Si') ? `<div class="evo-section-subtitle">PVE</div><div class="evo-grid"><div class="evo-item"><div class="k">Tipo</div><div class="v">${e.pveTipo||'—'}</div></div><div class="evo-item"><div class="k">Duración</div><div class="v">${e.pveMin||'—'} min</div></div><div class="evo-item"><div class="k">Resultado</div><div class="v">${e.pveResult||'—'}</div></div></div>` : ''}
+      ${e.pveTQTColocado==='Si' ? `<div class="evo-section-subtitle">TQT/T</div><div class="evo-grid"><div class="evo-item"><div class="k">Duración/plan</div><div class="v">${PVE_TQT_DURACION_LABEL[e.pveTQTDuracion]||'—'}</div></div>${e.pveTQTNocheReconexion ? `<div class="evo-item"><div class="k">Reconexión</div><div class="v">${e.pveTQTNocheReconexion==='Si'?'Sí':'No'}</div></div>` : ''}${e.pveTQTMotivo && e.pveTQTMotivo.length ? `<div class="evo-item"><div class="k">Motivo reconexión</div><div class="v">${e.pveTQTMotivo.join(', ')}</div></div>` : ''}</div>` : (e.pveTQTColocado==='No' ? `<div class="evo-section-subtitle">TQT/T</div><div class="evo-grid"><div class="evo-item"><div class="k">Colocación</div><div class="v">No</div></div></div>` : '')}
+      ${fmtDecanulacionResumen(e)}
+      ${tags ? `<div style="margin-top:6px">${tags}</div>` : ''}
+      ${logros ? `<div style="margin-top:4px">${logros}</div>` : ''}
+      ${e.obs ? `<div class="evo-obs">${escapeHTML(e.obs)}</div>` : ''}
+    </div>
+  </div>`;
+}
+
+function openHistorialRapido(patientId, desdeEvolucion){
   const p = patients.find(x=>x.id===patientId);
   if(!p) return;
+  histRapPacId = patientId;
   const evos = evoluciones.filter(e=>e.patientId===patientId)
     .sort((a,b)=>b.date.localeCompare(a.date)||b.id-a.id);
   document.getElementById('histRapTitulo').textContent = `${p.apellido}, ${p.nombre}`;
@@ -7037,40 +7067,11 @@ function openHistorialRapido(patientId){
   if(!evos.length){
     cont.innerHTML='<div class="empty"><i class="ti ti-notes-off"></i><p>Sin evoluciones</p></div>';
   } else {
-    cont.innerHTML='<div class="timeline">'+evos.map((e,i)=>{
-      if(e.tipo==='traslado'||e.tipo==='alta'||e.tipo==='obito'){
-        const cm={traslado:'var(--blue-400)',alta:'var(--teal-400)',obito:'var(--red-400)'};
-        const im={traslado:'ti-arrows-transfer-up',alta:'ti-home-check',obito:'ti-heart-off'};
-        return `<div class="evo-entry"><div class="evo-card" style="border-left:3px solid ${cm[e.tipo]}">
-          <div class="evo-card-header"><div style="display:flex;align-items:center;gap:6px">
-            <i class="ti ${im[e.tipo]}" style="color:${cm[e.tipo]};font-size:15px"></i>
-            <span class="evo-date">${fmtDate(e.date)}</span>
-          </div><span class="evo-kine">${e.kine||'—'}</span></div>
-          <div style="font-size:12px;font-weight:500">${escapeHTML(e.obs||'')}</div>
-        </div></div>`;
-      }
-      const items=[
-        e.interfaz?['Interfaz',e.interfaz]:null,
-        [e.modo,'Modo'],[e.fr,'FR'],[e.fio2,'FiO₂%'],[e.spo2,'SpO₂'],[e.pafi,'PAFI'],
-        [e.dp,'DP'],[e.rass,'RASS'],[e.akm1,'AKM']
-      ].filter(x=>x&&x[1]!==''&&x[1]!=null);
-      const tags=e.tecnicas?.length?e.tecnicas.map(t=>`<span class="badge badge-blue" style="font-size:9px">${t}</span>`).join(''):'';
-      return `<div class="evo-entry ${i===0?'latest':''}"><div class="evo-card">
-        <div class="evo-card-header">
-          <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
-            <span class="evo-date">${fmtDate(e.date)}</span>
-            <span class="badge badge-gray" style="font-size:9px">${e.turno||''}</span>
-            ${e.tolerancia?`<span class="badge ${e.tolerancia==='Buena'?'badge-teal':e.tolerancia==='Regular'?'badge-amber':'badge-red'}" style="font-size:9px">${e.tolerancia}</span>`:''}
-            ${e.armDia?`<span class="badge badge-amber" style="font-size:9px">ARM d${e.armDia}</span>`:''}
-          </div>
-          <span class="evo-kine">${e.kine||'—'}${puedeEditarEvolucion(e) ? ` <button class="btn btn-icon btn-sm" onclick="editarEvolucion(${e.id})" title="Editar (disponible hasta 24 hs después de la carga)"><i class="ti ti-pencil"></i></button>` : ''}</span>
-        </div>
-        ${items.length?`<div class="evo-grid">${items.map(([k,v])=>`<div class="evo-item"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('')}</div>`:''}
-        ${tags?`<div style="margin-top:5px">${tags}</div>`:''}
-        ${e.obs?`<div class="evo-obs">${escapeHTML(e.obs)}</div>`:''}
-      </div></div>`;
-    }).join('')+'</div>';
+    cont.innerHTML='<div class="timeline">'+evos.map(evoCardHTML).join('')+'</div>';
   }
+  // Si se abre desde un modal de evolución, ocultar "Nueva evolución" (ya hay una en curso)
+  const btnNueva = document.getElementById('histRapBtnNueva');
+  if(btnNueva) btnNueva.style.display = desdeEvolucion ? 'none' : '';
   openModal('modalHistRapido');
 }
 
@@ -7914,7 +7915,7 @@ function openEvolucion(patientId){
     }
   }
 
-  renderTimeline(patientId);
+  actualizarContadorHistorial('evoHistCount', patientId);
   openModal('modalEvo');
 }
 
@@ -8294,7 +8295,6 @@ async function guardarEvolucion(){
     showToast('Evolución actualizada','success');
     editingEvoId = null;
     closeModal('modalEvo');
-    renderTimeline(currentEvoPacId);
     renderAll();
     return;
   }
@@ -8312,7 +8312,8 @@ async function guardarEvolucion(){
   resetProcesoDecanulacion();
   ['msSedacion','msAnalgesia','msBNM','msVasoact'].forEach(resetMultiselect);
   document.getElementById('eDolorEscalaRow').style.display = 'none';
-  document.querySelectorAll('#modalEvo .tag.active').forEach(t=>t.classList.remove('active'));  renderTimeline(currentEvoPacId);
+  document.querySelectorAll('#modalEvo .tag.active').forEach(t=>t.classList.remove('active'));
+  actualizarContadorHistorial('evoHistCount', currentEvoPacId);
   renderAll();
   } finally {
     _guardandoEvo = false;
@@ -8324,60 +8325,18 @@ async function guardarEvolucion(){
 // ════════════════════════════════════════════════════════
 //  TIMELINE
 // ════════════════════════════════════════════════════════
-function renderTimeline(patientId){
-  const evos = evoluciones.filter(e=>e.patientId===patientId)
-    .sort((a,b)=>b.date.localeCompare(a.date)||b.id-a.id);
-  const el = document.getElementById('evoTimeline');
-  if(!evos.length){
-    el.innerHTML='<div class="empty" style="padding:1rem 0"><i class="ti ti-notes-off"></i><p>Sin evoluciones registradas</p></div>';
-    return;
-  }
-  el.innerHTML = '<div class="timeline">' + evos.map((e,i)=>{
-    // Eventos especiales (traslado, alta, óbito)
-    if(e.tipo === 'traslado' || e.tipo === 'alta' || e.tipo === 'obito'){
-      const colorMap = { traslado:'var(--blue-400)', alta:'var(--teal-400)', obito:'var(--red-400)' };
-      const iconMap = { traslado:'ti-arrows-transfer-up', alta:'ti-home-check', obito:'ti-heart-off' };
-      return `<div class="evo-entry">
-        <div class="evo-card" style="border-left:3px solid ${colorMap[e.tipo]||'var(--gray-300)'}">
-          <div class="evo-card-header">
-            <div style="display:flex;align-items:center;gap:6px">
-              <i class="ti ${iconMap[e.tipo]||'ti-point'}" style="color:${colorMap[e.tipo]};font-size:16px"></i>
-              <span class="evo-date">${fmtDate(e.date)}</span>
-              <span class="badge badge-gray" style="font-size:9px">${e.turno||''}</span>
-            </div>
-            <span class="evo-kine">${e.kine||'—'}</span>
-          </div>
-          <div style="font-size:12px;color:var(--text);font-weight:500">${escapeHTML(e.obs||'')}</div>
-        </div>
-      </div>`;
-    }
-    const tolBadge = e.tolerancia ? `<span class="badge ${e.tolerancia==='Buena'?'badge-teal':e.tolerancia==='Regular'?'badge-amber':'badge-red'}" style="font-size:9px">${e.tolerancia}</span>` : '';
-    const tags = e.tecnicas?.length ? e.tecnicas.map(t=>`<span class="badge badge-blue" style="font-size:9px;margin-right:2px;margin-bottom:2px">${t}</span>`).join('') : '';
-    const VM = [[e.modo,'Modo'],[e.vt,'VT (ml)'],[e.vtkg,'ml/kg'],[e.fr,'FR'],[e.peep,'PEEP'],[e.fio2,'FiO₂%'],[e.ppico,'Ppico'],[e.pplat,'Pplat'],[e.dp,'DP'],[e.crs,'Crs']].filter(([v])=>v!==''&&v!==undefined&&v!==null);
-    const EAB = [[e.ph,'pH'],[e.pco2,'pCO₂'],[e.po2,'pO₂'],[e.spo2,'SpO₂%'],[e.pafi,'PAFI']].filter(([v])=>v!==''&&v!==undefined&&v!==null);
-    const NEURO = [[e.rass,'RASS'],[e.cpot,'CPOT'],[e.camicu,'CAM-ICU'],[e.akm1,'AKM']].filter(([v])=>v!==''&&v!==undefined&&v!==null);
-    return `<div class="evo-entry ${i===0?'latest':''}">
-      <div class="evo-card">
-        <div class="evo-card-header">
-          <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
-            <span class="evo-date">${fmtDate(e.date)}</span>
-            <span class="badge badge-gray" style="font-size:9px">${e.turno}</span>
-            ${tolBadge}
-            ${e.armDia ? `<span class="badge badge-amber" style="font-size:9px">ARM día ${e.armDia}</span>` : ''}
-          </div>
-          <span class="evo-kine"><i class="ti ti-user" style="font-size:10px"></i> ${e.kine||'—'}${puedeEditarEvolucion(e) ? ` <button class="btn btn-icon btn-sm" onclick="editarEvolucion(${e.id})" title="Editar (disponible hasta 24 hs después de la carga)"><i class="ti ti-pencil"></i></button>` : ''}</span>
-        </div>
-        ${VM.length ? `<div class="evo-section-subtitle">Mecánica ventilatoria</div><div class="evo-grid">${VM.map(([v,k])=>`<div class="evo-item"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('')}</div>` : ''}
-        ${EAB.length ? `<div class="evo-section-subtitle">EAB</div><div class="evo-grid">${EAB.map(([v,k])=>`<div class="evo-item"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('')}</div>` : ''}
-        ${NEURO.length ? `<div class="evo-section-subtitle">Neurológico / Sedación</div><div class="evo-grid">${NEURO.map(([v,k])=>`<div class="evo-item"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('')}</div>` : ''}
-        ${(e.pve==='Sí'||e.pve==='Si') ? `<div class="evo-section-subtitle">PVE</div><div class="evo-grid"><div class="evo-item"><div class="k">Tipo</div><div class="v">${e.pveTipo||'—'}</div></div><div class="evo-item"><div class="k">Duración</div><div class="v">${e.pveMin||'—'} min</div></div><div class="evo-item"><div class="k">Resultado</div><div class="v">${e.pveResult||'—'}</div></div></div>` : ''}
-        ${e.pveTQTColocado==='Si' ? `<div class="evo-section-subtitle">TQT/T</div><div class="evo-grid"><div class="evo-item"><div class="k">Duración/plan</div><div class="v">${PVE_TQT_DURACION_LABEL[e.pveTQTDuracion]||'—'}</div></div>${e.pveTQTNocheReconexion ? `<div class="evo-item"><div class="k">Reconexión</div><div class="v">${e.pveTQTNocheReconexion==='Si'?'Sí':'No'}</div></div>` : ''}${e.pveTQTMotivo && e.pveTQTMotivo.length ? `<div class="evo-item"><div class="k">Motivo reconexión</div><div class="v">${e.pveTQTMotivo.join(', ')}</div></div>` : ''}</div>` : (e.pveTQTColocado==='No' ? `<div class="evo-section-subtitle">TQT/T</div><div class="evo-grid"><div class="evo-item"><div class="k">Colocación</div><div class="v">No</div></div></div>` : '')}
-        ${fmtDecanulacionResumen(e)}
-        ${tags ? `<div style="margin-top:6px;margin-bottom:2px">${tags}</div>` : ''}
-        ${e.obs ? `<div class="evo-obs">${escapeHTML(e.obs)}</div>` : ''}
-      </div>
-    </div>`;
-  }).join('') + '</div>';
+// Actualiza el contador de evoluciones en el botón "Ver evoluciones anteriores"
+function actualizarContadorHistorial(elId, patientId){
+  const el = document.getElementById(elId);
+  if(!el) return;
+  const n = evoluciones.filter(e=>e.patientId===patientId).length;
+  el.textContent = n;
+  el.style.display = n ? '' : 'none';
+}
+
+// Abre el modal de evolución correcto desde el historial rápido
+function abrirEvolucionDesdeHistorial(){
+  if(histRapPacId != null) openEvolucion(histRapPacId);
 }
 
 // ════════════════════════════════════════════════════════
