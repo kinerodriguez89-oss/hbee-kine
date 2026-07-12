@@ -618,7 +618,7 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
       <label>Contraseña</label>
       <input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
     </div>
-    <button class="btn btn-primary btn-block" onclick="doLogin()"><i class="ti ti-login"></i>Ingresar</button>
+    <button class="btn btn-primary btn-block" id="btnLogin" onclick="doLogin()"><i class="ti ti-login"></i>Ingresar</button>
 
     <span class="link-small" onclick="showSetup()">⚙ Configurar Google Drive</span>
 
@@ -4413,10 +4413,76 @@ const LS = {
 // ── SUPABASE ──────────────────────────────────────────
 const SUPA_URL = 'https://mahtdvrakymuwiapcxjj.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1haHRkdnJha3ltdXdpYXBjeGpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzMjMxMzcsImV4cCI6MjA5Njg5OTEzN30.2ozV6aouldSjqEwKpYnzQdEDdNqu_DGa0qJS6RoPxOo';
-const supaH = { 'Content-Type':'application/json', 'apikey':SUPA_KEY, 'Authorization':'Bearer '+SUPA_KEY };
+// ── Sesión de Supabase Auth ──────────────────────────────
+// La sesión vive en sessionStorage: sobrevive un F5 pero muere al cerrar
+// la pestaña (importante en computadoras compartidas del hospital).
+const AUTH_EMAIL_DOMAIN = 'kine.hbee.ar'; // dominio sintético interno, no recibe mails
+let supaSession = null;
+try { supaSession = JSON.parse(sessionStorage.getItem('hbee_supa_session')) || null; } catch(e){ supaSession = null; }
 
-async function supaFetch(path, options={}){
-  const r = await fetch(SUPA_URL+path, { ...options, headers:{ ...supaH, ...(options.headers||{}) } });
+function setSupaSession(data){
+  supaSession = {
+    access_token: data.access_token,
+    refresh_token: data.refresh_token,
+    expires_at: Math.floor(Date.now()/1000) + (data.expires_in || 3600)
+  };
+  try { sessionStorage.setItem('hbee_supa_session', JSON.stringify(supaSession)); } catch(e){}
+}
+function clearSupaSession(){
+  supaSession = null;
+  try { sessionStorage.removeItem('hbee_supa_session'); } catch(e){}
+}
+
+let _refreshPromise = null;
+async function refreshSupaSession(){
+  // Evita renovaciones simultáneas
+  if(_refreshPromise) return _refreshPromise;
+  const rt = supaSession?.refresh_token;
+  if(!rt) return false;
+  _refreshPromise = (async () => {
+    try {
+      const r = await fetch(SUPA_URL+'/auth/v1/token?grant_type=refresh_token', {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json', 'apikey':SUPA_KEY },
+        body: JSON.stringify({ refresh_token: rt })
+      });
+      if(!r.ok) return false;
+      const data = await r.json();
+      if(!data.access_token) return false;
+      setSupaSession(data);
+      return true;
+    } catch(e){ return false; }
+    finally { _refreshPromise = null; }
+  })();
+  return _refreshPromise;
+}
+
+function forceRelogin(){
+  clearSupaSession();
+  currentUser = null;
+  currentSector = null;
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('sectorScreen').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+  showToast('Tu sesión venció. Iniciá sesión de nuevo.','error');
+}
+
+async function supaFetch(path, options={}, _retried){
+  // Renovar el token si vence en menos de 2 minutos
+  if(supaSession && supaSession.expires_at - Math.floor(Date.now()/1000) < 120){
+    await refreshSupaSession();
+  }
+  const token = supaSession?.access_token;
+  if(!token) throw new Error('Sin sesión activa');
+  const headers = { 'Content-Type':'application/json', 'apikey':SUPA_KEY,
+    'Authorization':'Bearer '+token, ...(options.headers||{}) };
+  const r = await fetch(SUPA_URL+path, { ...options, headers });
+  if(r.status===401 && !_retried){
+    const ok = await refreshSupaSession();
+    if(ok) return supaFetch(path, options, true);
+    forceRelogin();
+    throw new Error('Sesión vencida');
+  }
   if(!r.ok){
     const e = await r.text().catch(()=>'sin detalle');
     throw new Error(e||`HTTP ${r.status}`);
@@ -4493,47 +4559,7 @@ async function saveToSupabase(){
 // ════════════════════════════════════════════════════════
 //  DATOS
 // ════════════════════════════════════════════════════════
-const USERS = [
-  // ── Jefatura ──
-  { user:'rodriguezd',   pass:'34407792', name:'Rodriguez D.',   role:'admin' },
-  { user:'petrem',       pass:'26872465', name:'Petre M.',        role:'admin' },
-  // ── Planta kinesiología ──
-  { user:'alvarezs',     pass:'30500289', name:'Alvarez S.',      role:'kine' },
-  { user:'gutierreza',   pass:'42582630', name:'Gutierrez A.',    role:'kine' },
-  { user:'aquinog',      pass:'32882124', name:'Aquino G.',       role:'kine' },
-  { user:'benegasf',     pass:'38325252', name:'Benegas F.',      role:'kine' },
-  { user:'brizuelae',    pass:'38147925', name:'Brizuela E.',     role:'kine' },
-  { user:'broviac',      pass:'32686159', name:'Brovia C.',       role:'kine' },
-  { user:'brunettig',    pass:'39587222', name:'Brunetti G.',     role:'kine' },
-  { user:'celanom',      pass:'35863393', name:'Celano M.',       role:'kine' },
-  { user:'cordarar',     pass:'37699863', name:'Cordara R.',      role:'kine' },
-  { user:'croccom',      pass:'20592562', name:'Crocco M.',       role:'kine' },
-  { user:'delgadoj',     pass:'38786995', name:'Delgado J.',      role:'kine' },
-  { user:'espinolar',    pass:'39106982', name:'Espinola R.',     role:'kine' },
-  { user:'figueroaf',    pass:'42142851', name:'Figueroa F.',     role:'kine' },
-  { user:'foresc',       pass:'39641773', name:'Fores C.',        role:'kine' },
-  { user:'gomezn',       pass:'32924804', name:'Gomez N.',        role:'kine' },
-  { user:'gouvertr',     pass:'36754382', name:'Gouvert R.',      role:'kine' },
-  { user:'largentee',    pass:'38602962', name:'Largente E.',     role:'kine' },
-  { user:'lealesn',      pass:'36884027', name:'Leales N.',       role:'kine' },
-  { user:'maldonadom',   pass:'39346327', name:'Maldonado M.',    role:'kine' },
-  { user:'martinn',      pass:'35632602', name:'Martin N.',       role:'kine' },
-  { user:'mirandac',     pass:'38823713', name:'Miranda C.',      role:'kine' },
-  { user:'naturav',      pass:'36091004', name:'Natura V.',       role:'kine' },
-  { user:'pabonr',       pass:'25100797', name:'Pabon R.',        role:'kine' },
-  { user:'perezl',       pass:'27634677', name:'Perez L.',        role:'kine' },
-  { user:'perezt',       pass:'27634649', name:'Perez T.',        role:'kine' },
-  { user:'quirogav',     pass:'38499723', name:'Quiroga V.',      role:'kine' },
-  { user:'rescoe',       pass:'41327316', name:'Resco E.',        role:'kine' },
-  { user:'ribeiroa',     pass:'42137641', name:'Ribeiro A.',      role:'kine' },
-  { user:'salash',       pass:'32026784', name:'Salas H.',        role:'kine' },
-  { user:'saltoj',       pass:'41202462', name:'Salto J.',        role:'kine' },
-  { user:'santanam',     pass:'32990608', name:'Santana M.',      role:'admin' },
-  { user:'scatolinip',   pass:'39213424', name:'Scatolini P.',    role:'kine' },
-  { user:'vaccam',       pass:'34260317', name:'Vacca M.',        role:'kine' },
-  { user:'valenzuelam',  pass:'34321706', name:'Valenzuela M.',   role:'kine' },
-  { user:'villagrasaj',  pass:'32454206', name:'Villagrasa J.',   role:'kine' },
-];
+// Usuarios: ahora gestionados en Supabase Auth + tabla perfiles (v3_90)
 
 let patients = LS.get('hbee_patients') || [
   { id:1, apellido:'Ramírez', nombre:'Carlos', dni:'25488761', edad:67, genero:'Masculino', peso:78, talla:172, imc:26.4, pcp:67.8,
@@ -4662,17 +4688,57 @@ function saveSetup(){
 // ════════════════════════════════════════════════════════
 //  AUTH
 // ════════════════════════════════════════════════════════
-function doLogin(){
-  const u = document.getElementById('loginUser').value.trim();
+async function doLogin(){
+  const u = document.getElementById('loginUser').value.trim().toLowerCase();
   const p = document.getElementById('loginPass').value;
-  const found = USERS.find(x => x.user === u && x.pass === p);
-  if(!found){ showToast('Usuario o contraseña incorrectos','error'); return; }
-  startSession(found);
+  if(!u || !p){ showToast('Ingresá usuario y contraseña','error'); return; }
+  const btn = document.getElementById('btnLogin');
+  if(btn){ btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader-2"></i> Ingresando…'; }
+  try {
+    const r = await fetch(SUPA_URL+'/auth/v1/token?grant_type=password', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', 'apikey':SUPA_KEY },
+      body: JSON.stringify({ email: u+'@'+AUTH_EMAIL_DOMAIN, password: p })
+    });
+    const data = await r.json().catch(()=>({}));
+    if(!r.ok || !data.access_token){
+      showToast('Usuario o contraseña incorrectos','error');
+      return;
+    }
+    setSupaSession(data);
+    // Perfil (nombre y rol) desde la base — RLS devuelve solo el propio
+    const perfil = await fetchMiPerfil();
+    if(!perfil){
+      clearSupaSession();
+      showToast('Tu usuario no tiene perfil asignado. Avisale a la jefatura.','error');
+      return;
+    }
+    startSession({ user: perfil.username, name: perfil.nombre, role: perfil.rol });
+  } catch(e){
+    console.error('Login error:', e);
+    showToast('Error de conexión. Verificá tu internet.','error');
+  } finally {
+    if(btn){ btn.disabled = false; btn.innerHTML = '<i class="ti ti-login"></i>Ingresar'; }
+  }
 }
-function quickLogin(name, pass){
-  const found = USERS.find(x => x.pass === pass);
-  if(found) startSession(found);
+
+async function fetchMiPerfil(){
+  try {
+    const rows = await supaFetch('/rest/v1/perfiles?select=username,nombre,rol&limit=1');
+    return rows && rows[0] ? rows[0] : null;
+  } catch(e){ return null; }
 }
+
+// Restaurar sesión si la pestaña se recargó (F5) con sesión vigente
+async function tryRestoreSession(){
+  if(!supaSession?.refresh_token) return;
+  const ok = await refreshSupaSession();
+  if(!ok){ clearSupaSession(); return; }
+  const perfil = await fetchMiPerfil();
+  if(!perfil){ clearSupaSession(); return; }
+  startSession({ user: perfil.username, name: perfil.nombre, role: perfil.rol });
+}
+tryRestoreSession();
 function startSession(user){
   currentUser = user;
   document.getElementById('loginScreen').style.display = 'none';
@@ -4712,9 +4778,8 @@ function launchApp(){
   } else {
     badge.style.display = 'none';
   }
-  // Control de acceso a Indicadores: solo usuarios autorizados (por username, evita problemas de tildes)
-  const INDICADORES_USERS = ['rodriguezd','santanam','petrem'];
-  const puedeVerIndicadores = INDICADORES_USERS.includes((currentUser.user||'').toLowerCase());
+  // Control de acceso a Indicadores: solo rol admin (el rol viene de la tabla perfiles en Supabase)
+  const puedeVerIndicadores = currentUser.role === 'admin';
   ['tab-indicadores','btab-indicadores'].forEach(id=>{
     const el = document.getElementById(id);
     if(el) el.style.display = puedeVerIndicadores ? '' : 'none';
@@ -4727,6 +4792,14 @@ function launchApp(){
 }
 function doLogout(){
   addLog('logout',`Salió: ${currentUser.name}`);
+  // Revocar la sesión en Supabase (best-effort)
+  try {
+    if(supaSession?.access_token){
+      fetch(SUPA_URL+'/auth/v1/logout', { method:'POST',
+        headers:{ 'apikey':SUPA_KEY, 'Authorization':'Bearer '+supaSession.access_token } });
+    }
+  } catch(e){}
+  clearSupaSession();
   currentUser = null;
   currentSector = null;
   gAccessToken = null;
