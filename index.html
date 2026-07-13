@@ -2158,6 +2158,8 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
             <select id="ePVEFallidaExtub">
               <option value="">-</option>
               <option value="si_vni">Sí, con VNI como cambio de interfaz</option>
+              <option value="si_cafo">Sí, con CAFO</option>
+              <option value="si_convencional">Sí, con oxigenoterapia convencional</option>
               <option value="no">No</option>
             </select>
           </div>
@@ -2397,7 +2399,7 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
             <div class="form-row" style="margin-top:10px">
               <div class="form-group">
                 <label>Tolerancia</label>
-                <select id="eDecTolerancia">
+                <select id="eDecTolerancia" onchange="onDecToleranciaChange(this.value)">
                   <option value="">-</option>
                   <option value="<3h">Menos de 3 hs</option>
                   <option value="3-6h">De 3 a 6 hs</option>
@@ -2405,6 +2407,44 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
                   <option value="noche1">En plan de pasar primera noche</option>
                   <option value="noche2">En plan de pasar segunda noche</option>
                 </select>
+              </div>
+            </div>
+
+            <!-- Tolerancia parcial (<12 hs): motivo de no tolerancia -->
+            <div id="decMotivoNoToleranciaBox" style="display:none">
+              <div class="dec-label">Motivo de no tolerancia</div>
+              <div class="tag-group" id="tagsDecMotivoNoTolerancia">
+                <span class="mtag" onclick="toggleTag(this)">Taquipnea</span>
+                <span class="mtag" onclick="toggleTag(this)">Uso de músculos accesorios</span>
+                <span class="mtag" onclick="toggleTag(this)">Disnea</span>
+                <span class="mtag" onclick="toggleTag(this)">Mal manejo de secreciones</span>
+                <span class="mtag" onclick="toggleTag(this)">Hipoxemia</span>
+                <span class="mtag" onclick="toggleTag(this)">Hipotensión/shock</span>
+              </div>
+            </div>
+
+            <!-- Plan nocturno: cumplimiento del objetivo -->
+            <div id="decNocheObjetivoBox" style="display:none">
+              <div class="form-row" style="margin-top:10px">
+                <div class="form-group">
+                  <label>¿Se cumplió el objetivo?</label>
+                  <select id="eDecNocheObjetivo" onchange="onDecNocheObjetivoChange(this.value)">
+                    <option value="">-</option>
+                    <option value="Si">Sí</option>
+                    <option value="No">No</option>
+                  </select>
+                </div>
+              </div>
+              <div id="decMotivoNocheBox" style="display:none">
+                <div class="dec-label">Motivo de no cumplimiento</div>
+                <div class="tag-group" id="tagsDecMotivoNoche">
+                  <span class="mtag" onclick="toggleTag(this)">Taquipnea</span>
+                  <span class="mtag" onclick="toggleTag(this)">Uso de músculos accesorios</span>
+                  <span class="mtag" onclick="toggleTag(this)">Disnea</span>
+                  <span class="mtag" onclick="toggleTag(this)">Mal manejo de secreciones</span>
+                  <span class="mtag" onclick="toggleTag(this)">Hipoxemia</span>
+                  <span class="mtag" onclick="toggleTag(this)">Hipotensión/shock</span>
+                </div>
               </div>
             </div>
 
@@ -5738,14 +5778,34 @@ function actualizarSeccionDecanulacion(mostrar){
 
 function resetProcesoDecanulacion(){
   ['eDecTolDesinf','eDecMotivoDesinf','eDecTolOclusion','eDecTolValvula','eDecPlanAccion','eDecDiametroActual','eDecDiametroNuevo',
-   'eDecTolerancia','eDecDecanulado']
+   'eDecTolerancia','eDecDecanulado','eDecNocheObjetivo']
     .forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
-  ['decMotivoDesinfBox','decOclusionBox','decBlueTestBox','decNoOclusionBox','decMotivoValvulaBox','decDiametroBox','decMotivoNoDecanulacionBox']
+  ['decMotivoDesinfBox','decOclusionBox','decBlueTestBox','decNoOclusionBox','decMotivoValvulaBox','decDiametroBox','decMotivoNoDecanulacionBox',
+   'decMotivoNoToleranciaBox','decNocheObjetivoBox','decMotivoNocheBox']
     .forEach(id=>{ const el=document.getElementById(id); if(el) el.style.display='none'; });
   limpiarTagsContainer('tagsDecBlueTest');
   limpiarTagsContainer('tagsDecMotivoOclusion');
   limpiarTagsContainer('tagsDecMotivoValvula');
   limpiarTagsContainer('tagsDecMotivoNoDecanulacion');
+  limpiarTagsContainer('tagsDecMotivoNoTolerancia');
+  limpiarTagsContainer('tagsDecMotivoNoche');
+}
+
+function onDecToleranciaChange(val){
+  const parcial = ['<3h','3-6h','6-12h'].includes(val);
+  const nocturno = ['noche1','noche2'].includes(val);
+  document.getElementById('decMotivoNoToleranciaBox').style.display = parcial ? 'block' : 'none';
+  document.getElementById('decNocheObjetivoBox').style.display = nocturno ? 'block' : 'none';
+  if(!parcial) limpiarTagsContainer('tagsDecMotivoNoTolerancia');
+  if(!nocturno){
+    const el = document.getElementById('eDecNocheObjetivo'); if(el) el.value='';
+    onDecNocheObjetivoChange('');
+  }
+}
+
+function onDecNocheObjetivoChange(val){
+  document.getElementById('decMotivoNocheBox').style.display = val==='No' ? 'block' : 'none';
+  if(val!=='No') limpiarTagsContainer('tagsDecMotivoNoche');
 }
 
 function onDecDecanuladoChange(val){
@@ -5764,6 +5824,9 @@ function fmtDecanulacionResumen(e){
     if(e.decTolOclusion==='Si'){
       if(e.decBlueTest && e.decBlueTest.length) items.push(`<div class="evo-item"><div class="k">Blue test</div><div class="v">${e.decBlueTest.join(', ')}</div></div>`);
       if(e.decTolerancia) items.push(`<div class="evo-item"><div class="k">Tolerancia</div><div class="v">${PVE_TQT_DURACION_LABEL[e.decTolerancia]||e.decTolerancia}</div></div>`);
+      if(e.decMotivoNoTolerancia && e.decMotivoNoTolerancia.length) items.push(`<div class="evo-item"><div class="k">Motivo no tolerancia</div><div class="v">${e.decMotivoNoTolerancia.join(', ')}</div></div>`);
+      if(e.decNocheObjetivo) items.push(`<div class="evo-item"><div class="k">¿Cumplió objetivo nocturno?</div><div class="v">${e.decNocheObjetivo==='Si'?'Sí':'No'}</div></div>`);
+      if(e.decNocheObjetivo==='No' && e.decMotivoNoche && e.decMotivoNoche.length) items.push(`<div class="evo-item"><div class="k">Motivo no cumplimiento</div><div class="v">${e.decMotivoNoche.join(', ')}</div></div>`);
       if(e.decDecanulado) items.push(`<div class="evo-item"><div class="k">Se decanuló</div><div class="v">${e.decDecanulado==='Si'?'Sí':'No'}</div></div>`);
       if(e.decDecanulado==='No' && e.decMotivoNoDecanulacion && e.decMotivoNoDecanulacion.length) items.push(`<div class="evo-item"><div class="k">Motivo</div><div class="v">${e.decMotivoNoDecanulacion.join(', ')}</div></div>`);
     } else if(e.decTolOclusion==='No'){
@@ -5793,6 +5856,7 @@ function onDecTolOclusionChange(val){
   if(val!=='Si'){
     limpiarTagsContainer('tagsDecBlueTest');
     const elT = document.getElementById('eDecTolerancia'); if(elT) elT.value='';
+    onDecToleranciaChange('');
     const elD = document.getElementById('eDecDecanulado'); if(elD) elD.value='';
     onDecDecanuladoChange('');
   }
@@ -8114,7 +8178,7 @@ const EVO_FIELD_MAP = {
   decTolDesinf:'eDecTolDesinf', decMotivoDesinf:'eDecMotivoDesinf',
   decTolOclusion:'eDecTolOclusion', decTolValvula:'eDecTolValvula',
   decPlanAccion:'eDecPlanAccion', decDiametroActual:'eDecDiametroActual', decDiametroNuevo:'eDecDiametroNuevo',
-  decTolerancia:'eDecTolerancia', decDecanulado:'eDecDecanulado',
+  decTolerancia:'eDecTolerancia', decDecanulado:'eDecDecanulado', decNocheObjetivo:'eDecNocheObjetivo',
   auscult:'eAuscult', tos:'eTos', spo2Reposo:'eSpO2Reposo', frResp:'eFRResp',
   neuroConciencia:'eNeuroConciencia', neuroFAC:'eNeuroFAC',
   tct1:'eTCT1', tct2:'eTCT2', tct3:'eTCT3', tct4:'eTCT4', tctScore:'eTCTScore',
@@ -8179,6 +8243,8 @@ function precargarCamposEvolucion(evo){
   onDecTolValvulaChange(evo.decTolValvula||'');
   onDecPlanAccionChange(evo.decPlanAccion||'');
   onDecDecanuladoChange(evo.decDecanulado||'');
+  onDecToleranciaChange(evo.decTolerancia||'');
+  onDecNocheObjetivoChange(evo.decNocheObjetivo||'');
   const cargarTagsDec = (containerId, valores) => {
     if(!valores || !valores.length) return;
     document.querySelectorAll('#'+containerId+' .mtag').forEach(t=>{
@@ -8187,6 +8253,8 @@ function precargarCamposEvolucion(evo){
     document.getElementById(containerId).closest('[id^="dec"]').style.display = 'block';
   };
   cargarTagsDec('tagsDecBlueTest', evo.decBlueTest);
+  cargarTagsDec('tagsDecMotivoNoTolerancia', evo.decMotivoNoTolerancia);
+  cargarTagsDec('tagsDecMotivoNoche', evo.decMotivoNoche);
   cargarTagsDec('tagsDecMotivoOclusion', evo.decMotivoOclusion);
   cargarTagsDec('tagsDecMotivoValvula', evo.decMotivoValvula);
   cargarTagsDec('tagsDecMotivoNoDecanulacion', evo.decMotivoNoDecanulacion);
@@ -8305,7 +8373,10 @@ async function guardarEvolucion(){
         return '';
       }
       if(pve==='Si' && G('ePVEresult')==='Exitosa') return G('ePVEExitExtub')==='Si' ? 'Sí — planificada' : 'No';
-      if(pve==='Si' && G('ePVEresult')==='Fallida') return G('ePVEFallidaExtub')==='si_vni' ? 'Sí — con VNI' : 'No';
+      if(pve==='Si' && G('ePVEresult')==='Fallida'){
+        const m = { si_vni:'Sí — con VNI', si_cafo:'Sí — con CAFO', si_convencional:'Sí — con O₂ convencional' };
+        return m[G('ePVEFallidaExtub')] || 'No';
+      }
       return '';
     })(),
     interfazPE:G('eInterfazPE'), nPVE: nPVE>0 ? nPVE : '',
@@ -8322,7 +8393,10 @@ async function guardarEvolucion(){
     decTolOclusion:G('eDecTolOclusion'), decTolValvula:G('eDecTolValvula'),
     decPlanAccion:G('eDecPlanAccion'), decDiametroActual:G('eDecDiametroActual'), decDiametroNuevo:G('eDecDiametroNuevo'),
     decTolerancia:G('eDecTolerancia'), decDecanulado:G('eDecDecanulado'),
+    decNocheObjetivo:G('eDecNocheObjetivo'),
     decBlueTest: [...document.querySelectorAll('#tagsDecBlueTest .mtag.active')].map(t=>t.textContent.trim()),
+    decMotivoNoTolerancia: [...document.querySelectorAll('#tagsDecMotivoNoTolerancia .mtag.active')].map(t=>t.textContent.trim()),
+    decMotivoNoche: [...document.querySelectorAll('#tagsDecMotivoNoche .mtag.active')].map(t=>t.textContent.trim()),
     decMotivoOclusion: [...document.querySelectorAll('#tagsDecMotivoOclusion .mtag.active')].map(t=>t.textContent.trim()),
     decMotivoValvula: [...document.querySelectorAll('#tagsDecMotivoValvula .mtag.active')].map(t=>t.textContent.trim()),
     decMotivoNoDecanulacion: [...document.querySelectorAll('#tagsDecMotivoNoDecanulacion .mtag.active')].map(t=>t.textContent.trim()),
