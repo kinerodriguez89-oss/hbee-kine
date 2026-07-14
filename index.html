@@ -6346,15 +6346,15 @@ function calcROX(){
     return;
   }
   faltanEl.style.display = 'none';
-  // ROX = (SpO2 / FiO2) / FR  — FiO2 en fracción (0–1)
-  const rox = (spo2 / fio2) / fr;
+  // ROX = (SpO2 / FiO2) / FR  — FiO2 en fracción (0–1); el campo se carga en % → /100
+  const rox = (spo2 / (fio2 / 100)) / fr;
   valEl.textContent = rox.toFixed(2);
   let cat, color;
   if(rox >= 4.88){ cat = 'Bajo riesgo de fracaso'; color = 'var(--teal-700)'; }
   else if(rox < 3.85){ cat = 'Alto riesgo de fracaso'; color = 'var(--red-600)'; }
   else { cat = 'Zona intermedia — revalorar'; color = 'var(--amber-600)'; }
   catEl.textContent = cat; catEl.style.color = color;
-  detEl.textContent = `(SpO₂ ${spo2} / FiO₂ ${fio2}%) / FR ${fr} rpm`;
+  detEl.textContent = `(SpO₂ ${spo2} / FiO₂ ${(fio2/100).toFixed(2)}) / FR ${fr} rpm`;
 }
 
 function calcMRCEvo(){
