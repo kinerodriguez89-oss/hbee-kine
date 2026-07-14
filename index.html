@@ -2367,60 +2367,11 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
           <select id="eCuffN"><option value="">-</option><option value="<20">Menos de 20 cmH₂O</option><option value="20-30">De 20 a 30 cmH₂O</option><option value=">30">Más de 30 cmH₂O</option></select>
         </div>
       </div>
-      <div id="canulaTQTBlock">
-        <div class="form-section-title"><i class="ti ti-cut"></i> Cánula de traqueostomía</div>
-        <div class="form-row four">
-          <div class="form-group"><label>Tipo de cánula</label>
-            <select id="eTipoCan"><option value="">-</option><option>Con balón</option><option>Con balón + puerto subglótico</option><option>Sin balón</option><option>Fenestrada</option></select>
-          </div>
-          <div class="form-group"><label>Ø interno (mm)</label><input type="number" id="eCanDI" inputmode="decimal" step="0.5"></div>
-          <div class="form-group"><label>Ø externo (mm)</label><input type="number" id="eCanDE" inputmode="decimal" step="0.5"></div>
-          <div class="form-group"><label>Estado del balón</label>
-            <select id="eEstadoBajon"><option value="">-</option><option>Inflado</option><option>Desinflado</option><option>No aplica (sin balón)</option></select>
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group"><label>Oclusión de cánula</label>
-            <select id="eOclusionCanula"><option value="">-</option><option>Sí — tolerada</option><option>Sí — no tolerada</option><option>No</option></select>
-          </div>
-          <div class="form-group"><label>Tolera desinflado del balón</label>
-            <select id="eTolDesinf"><option value="">-</option><option>Sí</option><option>No</option><option>No aplica (sin balón)</option></select>
-          </div>
-          <div class="form-group"><label>Tolera oclusión</label>
-            <select id="eTolOclusion"><option value="">-</option><option>Sí</option><option>No</option></select>
-          </div>
-          <div class="form-group"><label>Tolera válvula fonatoria</label>
-            <select id="eTolValvula"><option value="">-</option><option>Sí</option><option>No</option><option>No evaluada</option></select>
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group"><label>Blue test</label>
-            <select id="eBlueTest"><option value="">-</option><option>Positivo</option><option>Negativo</option><option>No realizado</option></select>
-          </div>
-          <div class="form-group"><label>Calidad de la voz</label>
-            <select id="eCalidadVoz"><option value="">-</option><option>Húmeda</option><option>Clara</option><option>Afonía</option><option>No aplica</option></select>
-          </div>
-        </div>
-      </div><!-- fin canulaTQTBlock -->
-
-      <div class="form-section-title"><i class="ti ti-droplets"></i> Secreciones traqueales</div>
-      <div class="form-row">
-        <div class="form-group"><label>Cantidad</label>
-          <select id="eSecTrqCant"><option value="">-</option><option>Nulas</option><option>Escasas</option><option>Moderadas</option><option>Abundantes</option></select>
-        </div>
-        <div class="form-group"><label>Calidad</label>
-          <select id="eSecTrqCal"><option value="">-</option><option>Mucosas</option><option>Mucopurulentas</option><option>Purulentas</option><option>Mucohemáticas</option><option>Hemáticas</option></select>
-        </div>
-      </div>
-      <div class="form-section-title"><i class="ti ti-mouth"></i> Lago orofaríngeo (LOF)</div>
-      <div class="form-row">
-        <div class="form-group"><label>Cantidad LOF</label>
-          <select id="eLOF"><option value="">-</option><option>Nulo</option><option>Escaso</option><option>Moderado</option><option>Abundante</option></select>
-        </div>
-        <div class="form-group"><label>Evaluación de deglución</label>
-          <select id="eDeglusion"><option value="">-</option><option>No realizada</option><option>Apta todas las consistencias</option><option>Apta semisólidos y líquidos</option><option>Apta semisólidos</option><option>Disfagia leve</option><option>Disfagia moderada</option><option>Disfagia severa — enteral</option></select>
-        </div>
-      </div>
+      <!-- v3_97: se eliminaron los sub-bloques "Cánula de traqueostomía", "Secreciones
+           traqueales" y "Lago orofaríngeo (LOF)" de este acordeón. Esos ítems se evalúan
+           en otros sectores (Proceso de Decanulación / Cuidados Mínimos / Secreciones del
+           árbol ventilatorio). Los datos históricos guardados (tipoCan, secTrqCant, lof,
+           etc.) se siguen mostrando en timeline y exportes; solo se quitó la carga. -->
     </div>
     <hr class="sep">
     </div><!-- fin tqtBlock -->
@@ -2624,29 +2575,11 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
       <i class="ti ti-chevron-down accordion-arrow open" id="arrGrupo"></i>
     </div>
     <div class="accordion-body open" id="accGrupo">
-      <!-- Respiratorio / Post UTI / Quemado / Post Qx -->
-      <div id="eGrupoResp" style="display:none">
-        <div class="form-row four" style="margin-top:8px">
-          <div class="form-group"><label>Auscultación</label>
-            <select id="eAuscult">
-              <option value="">-</option><option>BEAB sin ruidos agregados</option>
-              <option>MV disminuido generalizado</option><option>MV disminuido en base derecha</option>
-              <option>MV disminuido en base izquierda</option><option>MV disminuido en ambas bases</option>
-              <option>Crepitantes bibasales</option><option>Crepitantes base derecha</option>
-              <option>Crepitantes base izquierda</option><option>Roncus bilaterales</option>
-              <option>Sibilancias</option><option>No evaluada</option>
-            </select>
-          </div>
-          <div class="form-group"><label>Tos</label>
-            <select id="eTos">
-              <option value="">-</option><option>Efectiva y productiva</option><option>Efectiva seca</option>
-              <option>Parcialmente efectiva</option><option>No efectiva</option><option>No evaluada</option>
-            </select>
-          </div>
-          <div class="form-group"><label>SpO₂ en reposo (%)</label><input type="number" id="eSpO2Reposo" inputmode="numeric" max="100"></div>
-          <div class="form-group"><label>FR (rpm)</label><input type="number" id="eFRResp" inputmode="numeric"></div>
-        </div>
-      </div>
+      <!-- v3_97: bloque "Respiratorio" (auscultación, tos, SpO₂ reposo, FR) eliminado
+           de la Evaluación específica para todos los grupos que lo mostraban
+           (respiratorio, post UTI, quemado, post Qx). Se evalúa en otros sectores.
+           Datos históricos (auscult, tos, spo2Reposo, frResp) siguen leyéndose en
+           timeline/exportes; solo se quitó la carga. -->
       <!-- Neurológico -->
       <div id="eGrupoNeuro" style="display:none">
         <div class="form-row" style="margin-top:8px">
@@ -5820,16 +5753,10 @@ function limpiarTagsContainer(containerId){
   document.querySelectorAll('#'+containerId+' .mtag.active').forEach(t=>t.classList.remove('active'));
 }
 
-// Muestra/oculta el sub-bloque "Cánula de traqueostomía" dentro de "Vía aérea / Presión
-// de cuff" (solo aplica con ARM+TQT). Limpia sus campos cuando queda oculto.
-function actualizarModoCanulaTQT(esARM){
-  const canula = document.getElementById('canulaTQTBlock');
-  if(canula) canula.style.display = esARM ? 'block' : 'none';
-  if(!esARM){
-    ['eTipoCan','eCanDI','eCanDE','eEstadoBajon','eOclusionCanula','eTolDesinf','eTolOclusion','eTolValvula','eBlueTest','eCalidadVoz']
-      .forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
-  }
-}
+// v3_97: el sub-bloque "Cánula de traqueostomía" fue eliminado del acordeón de
+// Presión del cuff (se evalúa en otros sectores). Se conserva la función como
+// stub porque se invoca desde setInterfaz/setInterfazEsp; no hace nada.
+function actualizarModoCanulaTQT(esARM){ /* sin efecto desde v3_97 */ }
 
 // Muestra/oculta la sección independiente "Proceso de Decanulación" (solo TQT sin ARM).
 // Limpia sus campos cuando se oculta, para no arrastrar datos de otra interfaz.
@@ -6569,14 +6496,15 @@ function setVANO2tipo(tipo){
 function actualizarGrupoEvo(tipoKine){
   const iconos = { respiratorio:'ti-lungs', neurologico:'ti-brain', pre_qx:'ti-cut', post_qx:'ti-cut', post_uti:'ti-lungs', quemado:'ti-flame', amputado:'ti-tools', otro:'ti-stethoscope' };
   const labels = { respiratorio:'Respiratorio', neurologico:'Neurológico', pre_qx:'Pre-quirúrgico', post_qx:'Post-quirúrgico', post_uti:'Post UTI', quemado:'Quemado', amputado:'Amputado', otro:'Específico' };
-  const showResp = ['respiratorio','post_uti','quemado','post_qx'].includes(tipoKine);
+  // v3_97: el bloque Respiratorio se eliminó, así que showResp ya no aporta contenido.
+  // Solo cuentan para "Evaluación específica" los grupos que aún tienen sub-bloque propio
+  // (neurológico, pre/post Qx, amputado). Respiratorio/post UTI/quemado sin otro sub-bloque
+  // ya no abren un acordeón vacío.
   const showNeuro = tipoKine === 'neurologico';
   const showQx = tipoKine === 'pre_qx' || tipoKine === 'post_qx';
   const showAmputado = tipoKine === 'amputado';
-  const showQuemado = tipoKine === 'quemado';
-  const showAny = showResp || showNeuro || showQx || showAmputado || showQuemado;
+  const showAny = showNeuro || showQx || showAmputado;
   document.getElementById('eGrupoBlock').style.display = (showAny && tipoKine) ? 'block' : 'none';
-  document.getElementById('eGrupoResp').style.display = showResp ? 'block' : 'none';
 
   // Neurológico: solo visible si NO está en ARM Y el usuario seleccionó "No ARM" explícitamente
   const neuroEl = document.getElementById('eGrupoNeuro');
@@ -8117,9 +8045,8 @@ function openEvolucion(patientId){
   limpiarMotivoReconexionARM();
   document.getElementById('pveTETBlock').style.display = 'block';
   document.getElementById('pveTQTBlock').style.display = 'none';
-  // Reset árbol Cánula TQT / Proceso de Decanulación
+  // Reset árbol Proceso de Decanulación (canulaTQTBlock eliminado en v3_97)
   resetProcesoDecanulacion();
-  document.getElementById('canulaTQTBlock').style.display = 'block';
   document.getElementById('decanulacionSection').style.display = 'none';
 
   // Reset árbol de decisión ventilatoria
