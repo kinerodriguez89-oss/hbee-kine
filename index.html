@@ -184,6 +184,7 @@ tr:hover td{ background:var(--blue-50); }
 .badge-gray{ background:var(--gray-50); color:var(--gray-800); }
 .badge-purple{ background:var(--purple-50); color:var(--purple-800); }
 .badge-green{ background:var(--green-50); color:var(--green-800); }
+.badge-asp{ background:var(--purple-50); color:var(--purple-800); border:1.5px solid var(--purple-400); font-weight:700; gap:3px; }
 
 /* ─── MODAL ─── */
 .modal-overlay{ display:none; position:fixed; inset:0; background:rgba(0,0,0,.5);
@@ -1450,6 +1451,7 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
     <!-- ══ Ventilación — árbol de decisión ══ -->
     <div class="form-section">
       <div class="form-section-title"><i class="ti ti-lungs"></i> Ventilación</div>
+      <div id="eVentHeredadoHint" style="display:none;align-items:flex-start;gap:8px;background:var(--blue-50);border:1px solid var(--blue-100);border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:12px;color:var(--blue-800)"></div>
 
       <!-- Nivel 1: ¿En ARM? -->
       <div class="dec-label">¿El paciente está en ARM?</div>
@@ -6267,6 +6269,63 @@ function openEvolucionAdaptado(patientId){
   openEvolucion(patientId);
 }
 
+// ── Precarga del estado ventilatorio desde la última evolución ──
+function precargarVentilacionUltimaEvo(patientId){
+  const evos = evoluciones
+    .filter(e => e.patientId === patientId && !e.tipo && (e.interfaz || e.interfazEsp))
+    .sort((a,b) => String(b.date + (b.hora||'')).localeCompare(String(a.date + (a.hora||''))));
+  const ult = evos[0];
+  if(!ult) return false;
+
+  const esp = ult.interfazEsp || '';
+  const enARMult = !esp && (ult.interfaz === 'TET' || ult.interfaz === 'TQT');
+
+  if(enARMult){
+    setARMStatus(true);
+    selectInterfaz(ult.interfaz, false);
+    if(ult.armDiametro){ const el=document.getElementById('eARMdiametro'); if(el) el.value = ult.armDiametro; }
+    if(ult.interfaz === 'TET' && ult.tetADS){ const el=document.getElementById('eTETads'); if(el) el.value = ult.tetADS; }
+  } else if(esp){
+    setARMStatus(false);
+    setInterfazEsp(esp);
+    if(esp === 'VAN_O2'){
+      // Deducir el dispositivo desde los campos guardados o la interfaz legible
+      let disp = '';
+      if(ult.cnFlujo) disp = 'CN'; else if(ult.mvFio2) disp = 'MV'; else if(ult.mrFlujo) disp = 'MR';
+      if(!disp){
+        const i = ult.interfaz || '';
+        if(i.includes('nasal')) disp = 'CN'; else if(i.includes('Venturi')) disp = 'MV'; else if(i.includes('reservorio')) disp = 'MR';
+      }
+      if(disp){
+        setVANO2tipo(disp);
+        if(disp === 'CN' && ult.cnFlujo){ const el=document.getElementById('eCNflujo'); if(el) el.value = ult.cnFlujo; }
+        if(disp === 'MV' && ult.mvFio2){ const el=document.getElementById('eMVfio2'); if(el) el.value = ult.mvFio2; }
+        if(disp === 'MR' && ult.mrFlujo){ const el=document.getElementById('eMRflujo'); if(el) el.value = ult.mrFlujo; }
+      }
+    }
+    if(esp === 'CNAF'){
+      if(ult.cnafFlujo != null){ const el=document.getElementById('eCNAFflujo'); if(el) el.value = ult.cnafFlujo; }
+      if(ult.cnafFio2 != null){ const el=document.getElementById('eCNAFfio2'); if(el) el.value = ult.cnafFio2; }
+    }
+  } else {
+    return false;
+  }
+
+  // Aviso: el estado viene heredado, hay que verificarlo
+  const hint = document.getElementById('eVentHeredadoHint');
+  if(hint){
+    const detalle = [];
+    if(ult.mvFio2) detalle.push('FiO₂ ' + ult.mvFio2);
+    if(ult.cnFlujo) detalle.push(ult.cnFlujo + ' L/min');
+    if(ult.mrFlujo) detalle.push(ult.mrFlujo + ' L/min');
+    if(ult.cnafFlujo) detalle.push(ult.cnafFlujo + ' L/min');
+    if(ult.cnafFio2) detalle.push('FiO₂ ' + ult.cnafFio2 + '%');
+    hint.style.display = 'flex';
+    hint.innerHTML = '<i class="ti ti-history" style="font-size:15px;flex-shrink:0;margin-top:1px"></i><span>Estado ventilatorio precargado de la última evolución (' + fmtDate(ult.date) + (ult.hora ? ' · ' + ult.hora + ' hs' : '') + '): <strong>' + escapeHTML(ult.interfaz || '') + (detalle.length ? ' — ' + detalle.join(', ') : '') + '</strong>. Verificá y ajustá si la situación cambió.</span>';
+  }
+  return true;
+}
+
 // ── Árbol de decisión ventilatorio ──────────────────────
 function setARMStatus(enARM){
   document.getElementById('eBtnArmSi').className = 'dec-btn' + (enARM ? ' dec-arm-si' : '');
@@ -7184,7 +7243,9 @@ function evoCardHTML(e, i){
     </div></div>`;
   }
   const tolBadge = e.tolerancia ? `<span class="badge ${e.tolerancia.startsWith('Buena')?'badge-teal':e.tolerancia.startsWith('Regular')?'badge-amber':'badge-red'}" style="font-size:10px">${e.tolerancia.split(' ')[0]}</span>` : '';
-  const tags = e.tecnicas?.length ? e.tecnicas.map(t=>`<span class="badge badge-blue" style="font-size:10px;margin-right:2px;margin-bottom:2px">${t}</span>`).join('') : '';
+  const tags = e.tecnicas?.length ? e.tecnicas.map(t=> (t||'').toLowerCase().includes('aspirado traqueal')
+    ? `<span class="badge badge-asp" style="font-size:10px;margin-right:2px;margin-bottom:2px"><i class="ti ti-droplet-filled"></i> ${t}</span>`
+    : `<span class="badge badge-blue" style="font-size:10px;margin-right:2px;margin-bottom:2px">${t}</span>`).join('') : '';
   const logros = e.logros?.length ? e.logros.map(l=>`<span class="badge badge-teal" style="font-size:10px;margin:1px">${l}</span>`).join('') : '';
   const VM = [[e.modo,'Modo'],[e.vt,'VT (ml)'],[e.vtkg,'ml/kg'],[e.fr,'FR'],[e.peep,'PEEP'],[e.fio2,'FiO₂%'],[e.ppico,'Ppico'],[e.pplat,'Pplat'],[e.dp,'DP'],[e.crs,'Crs']].filter(([v])=>v!==''&&v!==undefined&&v!==null);
   const EAB = [[e.ph,'pH'],[e.pco2,'pCO₂'],[e.po2,'pO₂'],[e.spo2,'SpO₂%'],[e.pafi,'PAFI']].filter(([v])=>v!==''&&v!==undefined&&v!==null);
@@ -8006,18 +8067,25 @@ function openEvolucion(patientId){
     yaExtubado ? `<div class="day-counter" style="background:var(--green-50);border-color:#d1fae5"><div class="dc-val" style="color:var(--green-800)">✓</div><div class="dc-label" style="color:var(--green-400)">Extubado</div></div>` : '',
   ].filter(Boolean).join('');
 
-  // ── Pre-seleccionar estado ARM ──
+  // ── Pre-seleccionar estado ventilatorio ──
+  // Ocultamos el aviso de herencia hasta saber si aplica
+  { const h = document.getElementById('eVentHeredadoHint'); if(h){ h.style.display='none'; h.innerHTML=''; } }
+  // 1) Preferimos heredar el estado de la última evolución cargada
+  const ventHeredada = precargarVentilacionUltimaEvo(patientId);
   const enARM = !!(p.inicioARM && !yaExtubado);
-  if(enARM){
-    setARMStatus(true);
-    // Pre-seleccionar TET o TQT según el paciente
-    if(p.tqt && p.tqt !== 'No') selectInterfaz('TQT', false);
-    else selectInterfaz('TET', false);
-  }
-  // TQT espontáneo: si el paciente tiene TQT pero no está en ARM
-  if(!enARM && ((p.tqt && p.tqt !== 'No') || p.tqtMin === 'Sí')){
-    setARMStatus(false);
-    setInterfazEsp('TQT_AA');
+  if(!ventHeredada){
+    // 2) Sin evoluciones previas con ventilación: usamos la ficha del paciente
+    if(enARM){
+      setARMStatus(true);
+      // Pre-seleccionar TET o TQT según el paciente
+      if(p.tqt && p.tqt !== 'No') selectInterfaz('TQT', false);
+      else selectInterfaz('TET', false);
+    }
+    // TQT espontáneo: si el paciente tiene TQT pero no está en ARM
+    if(!enARM && ((p.tqt && p.tqt !== 'No') || p.tqtMin === 'Sí')){
+      setARMStatus(false);
+      setInterfazEsp('TQT_AA');
+    }
   }
   // Asegura que los tags dependientes de ARM/TQT (incl. Aspiración del LOF / nasofaríngea)
   // queden correctamente mostrados u ocultos incluso si no se disparó ninguno de los branches previos
@@ -8211,6 +8279,8 @@ const EVO_FIELD_MAP = {
 };
 
 function precargarCamposEvolucion(evo){
+  // En edición no aplica el aviso de estado heredado
+  { const h = document.getElementById('eVentHeredadoHint'); if(h){ h.style.display='none'; h.innerHTML=''; } }
   // Fecha / interfaz principal (ids con múltiples posibles destinos)
   const eDate = document.getElementById('eDate'); if(eDate && evo.date) eDate.value = evo.date;
   const interfazVal = evo.interfaz || '';
@@ -8562,7 +8632,9 @@ function buscarHistorial(){
       // mini timeline
       const html = evos.map(e=>{
         const tolBadge = e.tolerancia ? `<span class="badge ${e.tolerancia==='Buena'?'badge-teal':e.tolerancia==='Regular'?'badge-amber':'badge-red'}" style="font-size:9px">${e.tolerancia}</span>` : '';
-        const tags = e.tecnicas?.length ? e.tecnicas.map(t=>`<span class="badge badge-blue" style="font-size:9px;margin-right:2px">${t}</span>`).join('') : '';
+        const tags = e.tecnicas?.length ? e.tecnicas.map(t=> (t||'').toLowerCase().includes('aspirado traqueal')
+          ? `<span class="badge badge-asp" style="font-size:9px;margin-right:2px"><i class="ti ti-droplet-filled"></i> ${t}</span>`
+          : `<span class="badge badge-blue" style="font-size:9px;margin-right:2px">${t}</span>`).join('') : '';
         const items = [[e.modo,'Modo'],[e.fr,'FR'],[e.fio2,'FiO₂%'],[e.spo2,'SpO₂'],[e.pafi,'PAFI'],[e.rass,'RASS'],[e.akm1,'AKM']].filter(([v])=>v!==''&&v!=null);
         return `<div style="margin-bottom:10px;padding:10px;background:var(--gray-50);border-radius:var(--radius);border-left:3px solid var(--blue-200)">
           <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:5px">
