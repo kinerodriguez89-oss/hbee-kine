@@ -1466,8 +1466,8 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
         <div class="form-group"><label>TAM (calculada)</label><input type="text" id="eTAM" readonly style="background:var(--blue-50);color:var(--blue-800);font-weight:600"></div>
       </div>
       <div class="form-row three">
-        <div class="form-group"><label>SpO₂ monitor (%)</label><input type="number" id="eSpO2Mon" inputmode="numeric" max="100"></div>
-        <div class="form-group"><label>FR monitor (rpm)</label><input type="number" id="eFRMon" inputmode="numeric"></div>
+        <div class="form-group"><label>SpO₂ monitor (%)</label><input type="number" id="eSpO2Mon" inputmode="numeric" max="100" oninput="calcROX()"></div>
+        <div class="form-group"><label>FR monitor (rpm)</label><input type="number" id="eFRMon" inputmode="numeric" oninput="calcROX()"></div>
         <div class="form-group"><label>PIC (mmHg)</label><input type="number" id="ePIC" inputmode="numeric" placeholder="Si tiene sensor"></div>
       </div>
       <div class="form-row">
@@ -1664,10 +1664,39 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
         </div>
 
         <!-- Sub: CNAF -->
+        <div id="eSubVNI" style="display:none" class="dec-sublevel">
+          <div class="form-section-title" style="margin-bottom:10px"><i class="ti ti-lungs"></i> Setting de VNI</div>
+          <div class="form-row three">
+            <div class="form-group"><label>Modo</label>
+              <select id="eVNIModo"><option value="">-</option><option>VC-CMV</option><option>PC-CMV</option><option>PC-CSV</option></select>
+            </div>
+            <div class="form-group"><label>Pi (cmH₂O)</label><input type="number" id="eVNIPi" inputmode="decimal" placeholder="cmH₂O"></div>
+            <div class="form-group"><label>VT (ml)</label><input type="number" id="eVNIVt" inputmode="decimal" placeholder="ml"></div>
+          </div>
+          <div class="form-row three">
+            <div class="form-group"><label>FR (rpm)</label><input type="number" id="eVNIFr" inputmode="numeric" placeholder="rpm"></div>
+            <div class="form-group"><label>PEEP (cmH₂O)</label><input type="number" id="eVNIPeep" inputmode="decimal" placeholder="cmH₂O"></div>
+            <div class="form-group"><label>FiO₂ (%)</label><input type="number" id="eVNIFio2" inputmode="decimal" placeholder="21–100"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>Tipo de máscara</label>
+              <select id="eVNIMascara"><option value="">-</option><option>Total face</option><option>Oronasal</option></select>
+            </div>
+          </div>
+        </div>
         <div id="eSubCNAF" style="display:none" class="dec-sublevel">
           <div class="form-row">
-            <div class="form-group"><label>Flujo (L/min)</label><input type="number" id="eCNAFflujo" inputmode="decimal" placeholder="20–60"></div>
-            <div class="form-group"><label>FiO₂ (%)</label><input type="number" id="eCNAFfio2" inputmode="decimal" placeholder="21–100"></div>
+            <div class="form-group"><label>Flujo (L/min)</label><input type="number" id="eCNAFflujo" inputmode="decimal" placeholder="20–60" oninput="calcROX()"></div>
+            <div class="form-group"><label>FiO₂ (%)</label><input type="number" id="eCNAFfio2" inputmode="decimal" placeholder="21–100" oninput="calcROX()"></div>
+          </div>
+          <div id="eROXBox" style="display:none;margin-top:8px;background:var(--teal-50);border:1px solid var(--teal-100);border-radius:8px;padding:8px 12px">
+            <div style="display:flex;align-items:baseline;gap:8px">
+              <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--teal-800)">Índice ROX</span>
+              <span style="font-size:20px;font-weight:800" id="eROXValor">—</span>
+              <span style="font-size:12px;font-weight:700" id="eROXCat"></span>
+            </div>
+            <div style="font-size:11px;color:var(--text-muted)" id="eROXDetalle"></div>
+            <div id="eROXFaltan" style="font-size:11px;color:var(--amber-600);display:none">Completá SpO₂ y FR en Signos Vitales para calcular el ROX.</div>
           </div>
         </div>
       </div>
@@ -6297,6 +6326,37 @@ function esPacientePostUCI(p){
 const MRC_CAMPOS_EVO = ['eMRCAbdHombD','eMRCFlexCodoD','eMRCExtMunD','eMRCAbdHombI','eMRCFlexCodoI','eMRCExtMunI',
                         'eMRCFlexCadD','eMRCExtRodD','eMRCDorsiTobD','eMRCFlexCadI','eMRCExtRodI','eMRCDorsiTobI'];
 
+function calcROX(){
+  const box = document.getElementById('eROXBox');
+  if(!box) return;
+  // Solo tiene sentido con CAFO seleccionada
+  const esCNAF = document.getElementById('eInterfazEsp')?.value === 'CNAF';
+  if(!esCNAF){ box.style.display='none'; return; }
+  box.style.display = 'block';
+  const spo2 = parseFloat(document.getElementById('eSpO2Mon')?.value);
+  const fio2 = parseFloat(document.getElementById('eCNAFfio2')?.value);
+  const fr   = parseFloat(document.getElementById('eFRMon')?.value);
+  const valEl = document.getElementById('eROXValor');
+  const catEl = document.getElementById('eROXCat');
+  const detEl = document.getElementById('eROXDetalle');
+  const faltanEl = document.getElementById('eROXFaltan');
+  if(isNaN(spo2) || isNaN(fio2) || isNaN(fr) || fio2 <= 0 || fr <= 0){
+    valEl.textContent = '—'; catEl.textContent = ''; detEl.textContent = '';
+    faltanEl.style.display = (isNaN(spo2) || isNaN(fr)) ? 'block' : 'none';
+    return;
+  }
+  faltanEl.style.display = 'none';
+  // ROX = (SpO2 / FiO2) / FR  — FiO2 en fracción (0–1)
+  const rox = (spo2 / fio2) / fr;
+  valEl.textContent = rox.toFixed(2);
+  let cat, color;
+  if(rox >= 4.88){ cat = 'Bajo riesgo de fracaso'; color = 'var(--teal-700)'; }
+  else if(rox < 3.85){ cat = 'Alto riesgo de fracaso'; color = 'var(--red-600)'; }
+  else { cat = 'Zona intermedia — revalorar'; color = 'var(--amber-600)'; }
+  catEl.textContent = cat; catEl.style.color = color;
+  detEl.textContent = `(SpO₂ ${spo2} / FiO₂ ${fio2}%) / FR ${fr} rpm`;
+}
+
 function calcMRCEvo(){
   const vals = MRC_CAMPOS_EVO.map(id=>{ const v = parseInt(document.getElementById(id)?.value); return isNaN(v) ? null : v; });
   const llenos = vals.filter(v=>v!==null);
@@ -6392,6 +6452,7 @@ function setARMStatus(enARM){
   } else {
     // Ocultar sub-bloques de no-ARM
     document.getElementById('eSubVANO2').style.display = 'none';
+    document.getElementById('eSubVNI').style.display = 'none';
     document.getElementById('eSubCNAF').style.display = 'none';
     // Resetear botones de no-ARM
     document.querySelectorAll('#eSubArmNo .dec-btn').forEach(b=>{ b.classList.remove('dec-sel','dec-sel-tqt'); });
@@ -6416,7 +6477,9 @@ function setInterfazEsp(tipo){
   const btnId = { VAN_AA:'eBtnVAN_AA', VAN_O2:'eBtnVAN_O2', CNAF:'eBtnCNAF', VNI:'eBtnVNI', TQT_O2:'eBtnTQT_O2', TQT_AA:'eBtnTQT_AA' }[tipo];
   if(btnId){ document.getElementById(btnId).classList.add(esTQT ? 'dec-sel-tqt' : 'dec-sel'); }
   document.getElementById('eSubVANO2').style.display = tipo === 'VAN_O2' ? 'block' : 'none';
+  document.getElementById('eSubVNI').style.display = tipo === 'VNI' ? 'block' : 'none';
   document.getElementById('eSubCNAF').style.display = tipo === 'CNAF' ? 'block' : 'none';
+  calcROX();
   document.getElementById('tqtBlock').style.display = esTQT ? 'block' : 'none';
   actualizarSeccionDecanulacion(esTQT);
   if(esTQT){
@@ -8021,6 +8084,7 @@ function openEvolucion(patientId){
     'eQxDiaPOP','eQxCarga','eQxHerida',
     'eAmpNivel','eAmpMunon','eAmpVendaje',
     'eCNAFflujo','eCNAFfio2',
+    'eVNIModo','eVNIPi','eVNIVt','eVNIFr','eVNIPeep','eVNIFio2','eVNIMascara',
     'eMRCAbdHombD','eMRCFlexCodoD','eMRCExtMunD','eMRCAbdHombI','eMRCFlexCodoI','eMRCExtMunI',
     'eMRCFlexCadD','eMRCExtRodD','eMRCDorsiTobD','eMRCFlexCadI','eMRCExtRodI','eMRCDorsiTobI',
     'eObs','eInterfazPrincipal','eInterfazEsp',
@@ -8292,6 +8356,7 @@ const EVO_FIELD_MAP = {
   posicionARM:'ePosicionARM', pronoCiclo:'ePronoCiclo', cuffLeak:'eCuffLeak',
   cnFlujo:'eCNflujo', mvFio2:'eMVfio2', mrFlujo:'eMRflujo',
   cnafFlujo:'eCNAFflujo', cnafFio2:'eCNAFfio2',
+  vniModo:'eVNIModo', vniPi:'eVNIPi', vniVt:'eVNIVt', vniFr:'eVNIFr', vniPeep:'eVNIPeep', vniFio2:'eVNIFio2', vniMascara:'eVNIMascara',
   modo:'eModo', vt:'eVT', vtkg:'eVTkg', fr:'eFR', peep:'ePEEP',
   fc:'eFC', tas:'eTAS', tad:'eTAD', tam:'eTAM', spo2Mon:'eSpO2Mon', frMon:'eFRMon',
   pic:'ePIC', etco2:'eEtCO2', fio2:'eFiO2', ti:'eTi', pc:'ePC',
@@ -8483,6 +8548,7 @@ async function guardarEvolucion(){
     cuffLeak:G('eCuffLeak')||null,
     cnFlujo:G('eCNflujo'), mvFio2:G('eMVfio2'), mrFlujo:G('eMRflujo'),
     cnafFlujo:GN('eCNAFflujo'), cnafFio2:GN('eCNAFfio2'),
+    vniModo:G('eVNIModo'), vniPi:GN('eVNIPi'), vniVt:GN('eVNIVt'), vniFr:GN('eVNIFr'), vniPeep:GN('eVNIPeep'), vniFio2:GN('eVNIFio2'), vniMascara:G('eVNIMascara'),
     modo:G('eModo'), vt:GN('eVT'), vtkg:GN('eVTkg'), fr:GN('eFR'), peep:GN('ePEEP'),
     fc:GN('eFC'), tas:GN('eTAS'), tad:GN('eTAD'), tam:G('eTAM'), spo2Mon:GN('eSpO2Mon'), frMon:GN('eFRMon'), pic:GN('ePIC'), etco2:GN('eEtCO2'),
     fio2:GN('eFiO2'), ti:GN('eTi'), pc:GN('ePC'),
