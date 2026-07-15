@@ -622,6 +622,27 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
   </div>
 </div>
 
+<!-- ════ CAMBIO DE CONTRASEÑA (primer ingreso) ════ -->
+<div id="changePassScreen" style="display:none;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(145deg,#042C53 0%,#185FA5 55%,#0F6E56 100%);padding:1rem">
+  <div style="background:#fff;border-radius:20px;padding:2rem;width:420px;max-width:100%;box-shadow:0 24px 64px rgba(0,0,0,.28)">
+    <div style="text-align:center;margin-bottom:1.5rem">
+      <div style="display:inline-flex;align-items:center;gap:6px;background:var(--amber-50);color:var(--amber-800);font-size:10px;font-weight:700;padding:4px 12px;border-radius:20px;letter-spacing:.8px;text-transform:uppercase;margin-bottom:1rem"><i class="ti ti-lock"></i> Seguridad</div>
+      <h2 style="font-size:18px;font-weight:700;color:var(--blue-900);margin-bottom:4px">Creá tu contraseña</h2>
+      <p style="font-size:12px;color:var(--text-muted)" id="changePassGreeting">Por seguridad cambiá tu contraseña para continuar.</p>
+    </div>
+    <div class="form-group">
+      <label>Nueva contraseña</label>
+      <input type="password" id="newPass1" placeholder="Mínimo 8 caracteres" autocomplete="new-password">
+    </div>
+    <div class="form-group">
+      <label>Repetí la nueva contraseña</label>
+      <input type="password" id="newPass2" placeholder="••••••••" autocomplete="new-password" onkeydown="if(event.key==='Enter')guardarNuevaPass()">
+    </div>
+    <button class="btn btn-primary btn-block" id="btnChangePass" onclick="guardarNuevaPass()"><i class="ti ti-device-floppy"></i>Guardar y entrar</button>
+    <button class="btn btn-ghost btn-block btn-sm" onclick="doLogout()" style="color:var(--text-muted);margin-top:8px"><i class="ti ti-logout"></i>Cancelar y salir</button>
+  </div>
+</div>
+
 <!-- ════ LOGIN ════ -->
 <div id="loginScreen">
   <div class="login-card">
@@ -4730,7 +4751,7 @@ async function doLogin(){
       showToast('Tu usuario no tiene perfil asignado. Avisale a la jefatura.','error');
       return;
     }
-    startSession({ user: perfil.username, name: perfil.nombre, role: perfil.rol });
+    startSession({ user: perfil.username, name: perfil.nombre, role: perfil.rol, debeCambiarPass: perfil.debe_cambiar_pass === true });
   } catch(e){
     console.error('Login error:', e);
     showToast('Error de conexión. Verificá tu internet.','error');
@@ -4741,7 +4762,7 @@ async function doLogin(){
 
 async function fetchMiPerfil(){
   try {
-    const rows = await supaFetch('/rest/v1/perfiles?select=username,nombre,rol&limit=1');
+    const rows = await supaFetch('/rest/v1/perfiles?select=username,nombre,rol,debe_cambiar_pass&limit=1');
     return rows && rows[0] ? rows[0] : null;
   } catch(e){ return null; }
 }
@@ -4753,12 +4774,20 @@ async function tryRestoreSession(){
   if(!ok){ clearSupaSession(); return; }
   const perfil = await fetchMiPerfil();
   if(!perfil){ clearSupaSession(); return; }
-  startSession({ user: perfil.username, name: perfil.nombre, role: perfil.rol });
+  startSession({ user: perfil.username, name: perfil.nombre, role: perfil.rol, debeCambiarPass: perfil.debe_cambiar_pass === true });
 }
 tryRestoreSession();
 function startSession(user){
   currentUser = user;
   document.getElementById('loginScreen').style.display = 'none';
+  // v3_102: primer ingreso -> forzar cambio de contraseña antes de entrar
+  if(user.debeCambiarPass){
+    document.getElementById('changePassGreeting').textContent = `Hola ${user.name}, por seguridad cambiá tu contraseña para continuar.`;
+    document.getElementById('newPass1').value = '';
+    document.getElementById('newPass2').value = '';
+    document.getElementById('changePassScreen').style.display = 'flex';
+    return;
+  }
   // v3_100: estos admin también eligen sector al ingresar (prefieren la vista por sector)
   const ADMIN_CON_SECTOR = ['rodriguezd','petrem','santanaa'];
   const eligeSector = user.role === 'kine' || ADMIN_CON_SECTOR.includes(user.user);
@@ -4770,6 +4799,39 @@ function startSession(user){
     // Admin: entra directo con todos los sectores
     currentSector = null;
     launchApp();
+  }
+}
+
+async function guardarNuevaPass(){
+  const p1 = document.getElementById('newPass1').value;
+  const p2 = document.getElementById('newPass2').value;
+  if(p1.length < 8){ showToast('La contraseña debe tener al menos 8 caracteres','error'); return; }
+  if(p1 !== p2){ showToast('Las contraseñas no coinciden','error'); return; }
+
+  const btn = document.getElementById('btnChangePass');
+  if(btn){ btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader-2"></i> Guardando…'; }
+  try {
+    // 1) Cambiar la contraseña en Supabase Auth (usuario autenticado)
+    await supaFetch('/auth/v1/user', {
+      method:'PUT',
+      body: JSON.stringify({ password: p1 })
+    });
+    // 2) Apagar la marca debe_cambiar_pass en el perfil propio
+    await supaFetch('/rest/v1/perfiles?username=eq.'+encodeURIComponent(currentUser.user), {
+      method:'PATCH',
+      headers:{ 'Prefer':'return=minimal' },
+      body: JSON.stringify({ debe_cambiar_pass: false })
+    });
+    // 3) Continuar al ingreso normal, ya sin la marca
+    document.getElementById('changePassScreen').style.display = 'none';
+    addLog('password','Cambió su contraseña (primer ingreso)');
+    showToast('Contraseña actualizada ✓','success');
+    startSession({ ...currentUser, debeCambiarPass:false });
+  } catch(e){
+    console.error('Error cambio pass:', e);
+    showToast('No se pudo cambiar la contraseña: ' + (e.message||'').slice(0,60),'error');
+  } finally {
+    if(btn){ btn.disabled = false; btn.innerHTML = '<i class="ti ti-device-floppy"></i>Guardar y entrar'; }
   }
 }
 
@@ -4831,6 +4893,8 @@ function doLogout(){
   gAccessToken = null;
   document.getElementById('app').style.display = 'none';
   document.getElementById('sectorScreen').style.display = 'none';
+  const cps = document.getElementById('changePassScreen');
+  if(cps) cps.style.display = 'none';
   document.getElementById('loginScreen').style.display = 'flex';
   document.getElementById('loginUser').value = '';
   document.getElementById('loginPass').value = '';
