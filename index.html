@@ -66,6 +66,9 @@ body { font-family:var(--font); background:var(--bg); color:var(--text); font-si
   -webkit-appearance:none; appearance:none; }
 .form-group input:focus,.form-group select:focus,.form-group textarea:focus{
   outline:none; border-color:var(--primary); box-shadow:0 0 0 3px rgba(24,95,165,.1); }
+.form-group input.field-error, .form-group select.field-error, .form-group textarea.field-error{
+  border-color:var(--red-400); background:var(--red-50); box-shadow:0 0 0 3px rgba(220,38,38,.12); }
+.form-group.field-error-label > label{ color:var(--red-600); }
 .form-group textarea{ resize:vertical; min-height:72px; }
 .form-group select{ background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23888'/%3E%3C/svg%3E");
   background-repeat:no-repeat; background-position:right 10px center; padding-right:28px; }
@@ -6566,7 +6569,7 @@ function agregarEAB(data){
       '<div style="display:flex;align-items:center;gap:8px">'+
         '<label style="font-size:11px;color:var(--text-muted);margin:0">Hora</label>'+
         '<input type="time" data-eab="hora" value="'+val(data.hora)+'" style="width:auto;padding:4px 6px">'+
-        '<button type="button" onclick="this.closest(\'.eab-extra-card\').remove()" title="Quitar" style="background:none;border:none;color:var(--red-500);cursor:pointer;font-size:15px;line-height:1"><i class="ti ti-trash"></i></button>'+
+        '<button type="button" onclick="this.closest(\'.eab-extra-card\').remove()" title="Quitar" style="background:none;border:none;color:var(--red-600);cursor:pointer;font-size:15px;line-height:1"><i class="ti ti-trash"></i></button>'+
       '</div>'+
     '</div>'+
     '<div class="form-row four">'+
@@ -7744,6 +7747,8 @@ function filterPacientes(q){
 function openNuevoPaciente(){
   editPacId = null;
   document.getElementById('modalPacTitulo').textContent = 'Nuevo paciente';
+  document.querySelectorAll('#modalPaciente .field-error').forEach(el=>el.classList.remove('field-error'));
+  document.querySelectorAll('#modalPaciente .field-error-label').forEach(el=>el.classList.remove('field-error-label'));
   const campos = ['fApellido','fNombre','fDNI','fEdad','fGenero','fPeso','fTalla','fIMC','fPCP',
     'fFIHosp','fFIUTI','fDiag','fOtrosAnt','fObesidadCalc',
     'fCausaVM','fFIOT','fInicioARM','fVMNI','fProno','fTQT','fFinARM','fReintubado'];
@@ -7776,6 +7781,8 @@ function openEditPaciente(id){
   if(!p) return;
   editPacId = id;
   document.getElementById('modalPacTitulo').textContent = 'Editar paciente';
+  document.querySelectorAll('#modalPaciente .field-error').forEach(el=>el.classList.remove('field-error'));
+  document.querySelectorAll('#modalPaciente .field-error-label').forEach(el=>el.classList.remove('field-error-label'));
   const M = (fid, val) => { const el=document.getElementById(fid); if(el) el.value = val||''; };
   M('fApellido',p.apellido); M('fNombre',p.nombre); M('fDNI',p.dni); M('fEdad',p.edad); M('fGenero',p.genero);
   M('fPeso',p.peso); M('fTalla',p.talla); M('fIMC', (p.peso&&p.talla)?(p.peso/Math.pow(p.talla/100,2)).toFixed(1):'');
@@ -7861,8 +7868,57 @@ let _guardandoPac = false; // guard anti doble-click
 async function guardarPaciente(){
   if(_guardandoPac) return;
   const G = id => document.getElementById(id)?.value?.trim() || '';
+
+  // ── Validación de campos obligatorios ──────────────────
+  const REQUERIDOS = [
+    ['fApellido','Apellido'],
+    ['fNombre','Nombre'],
+    ['fGenero','Género'],
+    ['fPeso','Peso real (kg)'],
+    ['fTalla','Altura (talla)'],
+    ['fSala','Sala'],
+    ['fCama','Cama'],
+    ['fFIUTI','Fecha de ingreso al sector'],
+    ['fTipoKine','Grupo (tipo de kinesiología)'],
+    ['fDiag','Diagnóstico principal'],
+  ];
+  // Limpiar marcas previas
+  REQUERIDOS.forEach(([id])=>{
+    const el = document.getElementById(id);
+    if(!el) return;
+    el.classList.remove('field-error');
+    el.closest('.form-group')?.classList.remove('field-error-label');
+  });
+  const faltan = [];
+  REQUERIDOS.forEach(([id,label])=>{
+    const el = document.getElementById(id);
+    if(el && G(id)===''){
+      faltan.push({el,label});
+      el.classList.add('field-error');
+      el.closest('.form-group')?.classList.add('field-error-label');
+      // Quitar el rojo apenas se complete el campo
+      const limpiar = () => {
+        if((el.value||'').trim()!==''){
+          el.classList.remove('field-error');
+          el.closest('.form-group')?.classList.remove('field-error-label');
+          el.removeEventListener('input', limpiar);
+          el.removeEventListener('change', limpiar);
+        }
+      };
+      el.addEventListener('input', limpiar);
+      el.addEventListener('change', limpiar);
+    }
+  });
+  if(faltan.length){
+    showToast(faltan.length===1
+      ? `Falta completar: ${faltan[0].label}`
+      : `Faltan ${faltan.length} campos obligatorios`, 'error');
+    faltan[0].el.scrollIntoView({behavior:'smooth', block:'center'});
+    try{ faltan[0].el.focus({preventScroll:true}); }catch(e){}
+    return;
+  }
+
   const apellido = G('fApellido');
-  if(!apellido){ showToast('El apellido es obligatorio','error'); return; }
   _guardandoPac = true;
   try{
   const peso = parseFloat(G('fPeso')) || null;
