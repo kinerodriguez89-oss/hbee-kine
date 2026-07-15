@@ -1878,7 +1878,8 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
         <div class="form-group"><label>VT ml/kg PCP</label><input type="text" id="eVTkg" readonly style="background:var(--gray-50);color:var(--blue-800);font-weight:600"><div class="form-hint">VT / PCP del paciente</div></div>
       </div>
       <div class="form-row four">
-        <div class="form-group"><label>FR (rpm)</label><input type="number" id="eFR" inputmode="numeric" oninput="autoCalculate()"></div>
+        <div class="form-group"><label>FR seteada (rpm)</label><input type="number" id="eFR" inputmode="numeric" oninput="autoCalculate()"></div>
+        <div class="form-group"><label>FR real (rpm)</label><input type="number" id="eFRreal" inputmode="numeric"></div>
         <div class="form-group"><label>PEEP (cmH₂O)</label><input type="number" id="ePEEP" inputmode="decimal" step="0.5" oninput="autoCalculate()"></div>
         <div class="form-group"><label>FiO₂ (%)</label><input type="number" id="eFiO2" inputmode="numeric" min="21" max="100"></div>
         <div class="form-group"><label>Ti total (seg)</label><input type="number" id="eTi" inputmode="decimal" step="0.1"></div>
@@ -2029,6 +2030,12 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
           <input type="number" id="eLactato" inputmode="decimal" step="0.1" placeholder="ej: 1.2">
         </div>
       </div>
+
+      <!-- EAB adicionales (varios en el día) -->
+      <div id="eabExtraContainer"></div>
+      <button type="button" class="btn btn-ghost btn-sm" style="margin-top:10px" onclick="agregarEAB()">
+        <i class="ti ti-plus"></i> Agregar EAB
+      </button>
     </div>
 
     <hr class="sep">
@@ -2750,6 +2757,7 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
         <div class="tag-group" id="tagsResp">
           <span class="tag" id="tagAspLOFresp" onclick="toggleTag(this)" style="display:none">Aspiración del LOF</span>
           <span class="tag" id="tagAspNasofaringea" onclick="toggleTag(this)" style="display:none">Aspiración nasofaríngea</span>
+          <span class="tag" id="tagTitulacionPEEP" onclick="toggleTag(this)" style="display:none">Titulación de PEEP</span>
           <span class="tag" onclick="toggleTag(this)">Aceleración del flujo espiratorio</span>
           <span class="tag" onclick="toggleTag(this)">Tos asistida</span>
           <span class="tag" onclick="toggleTag(this)">Tos dirigida</span>
@@ -6534,6 +6542,60 @@ function actualizarCuidadosVAA(){
     t.style.display = mostrarAspNoARM ? 'inline-flex' : 'none';
     if(!mostrarAspNoARM) t.classList.remove('active');
   });
+
+  // Titulación de PEEP: solo si el paciente está en ARM (TET o TQT)
+  const tagTitPEEP = document.getElementById('tagTitulacionPEEP');
+  if(tagTitPEEP){
+    tagTitPEEP.style.display = enARM ? 'inline-flex' : 'none';
+    if(!enARM) tagTitPEEP.classList.remove('active');
+  }
+}
+
+// ── EAB adicionales (varios en el día) ──────────────────
+function agregarEAB(data){
+  data = data || {};
+  const cont = document.getElementById('eabExtraContainer');
+  if(!cont) return;
+  const val = v => (v===undefined||v===null) ? '' : v;
+  const card = document.createElement('div');
+  card.className = 'eab-extra-card';
+  card.style.cssText = 'background:var(--teal-50);border:1px solid var(--teal-200);border-radius:8px;padding:10px 12px;margin-top:10px';
+  card.innerHTML =
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'+
+      '<span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--teal-700)"><i class="ti ti-droplet"></i> EAB adicional</span>'+
+      '<div style="display:flex;align-items:center;gap:8px">'+
+        '<label style="font-size:11px;color:var(--text-muted);margin:0">Hora</label>'+
+        '<input type="time" data-eab="hora" value="'+val(data.hora)+'" style="width:auto;padding:4px 6px">'+
+        '<button type="button" onclick="this.closest(\'.eab-extra-card\').remove()" title="Quitar" style="background:none;border:none;color:var(--red-500);cursor:pointer;font-size:15px;line-height:1"><i class="ti ti-trash"></i></button>'+
+      '</div>'+
+    '</div>'+
+    '<div class="form-row four">'+
+      '<div class="form-group"><label>pH</label><input type="number" data-eab="ph" inputmode="decimal" step="0.01" value="'+val(data.ph)+'"></div>'+
+      '<div class="form-group"><label>pCO₂</label><input type="number" data-eab="pco2" inputmode="decimal" value="'+val(data.pco2)+'"></div>'+
+      '<div class="form-group"><label>pO₂</label><input type="number" data-eab="po2" inputmode="decimal" value="'+val(data.po2)+'"></div>'+
+      '<div class="form-group"><label>HCO₃</label><input type="number" data-eab="hco3" inputmode="decimal" value="'+val(data.hco3)+'"></div>'+
+    '</div>'+
+    '<div class="form-row four">'+
+      '<div class="form-group"><label>SpO₂ (%)</label><input type="number" data-eab="spo2" inputmode="numeric" max="100" value="'+val(data.spo2)+'"></div>'+
+      '<div class="form-group"><label>PAFI</label><input type="number" data-eab="pafi" inputmode="decimal" value="'+val(data.pafi)+'"></div>'+
+      '<div class="form-group"><label>Ác. láctico</label><input type="number" data-eab="lactato" inputmode="decimal" step="0.1" value="'+val(data.lactato)+'"></div>'+
+    '</div>';
+  cont.appendChild(card);
+}
+
+function collectEABExtra(){
+  const cont = document.getElementById('eabExtraContainer');
+  if(!cont) return [];
+  return [...cont.querySelectorAll('.eab-extra-card')].map(card=>{
+    const o = {};
+    card.querySelectorAll('[data-eab]').forEach(inp=>{
+      const k = inp.getAttribute('data-eab');
+      const v = (inp.value||'').trim();
+      if(v==='') return;
+      o[k] = (inp.type==='number') ? parseFloat(v) : v;
+    });
+    return o;
+  }).filter(o=>Object.keys(o).length>0);
 }
 
 function setVANO2tipo(tipo){
@@ -7340,7 +7402,7 @@ function evoCardHTML(e, i){
     ? `<span class="badge badge-asp" style="font-size:10px;margin-right:2px;margin-bottom:2px"><i class="ti ti-droplet-filled"></i> ${t}</span>`
     : `<span class="badge badge-blue" style="font-size:10px;margin-right:2px;margin-bottom:2px">${t}</span>`).join('') : '';
   const logros = e.logros?.length ? e.logros.map(l=>`<span class="badge badge-teal" style="font-size:10px;margin:1px">${l}</span>`).join('') : '';
-  const VM = [[e.modo,'Modo'],[e.vt,'VT (ml)'],[e.vtkg,'ml/kg'],[e.fr,'FR'],[e.peep,'PEEP'],[e.fio2,'FiO₂%'],[e.ppico,'Ppico'],[e.pplat,'Pplat'],[e.dp,'DP'],[e.crs,'Crs']].filter(([v])=>v!==''&&v!==undefined&&v!==null);
+  const VM = [[e.modo,'Modo'],[e.vt,'VT (ml)'],[e.vtkg,'ml/kg'],[e.fr,'FR set'],[e.frReal,'FR real'],[e.peep,'PEEP'],[e.fio2,'FiO₂%'],[e.ppico,'Ppico'],[e.pplat,'Pplat'],[e.dp,'DP'],[e.crs,'Crs']].filter(([v])=>v!==''&&v!==undefined&&v!==null);
   const EAB = [[e.ph,'pH'],[e.pco2,'pCO₂'],[e.po2,'pO₂'],[e.spo2,'SpO₂%'],[e.pafi,'PAFI']].filter(([v])=>v!==''&&v!==undefined&&v!==null);
   const NEURO = [[e.rass,'RASS'],[e.cpot,'CPOT'],[e.camicu,'CAM-ICU'],[e.akm1,'AKM'],[e.fac?e.fac.split(' ')[0]:'','FAC'],[e.eva,'EVA']].filter(([v])=>v!==''&&v!==undefined&&v!==null);
   return `<div class="evo-entry ${i===0?'latest':''}">
@@ -7360,6 +7422,10 @@ function evoCardHTML(e, i){
       ${e.interfazO2 ? `<div style="font-size:12px;color:var(--blue-700);margin-bottom:4px"><i class="ti ti-lungs"></i> ${e.interfazO2}${e.flujoO2?' — '+e.flujoO2:''}${e.spo2&&!EAB.length?' · SpO₂ '+e.spo2+'%':''}</div>` : ''}
       ${VM.length ? `<div class="evo-section-subtitle">Mecánica ventilatoria</div><div class="evo-grid">${VM.map(([v,k])=>`<div class="evo-item"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('')}</div>` : ''}
       ${EAB.length ? `<div class="evo-section-subtitle">EAB</div><div class="evo-grid">${EAB.map(([v,k])=>`<div class="evo-item"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('')}</div>` : ''}
+      ${Array.isArray(e.eabExtra) ? e.eabExtra.map(x=>{
+        const items=[[x.ph,'pH'],[x.pco2,'pCO₂'],[x.po2,'pO₂'],[x.hco3,'HCO₃'],[x.spo2,'SpO₂%'],[x.pafi,'PAFI'],[x.lactato,'Lact']].filter(([v])=>v!==''&&v!==undefined&&v!==null);
+        return items.length ? `<div class="evo-section-subtitle">EAB${x.hora?' · '+x.hora:''}</div><div class="evo-grid">${items.map(([v,k])=>`<div class="evo-item"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('')}</div>` : '';
+      }).join('') : ''}
       ${NEURO.length ? `<div class="evo-section-subtitle">Neurológico / Sedación</div><div class="evo-grid">${NEURO.map(([v,k])=>`<div class="evo-item"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('')}</div>` : ''}
       ${(e.pve==='Sí'||e.pve==='Si') ? `<div class="evo-section-subtitle">PVE</div><div class="evo-grid"><div class="evo-item"><div class="k">Tipo</div><div class="v">${e.pveTipo||'—'}</div></div><div class="evo-item"><div class="k">Duración</div><div class="v">${e.pveMin||'—'} min</div></div><div class="evo-item"><div class="k">Resultado</div><div class="v">${e.pveResult||'—'}</div></div></div>` : ''}
       ${e.pveTQTColocado==='Si' ? `<div class="evo-section-subtitle">TQT/T</div><div class="evo-grid"><div class="evo-item"><div class="k">Duración/plan</div><div class="v">${PVE_TQT_DURACION_LABEL[e.pveTQTDuracion]||'—'}</div></div>${e.pveTQTNocheReconexion ? `<div class="evo-item"><div class="k">Reconexión</div><div class="v">${e.pveTQTNocheReconexion==='Si'?'Sí':'No'}</div></div>` : ''}${e.pveTQTMotivo && e.pveTQTMotivo.length ? `<div class="evo-item"><div class="k">Motivo reconexión</div><div class="v">${e.pveTQTMotivo.join(', ')}</div></div>` : ''}</div>` : (e.pveTQTColocado==='No' ? `<div class="evo-section-subtitle">TQT/T</div><div class="evo-grid"><div class="evo-item"><div class="k">Colocación</div><div class="v">No</div></div></div>` : '')}
@@ -8060,7 +8126,7 @@ function openEvolucion(patientId){
   document.getElementById('eHora').value = ahora.getHours().toString().padStart(2,'0') + ':' + ahora.getMinutes().toString().padStart(2,'0');
   document.getElementById('eTurno').value = currentShift();
   document.getElementById('eKine').value = currentUser.name;
-  const nFields = ['eModo','eVT','eVTkg','eFR','ePEEP','eFiO2','eTi','ePC',
+  const nFields = ['eModo','eVT','eVTkg','eFR','eFRreal','ePEEP','eFiO2','eTi','ePC',
     'ePpico','ePplat','ePEEPt','eDP','eCrs','eRinsp','eFlujo','eMP','eER','eCT',
     'ePH','ePCO2','ePO2','eHCO3','eSpO2','ePAFI','eInterfaz',
     'eFC','eTAS','eTAD','eTAM','eSpO2Mon','eFRMon','ePIC','eEtCO2',
@@ -8091,6 +8157,7 @@ function openEvolucion(patientId){
     'eModo2','eVT2','eVTkg2','eFR2','ePEEP2','eFiO22','eTi2','ePpico2','ePplat2','ePEEPt2',
     'ePC2','eDP2','eCrs2','eRinsp2','eFlujo2','eMP2','eER2','eCT2','eP012','eDeltaPocc2'];
   nFields.forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  { const c=document.getElementById('eabExtraContainer'); if(c) c.innerHTML=''; }
   document.querySelectorAll('#modalEvo .tag.active').forEach(t=>t.classList.remove('active'));
   ['msSedacion','msAnalgesia','msBNM','msVasoact'].forEach(resetMultiselect);
   document.getElementById('eDolorEscalaRow').style.display = 'none';
@@ -8355,7 +8422,7 @@ const EVO_FIELD_MAP = {
   cnFlujo:'eCNflujo', mvFio2:'eMVfio2', mrFlujo:'eMRflujo',
   cnafFlujo:'eCNAFflujo', cnafFio2:'eCNAFfio2',
   vniModo:'eVNIModo', vniPi:'eVNIPi', vniVt:'eVNIVt', vniFr:'eVNIFr', vniPeep:'eVNIPeep', vniFio2:'eVNIFio2', vniMascara:'eVNIMascara',
-  modo:'eModo', vt:'eVT', vtkg:'eVTkg', fr:'eFR', peep:'ePEEP',
+  modo:'eModo', vt:'eVT', vtkg:'eVTkg', fr:'eFR', frReal:'eFRreal', peep:'ePEEP',
   fc:'eFC', tas:'eTAS', tad:'eTAD', tam:'eTAM', spo2Mon:'eSpO2Mon', frMon:'eFRMon',
   pic:'ePIC', etco2:'eEtCO2', fio2:'eFiO2', ti:'eTi', pc:'ePC',
   vr:'eVR', aaGrad:'eAAGrad', aaRatio:'eAaRatio', lactato:'eLactato',
@@ -8420,6 +8487,13 @@ function precargarCamposEvolucion(evo){
     const el = document.getElementById(EVO_FIELD_MAP[key]);
     if(el) el.value = val;
   });
+
+  // EAB adicionales
+  const eabCont = document.getElementById('eabExtraContainer');
+  if(eabCont){
+    eabCont.innerHTML = '';
+    if(Array.isArray(evo.eabExtra)) evo.eabExtra.forEach(e=>agregarEAB(e));
+  }
 
   // Multiselects
   setMultiselectValues('msSedacion', evo.sedacion);
@@ -8547,7 +8621,7 @@ async function guardarEvolucion(){
     cnFlujo:G('eCNflujo'), mvFio2:G('eMVfio2'), mrFlujo:G('eMRflujo'),
     cnafFlujo:GN('eCNAFflujo'), cnafFio2:GN('eCNAFfio2'),
     vniModo:G('eVNIModo'), vniPi:GN('eVNIPi'), vniVt:GN('eVNIVt'), vniFr:GN('eVNIFr'), vniPeep:GN('eVNIPeep'), vniFio2:GN('eVNIFio2'), vniMascara:G('eVNIMascara'),
-    modo:G('eModo'), vt:GN('eVT'), vtkg:GN('eVTkg'), fr:GN('eFR'), peep:GN('ePEEP'),
+    modo:G('eModo'), vt:GN('eVT'), vtkg:GN('eVTkg'), fr:GN('eFR'), frReal:GN('eFRreal'), peep:GN('ePEEP'),
     fc:GN('eFC'), tas:GN('eTAS'), tad:GN('eTAD'), tam:G('eTAM'), spo2Mon:GN('eSpO2Mon'), frMon:GN('eFRMon'), pic:GN('ePIC'), etco2:GN('eEtCO2'),
     fio2:GN('eFiO2'), ti:GN('eTi'), pc:GN('ePC'),
     vr:GN('eVR'), aaGrad:GN('eAAGrad'), aaRatio:GN('eAaRatio'), lactato:GN('eLactato'),
@@ -8556,7 +8630,7 @@ async function guardarEvolucion(){
     dp:GN('eDP'), crs:GN('eCrs'), rinsp:GN('eRinsp'), flujo:GN('eFlujo'),
     mp:GN('eMP'), er:GN('eER'), ct:GN('eCT'),
     ph:GN('ePH'), pco2:GN('ePCO2'), po2:GN('ePO2'), hco3:GN('eHCO3'),
-    spo2:GN('eSpO2'), pafi:GN('ePAFI'), diasHosp:GN('eDiasHosp'),
+    spo2:GN('eSpO2'), pafi:GN('ePAFI'), eabExtra:collectEABExtra(), diasHosp:GN('eDiasHosp'),
     rass:G('eRASS'), cpot:G('eCPOT'), camicu:G('eCAMICU'), ventSed:G('eVentSed'),
     dolorAuto:G('eDolorAuto'), dolorEscala:G('eDolorEscala'),
     sedacion:getMultiselectValues('msSedacion'), analgesia:getMultiselectValues('msAnalgesia'),
@@ -8674,7 +8748,7 @@ async function guardarEvolucion(){
   addLog('evolve',`Evolución de ${p?.apellido}, ${p?.nombre} (${fmtDate(date)} — ${evo.turno})`);
   showToast('Evolución guardada','success');
   // Reset
-  const nFields = ['eVT','eVTkg','eFR','ePEEP','eFiO2','eTi','ePC','ePpico','ePplat','ePEEPt','eDP','eCrs','eRinsp','eFlujo',
+  const nFields = ['eVT','eVTkg','eFR','eFRreal','ePEEP','eFiO2','eTi','ePC','ePpico','ePplat','ePEEPt','eDP','eCrs','eRinsp','eFlujo',
     'eMP','eER','eCT','ePH','ePCO2','ePO2','eHCO3','eSpO2','ePAFI',
     'eOtrosFarmacos','ePVEtmin','eCuffM','eCuffT','eCuffN','eCanDI','eCanDE','eObs',
     'eFC','eTAS','eTAD','eTAM','eSpO2Mon','eFRMon','ePIC','eEtCO2','eDolorEscala'];
@@ -8683,6 +8757,7 @@ async function guardarEvolucion(){
    'ePVE','ePVETipo','ePVEresult','eExtubacion','eInterfazPE','eOclusionCanula','eDeglusion','eTipoCan','eEstadoBajon','eSecTrqCant','eSecTrqCal','eLOF',
    'eSecCant','eSecChar'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   resetProcesoDecanulacion();
+  { const c=document.getElementById('eabExtraContainer'); if(c) c.innerHTML=''; }
   ['msSedacion','msAnalgesia','msBNM','msVasoact'].forEach(resetMultiselect);
   document.getElementById('eDolorEscalaRow').style.display = 'none';
   document.querySelectorAll('#modalEvo .tag.active').forEach(t=>t.classList.remove('active'));
