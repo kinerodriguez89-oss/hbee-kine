@@ -670,7 +670,7 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
       <div class="nav-tab" onclick="showSection('pacientes')" id="tab-pacientes"><i class="ti ti-users"></i> Pacientes</div>
       <div class="nav-tab" onclick="showSection('historial')" id="tab-historial"><i class="ti ti-clipboard-list"></i> Historial</div>
       <div class="nav-tab" onclick="showSection('indicadores')" id="tab-indicadores" style="display:none"><i class="ti ti-chart-bar"></i> Indicadores</div>
-      <div class="nav-tab" onclick="showSection('actividad')" id="tab-actividad"><i class="ti ti-activity"></i> Actividad</div>
+      <div class="nav-tab" onclick="showSection('actividad')" id="tab-actividad" style="display:none"><i class="ti ti-activity"></i> Actividad</div>
     </div>
     <div class="nav-right">
       <div class="sync-indicator" id="syncIndicator" style="cursor:pointer" onclick="syncNow()" title="Estado de sincronización">
@@ -693,7 +693,7 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
       <button class="bottom-tab" onclick="showSection('pacientes')" id="btab-pacientes"><i class="ti ti-users"></i><span>Pacientes</span></button>
       <button class="bottom-tab" onclick="showSection('historial')" id="btab-historial"><i class="ti ti-clipboard-list"></i><span>Historial</span></button>
       <button class="bottom-tab" onclick="showSection('indicadores')" id="btab-indicadores" style="display:none"><i class="ti ti-chart-bar"></i><span>Indicadores</span></button>
-      <button class="bottom-tab" onclick="showSection('actividad')" id="btab-actividad"><i class="ti ti-activity"></i><span>Actividad</span></button>
+      <button class="bottom-tab" onclick="showSection('actividad')" id="btab-actividad" style="display:none"><i class="ti ti-activity"></i><span>Actividad</span></button>
     </div>
   </div>
 
@@ -772,7 +772,13 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
     <div class="section" id="section-indicadores">
       <div class="page-header">
         <div><h2>Indicadores del servicio</h2><p>Métricas de actividad y prestaciones kinesiológicas</p></div>
-        <button class="btn btn-ghost btn-sm" onclick="exportarDatos()"><i class="ti ti-table-export"></i>Exportar Excel</button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-ghost btn-sm" onclick="exportarDatos()"><i class="ti ti-table-export"></i>Exportar Excel</button>
+          <button class="btn btn-ghost btn-sm" id="btnBackupJSON" style="display:none" onclick="descargarBackupCompleto()"><i class="ti ti-download"></i>Backup completo (JSON)</button>
+          <button class="btn btn-ghost btn-sm" id="btnRestoreJSON" style="display:none" onclick="document.getElementById('restoreFileInput').click()"><i class="ti ti-upload"></i>Restaurar backup</button>
+          <button class="btn btn-ghost btn-sm" id="btnWipeAll" style="display:none;color:var(--red-500)" onclick="borrarTodosLosPacientes()"><i class="ti ti-trash-x"></i>Borrar TODOS los pacientes</button>
+          <input type="file" id="restoreFileInput" accept="application/json,.json" style="display:none" onchange="restaurarBackupCompleto(event)">
+        </div>
       </div>
       <div id="indicadoresContent"></div>
     </div>
@@ -4598,35 +4604,9 @@ async function saveToSupabase(){
 // ════════════════════════════════════════════════════════
 // Usuarios: ahora gestionados en Supabase Auth + tabla perfiles (v3_90)
 
-let patients = LS.get('hbee_patients') || [
-  { id:1, apellido:'Ramírez', nombre:'Carlos', dni:'25488761', edad:67, genero:'Masculino', peso:78, talla:172, imc:26.4, pcp:67.8,
-    sala:'UTI-A', cama:'3', fIHosp:'2025-05-28', fIUTI:'2025-05-29',
-    diagnostico:'SDRA por neumonía bilateral',
-    antecedentes:['hta','dbt','tbq','epoc'], otrosAnt:'',
-    causaVM:'IRA', fIOT:'2025-05-29', inicioARM:'2025-05-29', vmni:'No', prono:2, tqt:'No', finARM:'', reintubado:'No',
-    estado:'Activo', fEUTI:'', fEK:'' },
-  { id:2, apellido:'Fernández', nombre:'María Elena', dni:'18772340', edad:54, genero:'Femenino', peso:65, talla:160, imc:25.4, pcp:52.4,
-    sala:'UTI-B', cama:'7', fIHosp:'2025-06-01', fIUTI:'2025-06-02',
-    diagnostico:'Shock séptico de foco abdominal',
-    antecedentes:['hta'], otrosAnt:'',
-    causaVM:'Post-op', fIOT:'2025-06-02', inicioARM:'2025-06-02', vmni:'', prono:0, tqt:'No', finARM:'', reintubado:'No',
-    estado:'Activo', fEUTI:'', fEK:'' },
-];
+let patients = LS.get('hbee_patients') || []; // v3_100: datos semilla de prueba eliminados para el piloto real
 
-let evoluciones = LS.get('hbee_evos') || [
-  { id:1001, patientId:1, date:'2025-06-09', turno:'Mañana', kine:'García L.',
-    armDia:11, utiDia:11, modo:'PS/CPAP', vt:480, vtkg:6.5, fr:18, peep:8, fio2:40, ti:'', pc:'',
-    ppico:22, pplat:18, peept:8, dp:10, crs:48, rinsp:'', flujo:'',
-    ph:7.38, pco2:42, po2:98, hco3:24.5, spo2:96, pafi:245, interfaz:'TET',
-    rass:'-2 Sedación leve', cpot:'2', camicu:'No evaluable', ventSed:'No', sedacion:'Midazolam 3mg/h', analgesia:'Fentanilo 50mcg/h', bnm:'', vasoact:'Noradrenalina 0.1mcg/kg/min',
-    akm1:'1 — Movilización pasiva en cama', akm2:'1 — Movilización pasiva en cama', mrc:'',
-    pve:'No', pveTipo:'', pveMin:'', pveResult:'', extubacion:'', interfazPE:'', nPVE:'',
-    cuffM:'', cuffT:'', cuffN:'', oclusionCanula:'', deglusion:'',
-    tecnicas:['Aspiración de secreciones','Movilización pasiva MMSS','Movilización pasiva MMII','Cambios posturales'],
-    secCant:'Moderadas', secChar:'Mucopurulentas',
-    tolerancia:'Buena',
-    obs:'Paciente hemodinámicamente estable con dosis bajas de NA. Inicio destete ventilatorio, toleró bien PS/CPAP. Sin eventos durante la guardia.' },
-];
+let evoluciones = LS.get('hbee_evos') || []; // v3_100: datos semilla de prueba eliminados
 
 let logs = LS.get('hbee_logs') || [];
 let currentUser = null;
@@ -4779,7 +4759,10 @@ tryRestoreSession();
 function startSession(user){
   currentUser = user;
   document.getElementById('loginScreen').style.display = 'none';
-  if(user.role === 'kine'){
+  // v3_100: estos admin también eligen sector al ingresar (prefieren la vista por sector)
+  const ADMIN_CON_SECTOR = ['rodriguezd','petrem','santanaa'];
+  const eligeSector = user.role === 'kine' || ADMIN_CON_SECTOR.includes(user.user);
+  if(eligeSector){
     // Mostrar selector de sector
     document.getElementById('sectorGreeting').textContent = `Bienvenido/a, ${user.name}`;
     document.getElementById('sectorScreen').style.display = 'flex';
@@ -4815,11 +4798,17 @@ function launchApp(){
   } else {
     badge.style.display = 'none';
   }
-  // Control de acceso a Indicadores: solo rol admin (el rol viene de la tabla perfiles en Supabase)
+  // Control de acceso a Indicadores y Actividad: solo rol admin (el rol viene de la tabla perfiles en Supabase)
   const puedeVerIndicadores = currentUser.role === 'admin';
-  ['tab-indicadores','btab-indicadores'].forEach(id=>{
+  ['tab-indicadores','btab-indicadores','tab-actividad','btab-actividad'].forEach(id=>{
     const el = document.getElementById(id);
     if(el) el.style.display = puedeVerIndicadores ? '' : 'none';
+  });
+  // Backup/Restore completo: SOLO el usuario rodriguezd (jefatura) — v3_99
+  const esRodriguez = currentUser.user === 'rodriguezd';
+  ['btnBackupJSON','btnRestoreJSON','btnWipeAll'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.style.display = esRodriguez ? '' : 'none';
   });
   addLog('login',`Ingresó: ${currentUser.name}${currentSector?' ('+currentSector+')':''}`);
   updateDashHeader();
@@ -5495,6 +5484,11 @@ function autoCalculate(){
 //  NAVEGACIÓN
 // ════════════════════════════════════════════════════════
 function showSection(id){
+  // v3_101: Indicadores y Actividad son solo para jefatura (rol admin)
+  if((id==='indicadores' || id==='actividad') && currentUser?.role !== 'admin'){
+    showToast('Sección disponible solo para jefatura','error');
+    return;
+  }
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.nav-tab,.bottom-tab').forEach(t=>t.classList.remove('active'));
   document.getElementById('section-'+id).classList.add('active');
@@ -7539,7 +7533,7 @@ function renderTabla(){
         <div style="display:flex;gap:5px">
           <button class="btn-evolve" onclick="openEvolucion(${p.id})"><i class="ti ti-stethoscope"></i> <span class="evo-count">${nEvo}</span></button>
           <button class="btn btn-icon btn-sm" onclick="openEditPaciente(${p.id})" title="Editar"><i class="ti ti-pencil"></i></button>
-          <button class="btn btn-icon btn-sm" style="color:var(--red-400)" onclick="eliminarPaciente(${p.id})" title="Eliminar"><i class="ti ti-trash"></i></button>
+          ${currentUser?.role==='admin' ? `<button class="btn btn-icon btn-sm" style="color:var(--red-400)" onclick="eliminarPaciente(${p.id})" title="Eliminar"><i class="ti ti-trash"></i></button>` : ''}
         </div>
       </td>
     </tr>`;
@@ -7607,7 +7601,7 @@ function filterPacientes(q){
         <div style="display:flex;gap:5px">
           <button class="btn-evolve" onclick="openEvolucion(${p.id})"><i class="ti ti-stethoscope"></i> <span class="evo-count">${nEvo}</span></button>
           <button class="btn btn-icon btn-sm" onclick="openEditPaciente(${p.id})"><i class="ti ti-pencil"></i></button>
-          <button class="btn btn-icon btn-sm" style="color:var(--red-400)" onclick="eliminarPaciente(${p.id})"><i class="ti ti-trash"></i></button>
+          ${currentUser?.role==='admin' ? `<button class="btn btn-icon btn-sm" style="color:var(--red-400)" onclick="eliminarPaciente(${p.id})"><i class="ti ti-trash"></i></button>` : ''}
         </div>
       </td>
     </tr>`;
@@ -7808,11 +7802,26 @@ async function guardarPaciente(){
 }
 
 async function eliminarPaciente(id){
+  if(currentUser?.role !== 'admin'){
+    showToast('Solo la jefatura puede eliminar pacientes','error');
+    return;
+  }
   const p = patients.find(x=>x.id===id);
   if(!confirm(`¿Eliminar a ${p?.apellido}, ${p?.nombre}? Se borrarán también sus evoluciones.`)) return;
+  const nid = Number(id);
+  try {
+    // v3_100: borrar de verdad en Supabase (antes solo se re-subían los demás,
+    // así que el paciente volvía a aparecer al recargar).
+    await supaFetch('/rest/v1/evoluciones?patient_id=eq.'+nid, { method:'DELETE' });
+    await supaFetch('/rest/v1/pacientes?id=eq.'+nid, { method:'DELETE' });
+  } catch(err){
+    console.error('Error al eliminar en Supabase:', err);
+    showToast('Error al eliminar en la nube: ' + (err.message||'').slice(0,60), 'error');
+    return; // no tocar lo local si falló la nube, para no desincronizar
+  }
   patients = patients.filter(x=>x.id!==id);
   evoluciones = evoluciones.filter(x=>x.patientId!==id);
-  await persistAll();
+  savePacientes(); saveEvos();
   addLog('delete',`Eliminó: ${p?.apellido}, ${p?.nombre}`);
   showToast('Paciente eliminado');
   renderAll();
@@ -9428,6 +9437,159 @@ function exportarDatos(){
   } catch(err){
     console.error('Error exportando:', err);
     showToast('Error al exportar: ' + (err.message||'desconocido').slice(0,80), 'error');
+  }
+}
+
+// ════════════════════════════════════════════════════════
+//  BACKUP COMPLETO (JSON) — solo rodriguezd (v3_99)
+//  Descarga un archivo con TODOS los datos íntegros (sin aplanar),
+//  y permite restaurarlo por merge (upsert) hacia Supabase.
+// ════════════════════════════════════════════════════════
+function descargarBackupCompleto(){
+  // Guardia de seguridad: aunque el botón está oculto, verificamos el usuario.
+  if(currentUser?.user !== 'rodriguezd'){
+    showToast('Acción no autorizada','error');
+    return;
+  }
+  try {
+    const backup = {
+      _tipo: 'HBEE_Kine_backup',
+      _version: 1,
+      _generadoPor: currentUser.user,
+      _fecha: new Date().toISOString(),
+      _conteo: { pacientes: patients.length, evoluciones: evoluciones.length },
+      pacientes: patients,
+      evoluciones: evoluciones,
+    };
+    const json = JSON.stringify(backup, null, 2);
+    const blob = new Blob([json], { type:'application/json;charset=utf-8;' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'HBEE_Kine_BACKUP_' + today() + '.json';
+    a.click();
+    addLog('backup', `Backup completo descargado (${patients.length} pac, ${evoluciones.length} evo)`);
+    showToast(`Backup descargado: ${patients.length} pacientes, ${evoluciones.length} evoluciones`, 'success');
+  } catch(err){
+    console.error('Error backup:', err);
+    showToast('Error al generar backup: ' + (err.message||'').slice(0,80), 'error');
+  }
+}
+
+async function restaurarBackupCompleto(event){
+  // Guardia de seguridad
+  if(currentUser?.user !== 'rodriguezd'){
+    showToast('Acción no autorizada','error');
+    return;
+  }
+  const input = event.target;
+  const file = input.files && input.files[0];
+  if(!file){ return; }
+
+  try {
+    const texto = await file.text();
+    const backup = JSON.parse(texto);
+
+    // Validación de estructura
+    if(backup._tipo !== 'HBEE_Kine_backup' || !Array.isArray(backup.pacientes) || !Array.isArray(backup.evoluciones)){
+      showToast('El archivo no es un backup válido de HBEE Kine','error');
+      input.value = '';
+      return;
+    }
+
+    const nPac = backup.pacientes.length;
+    const nEvo = backup.evoluciones.length;
+    const fechaBk = backup._fecha ? new Date(backup._fecha).toLocaleString('es-AR') : 'desconocida';
+
+    const ok = confirm(
+      `Vas a RESTAURAR un backup.\n\n` +
+      `Archivo: ${nPac} pacientes, ${nEvo} evoluciones.\n` +
+      `Generado: ${fechaBk}\n\n` +
+      `Los registros del backup se van a FUSIONAR con los datos actuales ` +
+      `(por ID). Los pacientes/evoluciones que existan con el mismo ID se ` +
+      `sobrescriben con la versión del backup; los que no existan se agregan. ` +
+      `No se borra nada que no esté en el backup.\n\n¿Continuar?`
+    );
+    if(!ok){ input.value = ''; return; }
+
+    // Fusión en memoria por ID (el backup pisa lo actual con el mismo ID)
+    const mapPac = new Map(patients.map(p=>[Number(p.id), p]));
+    backup.pacientes.forEach(p=>{ if(p && p.id!=null) mapPac.set(Number(p.id), { ...p, id:Number(p.id) }); });
+    patients = [...mapPac.values()];
+
+    const mapEvo = new Map(evoluciones.map(e=>[Number(e.id), e]));
+    backup.evoluciones.forEach(e=>{
+      if(e && e.id!=null) mapEvo.set(Number(e.id), { ...e, id:Number(e.id), patientId:Number(e.patientId ?? e.patient_id) });
+    });
+    evoluciones = [...mapEvo.values()];
+
+    savePacientes(); saveEvos();
+    renderAll();
+
+    // Subir a Supabase (upsert por merge-duplicates, igual que el guardado normal)
+    await saveToSupabase();
+
+    addLog('restore', `Backup restaurado (${nPac} pac, ${nEvo} evo del archivo)`);
+    showToast(`Backup restaurado y sincronizado. Total ahora: ${patients.length} pacientes, ${evoluciones.length} evoluciones`, 'success');
+  } catch(err){
+    console.error('Error restaurando:', err);
+    showToast('Error al restaurar: ' + (err.message||'').slice(0,80), 'error');
+  } finally {
+    input.value = ''; // permitir volver a elegir el mismo archivo
+  }
+}
+
+// ════════════════════════════════════════════════════════
+//  BORRAR TODOS LOS PACIENTES — solo rodriguezd (v3_100)
+//  Elimina de verdad de Supabase (pacientes + evoluciones) y local.
+//  Pensado para limpiar los datos de prueba antes del piloto real.
+// ════════════════════════════════════════════════════════
+async function borrarTodosLosPacientes(){
+  if(currentUser?.user !== 'rodriguezd'){
+    showToast('Acción no autorizada','error');
+    return;
+  }
+  const nPac = patients.length, nEvo = evoluciones.length;
+  if(nPac === 0 && nEvo === 0){
+    showToast('No hay pacientes para borrar','info');
+    return;
+  }
+
+  // Doble confirmación, la segunda escrita
+  const paso1 = confirm(
+    `⚠️ Vas a BORRAR TODOS los pacientes y evoluciones.\n\n` +
+    `Actualmente hay ${nPac} pacientes y ${nEvo} evoluciones.\n` +
+    `Esto los elimina de Supabase y de este dispositivo. NO se puede deshacer.\n\n` +
+    `Recomendación: descargá un "Backup completo (JSON)" antes, por las dudas.\n\n¿Continuar?`
+  );
+  if(!paso1) return;
+
+  const escrito = prompt('Para confirmar, escribí exactamente: BORRAR TODO');
+  if(escrito !== 'BORRAR TODO'){
+    showToast('Cancelado: el texto no coincide','info');
+    return;
+  }
+
+  setSyncStatus('syncing');
+  try {
+    // Borrar en Supabase. Primero evoluciones (por la FK a pacientes), luego pacientes.
+    // El filtro "id=gte.0" abarca todas las filas (los id son bigint >= 0).
+    await supaFetch('/rest/v1/evoluciones?id=gte.0', { method:'DELETE' });
+    await supaFetch('/rest/v1/pacientes?id=gte.0', { method:'DELETE' });
+
+    // Limpiar en memoria y local
+    patients = [];
+    evoluciones = [];
+    savePacientes();
+    saveEvos();
+    renderAll();
+
+    setSyncStatus('ok');
+    addLog('wipe', `Borró TODOS los pacientes (${nPac} pac, ${nEvo} evo)`);
+    showToast(`Listo. Se borraron ${nPac} pacientes y ${nEvo} evoluciones.`, 'success');
+  } catch(err){
+    console.error('Error al borrar todo:', err);
+    setSyncStatus('error');
+    showToast('Error al borrar en Supabase: ' + (err.message||'').slice(0,80), 'error');
   }
 }
 
