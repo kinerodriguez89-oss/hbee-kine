@@ -666,6 +666,10 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
       <label>Contraseña</label>
       <input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
     </div>
+    <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:14px">
+      <input type="checkbox" id="loginRecordar" style="width:16px;height:16px;margin-top:2px;accent-color:var(--blue-600);cursor:pointer;flex-shrink:0">
+      <label for="loginRecordar" style="font-size:12px;color:var(--text-muted);cursor:pointer;margin:0;line-height:1.4">Recordar mi sesión en esta computadora<br><span style="font-size:10.5px;color:var(--text-light)">No lo actives en computadoras compartidas</span></label>
+    </div>
     <button class="btn btn-primary btn-block" id="btnLogin" onclick="doLogin()"><i class="ti ti-login"></i>Ingresar</button>
 
     <div style="text-align:center;margin-top:1.4rem;padding-top:.9rem;border-top:1px solid var(--border)">
@@ -4511,18 +4515,38 @@ const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsI
 const AUTH_EMAIL_DOMAIN = 'kine.hbee.ar'; // dominio sintético interno, no recibe mails
 let supaSession = null;
 try { supaSession = JSON.parse(sessionStorage.getItem('hbee_supa_session')) || null; } catch(e){ supaSession = null; }
+// v3_108: si el usuario tildó "recordar mi sesión", la sesión también se
+// guarda en localStorage y sobrevive al cierre del navegador. sessionStorage
+// tiene prioridad (sesión de la pestaña actual).
+try {
+  if(!supaSession && localStorage.getItem('hbee_recordar_sesion') === '1'){
+    supaSession = JSON.parse(localStorage.getItem('hbee_supa_session')) || null;
+  }
+} catch(e){}
 
 function setSupaSession(data){
   supaSession = {
     access_token: data.access_token,
     refresh_token: data.refresh_token,
-    expires_at: Math.floor(Date.now()/1000) + (data.expires_in || 3600)
+    expires_at: Math.floor(Date.now()/1000) + (data.expires_in || 3600),
+    // user_metadata del usuario (Auth): la usamos como fuente de verdad de
+    // "ya cambió su contraseña", porque el usuario siempre puede escribirla
+    // sobre sí mismo (a diferencia de la tabla perfiles, protegida por RLS).
+    user_metadata: data.user?.user_metadata || supaSession?.user_metadata || null
   };
   try { sessionStorage.setItem('hbee_supa_session', JSON.stringify(supaSession)); } catch(e){}
+  // Si "recordar sesión" está activo, persistir también en localStorage
+  // (importante: el refresh token rota en cada renovación, hay que actualizarlo siempre)
+  try {
+    if(localStorage.getItem('hbee_recordar_sesion') === '1'){
+      localStorage.setItem('hbee_supa_session', JSON.stringify(supaSession));
+    }
+  } catch(e){}
 }
 function clearSupaSession(){
   supaSession = null;
   try { sessionStorage.removeItem('hbee_supa_session'); } catch(e){}
+  try { localStorage.removeItem('hbee_supa_session'); } catch(e){}
 }
 
 let _refreshPromise = null;
@@ -4807,6 +4831,13 @@ async function doLogin(){
       showToast('Usuario o contraseña incorrectos','error');
       return;
     }
+    // v3_108: preferencia "recordar sesión" — se fija ANTES de guardar la
+    // sesión para que setSupaSession sepa si debe persistir en localStorage
+    const recordar = document.getElementById('loginRecordar')?.checked === true;
+    try {
+      if(recordar){ localStorage.setItem('hbee_recordar_sesion','1'); }
+      else { localStorage.removeItem('hbee_recordar_sesion'); localStorage.removeItem('hbee_supa_session'); }
+    } catch(_e){}
     setSupaSession(data);
     // Perfil (nombre y rol) desde la base — RLS devuelve solo el propio
     const perfil = await fetchMiPerfil();
@@ -4815,7 +4846,10 @@ async function doLogin(){
       showToast('Tu usuario no tiene perfil asignado. Avisale a la jefatura.','error');
       return;
     }
-    startSession({ user: perfil.username, name: perfil.nombre, role: perfil.rol, debeCambiarPass: perfil.debe_cambiar_pass === true });
+    // v3_107: si la metadata de Auth dice que ya cambió su contraseña, no volver
+    // a pedirla aunque la marca en perfiles haya quedado prendida (RLS impedía apagarla)
+    const yaCambio = data.user?.user_metadata?.pass_cambiada === true;
+    startSession({ user: perfil.username, name: perfil.nombre, role: perfil.rol, debeCambiarPass: perfil.debe_cambiar_pass === true && !yaCambio });
   } catch(e){
     console.error('Login error:', e);
     showToast('Error de conexión. Verificá tu internet.','error');
@@ -4838,9 +4872,15 @@ async function tryRestoreSession(){
   if(!ok){ clearSupaSession(); return; }
   const perfil = await fetchMiPerfil();
   if(!perfil){ clearSupaSession(); return; }
-  startSession({ user: perfil.username, name: perfil.nombre, role: perfil.rol, debeCambiarPass: perfil.debe_cambiar_pass === true });
+  const yaCambio = supaSession?.user_metadata?.pass_cambiada === true;
+  startSession({ user: perfil.username, name: perfil.nombre, role: perfil.rol, debeCambiarPass: perfil.debe_cambiar_pass === true && !yaCambio });
 }
 tryRestoreSession();
+// Pre-tildar el checkbox "recordar sesión" según la preferencia guardada
+try {
+  const cbRec = document.getElementById('loginRecordar');
+  if(cbRec) cbRec.checked = localStorage.getItem('hbee_recordar_sesion') === '1';
+} catch(e){}
 function startSession(user){
   currentUser = user;
   document.getElementById('loginScreen').style.display = 'none';
@@ -4875,17 +4915,30 @@ async function guardarNuevaPass(){
   const btn = document.getElementById('btnChangePass');
   if(btn){ btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader-2"></i> Guardando…'; }
   try {
-    // 1) Cambiar la contraseña en Supabase Auth (usuario autenticado)
-    await supaFetch('/auth/v1/user', {
+    // 1) Cambiar la contraseña en Supabase Auth y dejar constancia en la
+    //    metadata del usuario (pass_cambiada). La metadata es la fuente de
+    //    verdad: el usuario siempre puede escribirla sobre sí mismo, a
+    //    diferencia de la tabla perfiles (protegida por RLS).
+    const updated = await supaFetch('/auth/v1/user', {
       method:'PUT',
-      body: JSON.stringify({ password: p1 })
+      body: JSON.stringify({ password: p1, data: { pass_cambiada: true } })
     });
-    // 2) Apagar la marca debe_cambiar_pass en el perfil propio
-    await supaFetch('/rest/v1/perfiles?username=eq.'+encodeURIComponent(currentUser.user), {
-      method:'PATCH',
-      headers:{ 'Prefer':'return=minimal' },
-      body: JSON.stringify({ debe_cambiar_pass: false })
-    });
+    // Actualizar la metadata guardada en la sesión local
+    if(supaSession){
+      supaSession.user_metadata = updated?.user_metadata || { ...(supaSession.user_metadata||{}), pass_cambiada: true };
+      try { sessionStorage.setItem('hbee_supa_session', JSON.stringify(supaSession)); } catch(_e){}
+    }
+    // 2) Intentar apagar la marca en perfiles (best-effort: si RLS no lo
+    //    permite, no pasa nada — la metadata ya evita que vuelva a pedirla)
+    try {
+      await supaFetch('/rest/v1/perfiles?username=eq.'+encodeURIComponent(currentUser.user), {
+        method:'PATCH',
+        headers:{ 'Prefer':'return=minimal' },
+        body: JSON.stringify({ debe_cambiar_pass: false })
+      });
+    } catch(ePerfil){
+      console.warn('No se pudo actualizar debe_cambiar_pass en perfiles (RLS). Se usa la metadata de Auth.', ePerfil);
+    }
     // 3) Continuar al ingreso normal, ya sin la marca
     document.getElementById('changePassScreen').style.display = 'none';
     addLog('password','Cambió su contraseña (primer ingreso)');
