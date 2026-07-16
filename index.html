@@ -4358,6 +4358,23 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
   </div>
 </div>
 
+<!-- ════ MODAL EVOLUCIÓN ESCRITA IA ════ -->
+<div class="modal-overlay" id="modalEvoIA" style="z-index:260">
+  <div class="modal" style="width:640px">
+    <div class="modal-header">
+      <div>
+        <h3><i class="ti ti-sparkles" style="color:var(--teal-600);margin-right:6px"></i>Evolución escrita con IA</h3>
+        <div class="modal-subtitle" id="evoIASub"></div>
+      </div>
+      <button class="modal-close" onclick="closeModal('modalEvoIA')">&times;</button>
+    </div>
+
+    <div id="evoIAContent" style="min-height:120px"></div>
+
+    <div class="modal-footer" id="evoIAFooter"></div>
+  </div>
+</div>
+
 <!-- ════ MODAL HISTORIAL RÁPIDO ════ -->
 <div class="modal-overlay" id="modalHistRapido">
   <div class="modal">
@@ -4688,6 +4705,54 @@ function saveGeminiKey(){
   showToast('API key de Gemini guardada ✓','success');
 }
 
+// ── Llamada centralizada a Gemini con fallback de modelos ──
+// Google dio de baja gemini-2.5-flash el 09/07/2026 (antes de la fecha anunciada),
+// por eso se prueba una lista de modelos vigentes en orden hasta que uno responda.
+const GEMINI_MODELS = ['gemini-3.5-flash', 'gemini-3.1-flash-lite', 'gemini-flash-latest'];
+
+async function llamarGemini(prompt, keyOverride){
+  const apiKey = (keyOverride || LS.get('hbee_gemini_key') || '').trim();
+  if(!apiKey) throw new Error('Falta configurar la API key de Gemini en Ajustes.');
+  // Si ya sabemos qué modelo funcionó la última vez, probarlo primero
+  const preferido = LS.get('hbee_gemini_model');
+  const modelos = (preferido && !GEMINI_MODELS.includes(preferido))
+    ? [preferido, ...GEMINI_MODELS]
+    : (preferido ? [preferido, ...GEMINI_MODELS.filter(m => m !== preferido)] : GEMINI_MODELS.slice());
+  let lastErr = null;
+  for(const modelo of modelos){
+    let r;
+    try {
+      r = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${encodeURIComponent(apiKey)}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+        }
+      );
+    } catch(e){
+      throw new Error('No se pudo conectar con Gemini: ' + (e.message || 'red bloqueada'));
+    }
+    const data = await r.json().catch(()=>null);
+    if(!r.ok){
+      const msg = data?.error?.message || `HTTP ${r.status} ${r.statusText||''}`;
+      // Modelo retirado o inexistente → probar el siguiente de la lista
+      if(r.status === 404 || /no longer available|not found|deprecated|shut ?down/i.test(msg)){
+        console.warn(`Gemini: modelo ${modelo} no disponible, probando siguiente…`, msg);
+        lastErr = new Error(msg);
+        continue;
+      }
+      // Otro tipo de error (key inválida, cuota, etc.) → cortar acá
+      throw new Error(msg);
+    }
+    const text = data?.candidates?.[0]?.content?.parts?.map(x => x.text || '').join('') || '';
+    if(!text){ lastErr = new Error('Gemini no devolvió texto.'); continue; }
+    LS.set('hbee_gemini_model', modelo); // recordar el modelo que funcionó
+    return text;
+  }
+  throw lastErr || new Error('Ningún modelo de Gemini disponible.');
+}
+
 async function testGeminiKey(){
   const key = document.getElementById('setupGeminiKey').value.trim();
   const hint = document.getElementById('geminiKeyHint');
@@ -4695,23 +4760,11 @@ async function testGeminiKey(){
   hint.style.display = 'none';
   showToast('Probando key...', 'success');
   try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(key)}`;
-    const r = await fetch(url, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ contents:[{ parts:[{ text:'Respondé solo: OK' }] }] })
-    });
-    const data = await r.json().catch(()=>null);
-    if(!r.ok){
-      const msg = data?.error?.message || `HTTP ${r.status} ${r.statusText}`;
-      showToast('Key rechazada: ' + msg.slice(0,90), 'error');
-      console.error('Gemini test error:', data);
-      return;
-    }
+    await llamarGemini('Respondé solo: OK', key);
     showToast('✓ API key válida y funcionando', 'success');
   } catch(e){
-    console.error('Gemini fetch error:', e);
-    showToast('No se pudo conectar: ' + (e.message||'red bloqueada'), 'error');
+    console.error('Gemini test error:', e);
+    showToast('Key rechazada: ' + String(e.message||'error desconocido').slice(0,90), 'error');
   }
 }
 
@@ -5138,21 +5191,7 @@ EVOLUCIONES (de la más antigua a la más reciente):
 ${evosTexto}`;
 
   try {
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(GEMINI_KEY)}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-      }
-    );
-    const data = await response.json();
-    if(!response.ok){
-      const apiMsg = data?.error?.message || `HTTP ${response.status}`;
-      throw new Error(apiMsg);
-    }
-    const text = data.candidates?.[0]?.content?.parts?.map(x=>x.text||'').join('') || '';
-    if(!text){ throw new Error('Gemini no devolvió texto.'); }
+    const text = await llamarGemini(prompt);
 
     // Convertir **negrita** simple a <strong>, y saltos de línea a párrafos
     const html = text
@@ -5310,21 +5349,7 @@ TODAS LAS EVOLUCIONES REGISTRADAS (orden cronológico, de la más antigua a la m
 ${evosTexto}`;
 
   try {
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(GEMINI_KEY)}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-      }
-    );
-    const data = await response.json();
-    if(!response.ok){
-      const apiMsg = data?.error?.message || `HTTP ${response.status}`;
-      throw new Error(apiMsg);
-    }
-    const textoInforme = data.candidates?.[0]?.content?.parts?.map(x=>x.text||'').join('') || '';
-    if(!textoInforme){ throw new Error('Gemini no devolvió texto.'); }
+    const textoInforme = await llamarGemini(prompt);
 
     descargarInformeWord(p, textoInforme, diasARM, diasTQT);
 
@@ -5442,6 +5467,248 @@ ${cuerpoHtml}
 }
 
 
+
+// ════════════════════════════════════════════════════════
+//  EVOLUCIÓN ESCRITA CON IA (post-guardado de evolución)
+// ════════════════════════════════════════════════════════
+let _evoIAData = null; // { evo, p }
+
+// Convierte una evolución recién guardada en texto estructurado para la IA
+function construirTextoEvo(evo, p){
+  const L = [];
+  const add = (label, val) => {
+    if(val === '' || val === null || val === undefined) return;
+    if(Array.isArray(val)){ if(!val.length) return; val = val.join(', '); }
+    L.push(`${label}: ${val}`);
+  };
+  add('Fecha', fmtDate(evo.date)); add('Turno', evo.turno);
+  if(evo.tipo_evo === 'minimos'){
+    add('Frecuencia de tratamiento', evo.frecuencia);
+    add('EVA (dolor)', evo.eva);
+    add('Conciencia', evo.conciencia); add('Orientación', evo.orientacion);
+    add('Interfaz de O2', evo.interfazO2); add('Flujo de O2', evo.flujoO2);
+    add('SpO2 (%)', evo.spo2); add('FR', evo.fr);
+    add('Auscultación', evo.auscultacion); add('Tos', evo.tos);
+    add('Logros / actividades realizadas', evo.logros);
+    add('FAC', evo.fac); add('Tolerancia al tratamiento', evo.tolerancia);
+    add('Hemicuerpo afectado', evo.hemi); add('Control de tronco', evo.controlTronco);
+    add('Deglución', evo.deglusion);
+    add('Día POP', evo.diaPOP); add('Carga', evo.carga); add('Herida', evo.herida);
+    add('Nivel de amputación', evo.nivelAmp); add('Estado del muñón', evo.munon); add('Vendaje', evo.vendaje);
+    add('Tolera desinflado de balón', evo.tolDesinf); add('Tolera oclusión de cánula', evo.tolOclusion);
+    add('Tolera válvula fonatoria', evo.tolValvula);
+    add('Blue test', evo.blueTest); add('Calidad de voz', evo.calidadVoz); add('Tos (TQT)', evo.tosTQT);
+    add('Secreciones por TQT (cantidad)', evo.secTQTCant); add('Secreciones por TQT (calidad)', evo.secTQTCal);
+    add('Observaciones', evo.obs);
+  } else {
+    add('Día de ARM', evo.armDia); add('Día en el sector', evo.utiDia); add('Días de internación', evo.diasHosp);
+    add('Interfaz', evo.interfaz); add('Detalle de interfaz', evo.interfazEsp);
+    add('Diámetro de TET/cánula', evo.armDiametro); add('TET a nivel de ADS (cm)', evo.tetADS);
+    add('Posición', evo.posicionARM); add('Ciclo de prono', evo.pronoCiclo);
+    add('Cuff leak test', evo.cuffLeak);
+    add('Cánula nasal (flujo L/min)', evo.cnFlujo); add('Máscara Venturi FiO2 (%)', evo.mvFio2);
+    add('Máscara con reservorio (flujo L/min)', evo.mrFlujo);
+    add('CNAF flujo (L/min)', evo.cnafFlujo); add('CNAF FiO2 (%)', evo.cnafFio2);
+    add('VNI modo', evo.vniModo); add('VNI Pi', evo.vniPi); add('VNI Vt', evo.vniVt);
+    add('VNI FR', evo.vniFr); add('VNI PEEP', evo.vniPeep); add('VNI FiO2 (%)', evo.vniFio2); add('VNI máscara', evo.vniMascara);
+    add('Modo ventilatorio', evo.modo); add('VT (ml)', evo.vt); add('VT/kg PBW (ml/kg)', evo.vtkg);
+    add('FR seteada', evo.fr); add('FR real', evo.frReal);
+    add('PEEP (cmH2O)', evo.peep); add('FiO2 (%)', evo.fio2); add('Ti (s)', evo.ti); add('Presión control (cmH2O)', evo.pc);
+    add('P pico (cmH2O)', evo.ppico); add('P plateau (cmH2O)', evo.pplat); add('PEEP total (cmH2O)', evo.peept);
+    add('Driving pressure (cmH2O)', evo.dp); add('Compliance Crs (ml/cmH2O)', evo.crs);
+    add('Resistencia inspiratoria', evo.rinsp); add('Flujo (L/min)', evo.flujo);
+    add('Poder mecánico (J/min)', evo.mp); add('P0.1 (cmH2O)', evo.p01); add('Delta Pocc (cmH2O)', evo.deltaPocc);
+    add('pH', evo.ph); add('pCO2 (mmHg)', evo.pco2); add('pO2 (mmHg)', evo.po2); add('HCO3', evo.hco3);
+    add('SpO2 (%)', evo.spo2); add('PAFI', evo.pafi); add('Lactato', evo.lactato);
+    add('FC (lpm)', evo.fc);
+    add('TA (mmHg)', (evo.tas!=='' && evo.tad!=='' && evo.tas!=null && evo.tad!=null) ? `${evo.tas}/${evo.tad}` : '');
+    add('TAM (mmHg)', evo.tam); add('PIC (mmHg)', evo.pic); add('EtCO2 (mmHg)', evo.etco2);
+    add('RASS', evo.rass); add('CPOT', evo.cpot); add('CAM-ICU', evo.camicu);
+    add('Relación paciente-ventilador', evo.ventSed);
+    add('Dolor (autorreporte)', evo.dolorAuto); add('Escala de dolor', evo.dolorEscala);
+    add('Sedación', evo.sedacion); add('Analgesia', evo.analgesia); add('BNM', evo.bnm);
+    add('Vasoactivos', evo.vasoact); add('Otros fármacos', evo.otrosFarmacos);
+    add('AKM', evo.akm1); add('MRC', evo.mrc); add('MRC total (score)', evo.mrcTotal);
+    if(evo.pve && evo.pve !== '' && evo.pve !== 'No'){
+      add('PVE realizada', 'Sí'); add('Tipo de PVE', evo.pveTipo);
+      add('Duración de PVE (min)', evo.pveMin); add('Resultado de PVE', evo.pveResult);
+    } else if(evo.pve === 'No'){
+      add('PVE realizada', 'No'); add('Situación sin PVE', evo.pveNoExtubTipo);
+    }
+    add('Extubación', evo.extubacion);
+    add('Interfaz post-extubación', evo.interfazPE || evo.pveNoInterfaz);
+    add('Cantidad de PVEs acumuladas', evo.nPVE);
+    add('Presión de cuff M/T/N (cmH2O)', [evo.cuffM, evo.cuffT, evo.cuffN].filter(Boolean).join(' / '));
+    add('Oclusión de cánula', evo.oclusionCanula); add('Deglución', evo.deglusion);
+    add('Tipo de cánula', evo.tipoCan); add('Estado del balón', evo.estadoBajon);
+    add('Secreciones traqueales (cantidad)', evo.secTrqCant); add('Secreciones traqueales (calidad)', evo.secTrqCal);
+    add('Aspiración del LOF', evo.lof);
+    add('Secreciones LOF (cantidad)', evo.secLOFcant); add('Secreciones LOF (calidad)', evo.secLOFcal);
+    add('Secreciones VAA (cantidad)', evo.secVAAcant); add('Secreciones VAA (calidad)', evo.secVAAcal);
+    add('Tolera desinflado de balón', evo.tolDesinf || evo.decTolDesinf);
+    add('Motivo de no tolerancia al desinflado', evo.decMotivoDesinf);
+    add('Tolera oclusión de cánula', evo.tolOclusion || evo.decTolOclusion);
+    add('Tolera válvula fonatoria', evo.tolValvula || evo.decTolValvula);
+    add('Blue test', evo.blueTest);
+    add('Blue test (proceso de decanulación)', evo.decBlueTest);
+    add('Calidad de voz', evo.calidadVoz);
+    add('Plan de acción (decanulación)', evo.decPlanAccion);
+    add('Cambio de diámetro de cánula (actual → nuevo)',
+      (evo.decDiametroActual && evo.decDiametroNuevo) ? `${evo.decDiametroActual} → ${evo.decDiametroNuevo}` : '');
+    add('Tolerancia (decanulación)', evo.decTolerancia);
+    add('Decanulado', evo.decDecanulado);
+    add('Motivo de no decanulación', evo.decMotivoNoDecanulacion);
+    add('Motivo de no tolerancia', evo.decMotivoNoTolerancia);
+    add('Objetivo nocturno (decanulación)', evo.decNocheObjetivo); add('Motivo nocturno', evo.decMotivoNoche);
+    add('Auscultación', evo.auscult); add('Tos', evo.tos);
+    add('SpO2 en reposo (%)', evo.spo2Reposo); add('FR (respiratorio)', evo.frResp);
+    add('Conciencia', evo.neuroConciencia); add('FAC', evo.neuroFAC); add('TCT score', evo.tctScore);
+    add('Día POP', evo.qxDiaPOP); add('Carga', evo.qxCarga); add('Herida quirúrgica', evo.qxHerida);
+    add('Nivel de amputación', evo.ampNivel); add('Estado del muñón', evo.ampMunon); add('Vendaje', evo.ampVendaje);
+    if(evo.musResp){
+      add('PImax', evo.musResp.pimax); add('PEmax', evo.musResp.pemax);
+      add('Capacidad vital', evo.musResp.cv); add('Pico flujo tosido', evo.musResp.pft); add('Pico flujo espiratorio', evo.musResp.pfe);
+    }
+    if(evo.modSetting){
+      L.push('— Se modificó el seteo del ventilador durante la sesión. Parámetros post-modificación:');
+      add('Modo (post)', evo.modo2); add('VT (post, ml)', evo.vt2); add('FR (post)', evo.fr2);
+      add('PEEP (post)', evo.peep2); add('FiO2 (post, %)', evo.fio22);
+      add('P pico (post)', evo.ppico2); add('P plateau (post)', evo.pplat2);
+      add('Driving pressure (post)', evo.dp2); add('Compliance (post)', evo.crs2);
+    }
+    add('Técnicas kinésicas realizadas', evo.tecnicas);
+    add('Observaciones', evo.obs);
+  }
+  return L.join('\n');
+}
+
+// Se llama automáticamente al guardar una evolución nueva
+function ofrecerEvolucionIA(evo, patientId){
+  const p = patients.find(x => x.id === patientId);
+  if(!p) return;
+  if(!(LS.get('hbee_gemini_key') || '').trim()) return; // sin key configurada no se ofrece
+  _evoIAData = { evo, p };
+  document.getElementById('evoIASub').textContent =
+    `${p.apellido}, ${p.nombre} · ${fmtDate(evo.date)} — ${evo.turno || '—'}`;
+  document.getElementById('evoIAContent').innerHTML = `
+    <div style="text-align:center;padding:1.4rem .5rem">
+      <i class="ti ti-sparkles" style="font-size:32px;color:var(--teal-600)"></i>
+      <p style="font-size:13.5px;margin-top:10px;color:var(--text)">La evolución se guardó correctamente. ¿Querés que la IA redacte una <strong>evolución escrita breve</strong> en base a lo que cargaste?</p>
+      <p style="font-size:12px;color:var(--text-muted);margin-top:6px">Vas a poder editarla, copiarla o descargarla como nota simple.</p>
+    </div>`;
+  document.getElementById('evoIAFooter').innerHTML = `
+    <button class="btn btn-ghost" onclick="closeModal('modalEvoIA')">No, gracias</button>
+    <button class="btn btn-success" onclick="generarEvolucionIA()"><i class="ti ti-sparkles"></i>Generar</button>`;
+  openModal('modalEvoIA');
+}
+
+async function generarEvolucionIA(){
+  if(!_evoIAData) return;
+  const { evo, p } = _evoIAData;
+  const cont = document.getElementById('evoIAContent');
+  const foot = document.getElementById('evoIAFooter');
+  cont.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2.2rem 1rem;gap:12px">
+    <span class="ocr-spinner" style="width:28px;height:28px;border-width:3px"></span>
+    <div style="font-size:13px;color:var(--text-muted)">Redactando evolución con IA…</div>
+  </div>`;
+  foot.innerHTML = '';
+
+  const datosPac = [
+    `Paciente: ${p.apellido}, ${p.nombre}`,
+    p.edad ? `Edad: ${p.edad} años` : '',
+    `Sector: ${SALA_LABEL[p.sala] || p.sala}, cama ${p.cama || '—'}`,
+    p.diagnostico ? `Diagnóstico: ${p.diagnostico}` : '',
+  ].filter(Boolean).join('\n');
+
+  const prompt = `Sos un kinesiólogo de terapia intensiva redactando la evolución kinésica escrita del día para la historia clínica de un paciente. Te paso los datos estructurados de UNA sola evolución (lo que se cargó en el sistema del servicio) junto con datos básicos del paciente.
+
+Redactá una evolución breve en prosa, en español, en tiempo presente, con tono profesional médico, tal como se escribiría en la historia clínica (por ejemplo: "Paciente en ARM, modo PCV..., se realiza..."). Máximo un párrafo de 5 a 8 oraciones. Integrá los datos de forma natural y fluida, sin listar campo por campo ni usar viñetas. Priorizá lo clínicamente relevante: estado ventilatorio/oxigenación, sedoanalgesia y estado de conciencia si aplica, motricidad/AKM, hitos como PVE/extubación/decanulación, técnicas realizadas y observaciones. NO inventes datos que no estén en la información provista, NO agregues encabezados, títulos, firma ni fecha (solo el cuerpo de la evolución), y NO uses markdown.
+
+DATOS DEL PACIENTE:
+${datosPac}
+
+DATOS DE LA EVOLUCIÓN:
+${construirTextoEvo(evo, p)}`;
+
+  try {
+    const texto = (await llamarGemini(prompt)).trim();
+    cont.innerHTML = `
+      <textarea id="evoIATexto" style="width:100%;min-height:190px;padding:12px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;line-height:1.6;font-family:inherit;resize:vertical;background:var(--teal-50)">${escapeHTML(texto)}</textarea>
+      <div style="font-size:10px;color:var(--text-light);margin-top:6px;text-align:right">
+        <i class="ti ti-sparkles"></i> Generado por IA · Revisá y editá el texto antes de usarlo clínicamente
+      </div>`;
+    foot.innerHTML = `
+      <button class="btn btn-ghost" onclick="closeModal('modalEvoIA')">Cerrar</button>
+      <button class="btn btn-ghost" onclick="generarEvolucionIA()"><i class="ti ti-refresh"></i>Regenerar</button>
+      <button class="btn btn-ghost" onclick="copiarEvolucionIA()"><i class="ti ti-copy"></i>Copiar</button>
+      <button class="btn btn-success" onclick="descargarNotaEvolucionIA()"><i class="ti ti-download"></i>Descargar nota</button>`;
+  } catch(e){
+    console.error('Evolución IA error:', e);
+    cont.innerHTML = `<div class="empty"><i class="ti ti-x" style="color:var(--red-600)"></i><p>Error al generar la evolución: ${escapeHTML(e.message || 'desconocido')}</p></div>`;
+    foot.innerHTML = `
+      <button class="btn btn-ghost" onclick="closeModal('modalEvoIA')">Cerrar</button>
+      <button class="btn btn-success" onclick="generarEvolucionIA()"><i class="ti ti-refresh"></i>Reintentar</button>`;
+  }
+}
+
+function copiarEvolucionIA(){
+  const ta = document.getElementById('evoIATexto');
+  if(!ta || !ta.value.trim()){ showToast('No hay texto para copiar','error'); return; }
+  const hecho = () => showToast('Evolución copiada al portapapeles ✓','success');
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(ta.value).then(hecho).catch(()=>{
+      ta.select(); document.execCommand('copy'); hecho();
+    });
+  } else {
+    ta.select(); document.execCommand('copy'); hecho();
+  }
+}
+
+function descargarNotaEvolucionIA(){
+  const ta = document.getElementById('evoIATexto');
+  const texto = ta ? ta.value.trim() : '';
+  if(!texto || !_evoIAData){ showToast('No hay texto para descargar','error'); return; }
+  const { evo, p } = _evoIAData;
+  const kine = evo.kine || currentUser?.name || '—';
+  const html = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Evolución kinésica</title>
+<style>
+  body { font-family: Calibri, Arial, sans-serif; font-size: 11pt; color: #222; margin: 2cm 2.2cm; }
+  .head { border-bottom: 2px solid #185FA5; padding-bottom: 8px; margin-bottom: 14px; }
+  .brand-name { font-size: 12px; font-weight: 700; color: #0C447C; letter-spacing: .3px; }
+  .brand-sub { font-size: 10.5px; color: #0F6E56; font-weight: 600; margin-top: 2px; }
+  .datos { background: #E6F1FB; padding: 8px 12px; margin-bottom: 14px; font-size: 10pt; }
+  .datos strong { color: #185FA5; }
+  .cuerpo { line-height: 1.6; text-align: justify; }
+  .firma { margin-top: 42px; }
+  .firma-line { border-top: 1px solid #333; width: 200px; margin-bottom: 4px; }
+</style></head>
+<body>
+<div class="head">
+  <div class="brand-name">HOSPITAL DE ALTA COMPLEJIDAD DEL BICENTENARIO ESTEBAN ECHEVERRÍA</div>
+  <div class="brand-sub">Servicio de Kinesiología — Evolución kinésica</div>
+</div>
+<div class="datos">
+  <strong>Paciente:</strong> ${escapeHTML(p.apellido)}, ${escapeHTML(p.nombre)} &nbsp;·&nbsp;
+  <strong>Sector:</strong> ${escapeHTML(SALA_LABEL[p.sala] || p.sala)} — Cama ${escapeHTML(p.cama) || '—'} &nbsp;·&nbsp;
+  <strong>Fecha:</strong> ${fmtDate(evo.date)} — Turno ${escapeHTML(evo.turno) || '—'}
+  ${p.diagnostico ? `<br><strong>Diagnóstico:</strong> ${escapeHTML(p.diagnostico)}` : ''}
+</div>
+<p class="cuerpo">${escapeHTML(texto).replace(/\n/g,'<br>')}</p>
+<div class="firma">
+  <div class="firma-line"></div>
+  <div style="font-size:10.5pt;font-weight:700">${escapeHTML(kine)}</div>
+  <div style="font-size:9pt;color:#666">Kinesiólogo/a — Servicio de Kinesiología HBEE</div>
+</div>
+</body></html>`;
+  const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `Evolucion_${(p.apellido || 'paciente').replace(/\s+/g,'_')}_${evo.date}.doc`;
+  a.click();
+  addLog('export', `Nota de evolución IA descargada: ${p.apellido}, ${p.nombre} (${fmtDate(evo.date)})`);
+  showToast('Nota descargada ✓','success');
+}
 
 function autoCalculate(){
   const get = id => { const v=parseFloat(document.getElementById(id)?.value); return isNaN(v)?null:v; };
@@ -6744,6 +7011,7 @@ async function guardarEvoMin(){
   showToast('Evolución guardada','success');
   actualizarContadorHistorial('evoMinHistCount', currentEvoMinPacId);
   renderAll();
+  ofrecerEvolucionIA(evo, currentEvoMinPacId); // opción de redactar la evolución con IA
 }
 
 function openFichaNeuroFromEvo(){
@@ -8819,6 +9087,7 @@ async function guardarEvolucion(){
   document.querySelectorAll('#modalEvo .tag.active').forEach(t=>t.classList.remove('active'));
   actualizarContadorHistorial('evoHistCount', currentEvoPacId);
   renderAll();
+  ofrecerEvolucionIA(evo, currentEvoPacId); // opción de redactar la evolución con IA
   } finally {
     _guardandoEvo = false;
     const btnEvoFin = document.getElementById('btnGuardarEvo');
