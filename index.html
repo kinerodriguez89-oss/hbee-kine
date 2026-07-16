@@ -5675,7 +5675,7 @@ async function generarEvolucionIA(){
 
   const prompt = `Sos un kinesiólogo de terapia intensiva redactando la evolución kinésica escrita del día para la historia clínica de un paciente. Te paso los datos estructurados de UNA sola evolución (lo que se cargó en el sistema del servicio) junto con datos básicos del paciente.
 
-Redactá una evolución breve en prosa, en español, en tiempo presente, con tono profesional médico, tal como se escribiría en la historia clínica (por ejemplo: "Paciente en ARM, modo PCV..., se realiza..."). Máximo un párrafo de 5 a 8 oraciones. Integrá los datos de forma natural y fluida, sin listar campo por campo ni usar viñetas. Priorizá lo clínicamente relevante: estado ventilatorio/oxigenación, sedoanalgesia y estado de conciencia si aplica, motricidad/AKM, hitos como PVE/extubación/decanulación, técnicas realizadas y observaciones. NO inventes datos que no estén en la información provista, NO agregues encabezados, títulos, firma ni fecha (solo el cuerpo de la evolución), y NO uses markdown.
+Redactá una evolución MUY breve en prosa, en español, en tiempo presente, con tono profesional médico, tal como se escribiría en la historia clínica (por ejemplo: "Paciente en ARM, modo PCV..., se realiza..."). LÍMITE ESTRICTO: máximo 250 caracteres en total (aproximadamente 2 a 3 oraciones cortas). Priorizá SOLO lo más relevante clínicamente y descartá el resto para respetar el límite: estado ventilatorio/oxigenación, hitos como PVE/extubación/decanulación, y técnicas realizadas. Integrá los datos de forma natural y fluida, sin listar campo por campo ni usar viñetas. NO inventes datos que no estén en la información provista, NO agregues encabezados, títulos, firma ni fecha (solo el cuerpo de la evolución), NO uses markdown, y NO superes los 250 caracteres bajo ninguna circunstancia.
 
 DATOS DEL PACIENTE:
 ${datosPac}
@@ -5684,11 +5684,21 @@ DATOS DE LA EVOLUCIÓN:
 ${construirTextoEvo(evo, p)}`;
 
   try {
-    const texto = (await llamarGemini(prompt)).trim();
+    let texto = (await llamarGemini(prompt)).trim();
+    // Garantía dura del límite: si el modelo se pasó de 250, recortar
+    // prolijamente en el último límite de palabra dentro del tope.
+    const MAX_EVO_IA = 250;
+    if(texto.length > MAX_EVO_IA){
+      let corte = texto.slice(0, MAX_EVO_IA);
+      const ultimoEspacio = corte.lastIndexOf(' ');
+      if(ultimoEspacio > MAX_EVO_IA - 40) corte = corte.slice(0, ultimoEspacio);
+      texto = corte.replace(/[\s,;:]+$/,'') + '.';
+    }
     cont.innerHTML = `
-      <textarea id="evoIATexto" style="width:100%;min-height:190px;padding:12px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;line-height:1.6;font-family:inherit;resize:vertical;background:var(--teal-50)">${escapeHTML(texto)}</textarea>
-      <div style="font-size:10px;color:var(--text-light);margin-top:6px;text-align:right">
-        <i class="ti ti-sparkles"></i> Generado por IA · Revisá y editá el texto antes de usarlo clínicamente
+      <textarea id="evoIATexto" maxlength="${MAX_EVO_IA}" oninput="document.getElementById('evoIAContador').textContent=this.value.length+'/${MAX_EVO_IA}'" style="width:100%;min-height:150px;padding:12px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;line-height:1.6;font-family:inherit;resize:vertical;background:var(--teal-50)">${escapeHTML(texto)}</textarea>
+      <div style="display:flex;justify-content:space-between;align-items:center;font-size:10px;color:var(--text-light);margin-top:6px">
+        <span><i class="ti ti-sparkles"></i> Generado por IA · Revisá y editá antes de usarlo clínicamente</span>
+        <span id="evoIAContador" style="font-weight:600;white-space:nowrap">${texto.length}/${MAX_EVO_IA}</span>
       </div>`;
     foot.innerHTML = `
       <button class="btn btn-ghost" onclick="closeModal('modalEvoIA')">Cerrar</button>
@@ -7707,6 +7717,97 @@ async function confirmarEgreso(){
 // ════════════════════════════════════════════════════════
 let histRapPacId = null;
 
+// v3_109: etiquetas legibles para mostrar TODO lo que se completó en la
+// evolución dentro del historial. Solo se listan campos con valor; los que
+// ya aparecen en las secciones dedicadas de la tarjeta se excluyen abajo.
+const EVO_LABELS = {
+  utiDia:'Día en el sector', diasHosp:'Días de internación',
+  interfaz:'Interfaz', interfazEsp:'Detalle de interfaz', armDiametro:'Diámetro TET/cánula (mm)', tetADS:'TET a ADS (cm)',
+  posicionARM:'Posición', pronoCiclo:'Ciclo de prono', cuffLeak:'Cuff leak test',
+  cnFlujo:'Cánula nasal (L/min)', mvFio2:'Máscara Venturi FiO₂ (%)', mrFlujo:'Máscara reservorio (L/min)',
+  cnafFlujo:'CNAF flujo (L/min)', cnafFio2:'CNAF FiO₂ (%)',
+  vniModo:'VNI modo', vniPi:'VNI Pi', vniVt:'VNI Vt', vniFr:'VNI FR', vniPeep:'VNI PEEP', vniFio2:'VNI FiO₂ (%)', vniMascara:'VNI máscara',
+  ti:'Ti (s)', pc:'Presión control', peept:'PEEP total', rinsp:'Resistencia insp.', flujo:'Flujo (L/min)',
+  mp:'Poder mecánico', p01:'P0.1', deltaPocc:'ΔPocc', hco3:'HCO₃', lactato:'Lactato',
+  fc:'FC (lpm)', tam:'TAM (mmHg)', pic:'PIC (mmHg)', etco2:'EtCO₂ (mmHg)', spo2Mon:'SpO₂ monitor (%)', frMon:'FR monitor',
+  ventSed:'Relación pac.-ventilador', dolorAuto:'Dolor (autorreporte)', dolorEscala:'Escala de dolor',
+  sedacion:'Sedación', analgesia:'Analgesia', bnm:'BNM', vasoact:'Vasoactivos', otrosFarmacos:'Otros fármacos',
+  mrc:'MRC', mrcTotal:'MRC-Sum (score)',
+  interfazPE:'Interfaz post-extubación', nPVE:'PVEs acumuladas',
+  cuffM:'Cuff mañana', cuffT:'Cuff tarde', cuffN:'Cuff noche',
+  oclusionCanula:'Oclusión de cánula', tipoCan:'Tipo de cánula', canDI:'Cánula DI', canDE:'Cánula DE', estadoBajon:'Estado del balón',
+  secTrqCant:'Secreciones traqueales (cant.)', secTrqCal:'Secreciones traqueales (cal.)',
+  lof:'Aspiración del LOF', secLOFcant:'Secreciones LOF (cant.)', secLOFcal:'Secreciones LOF (cal.)',
+  secVAAcant:'Secreciones VAA (cant.)', secVAAcal:'Secreciones VAA (cal.)',
+  tolDesinf:'Tolera desinflado balón', tolOclusion:'Tolera oclusión', tolValvula:'Tolera válvula fonatoria',
+  calidadVoz:'Calidad de voz',
+  auscult:'Auscultación', spo2Reposo:'SpO₂ en reposo (%)', frResp:'FR (respiratorio)',
+  neuroConciencia:'Conciencia', neuroFAC:'FAC', tctScore:'TCT score',
+  qxDiaPOP:'Día POP', qxCarga:'Carga', qxHerida:'Herida quirúrgica',
+  ampNivel:'Nivel de amputación', ampMunon:'Estado del muñón', ampVendaje:'Vendaje',
+  // Mínimos
+  eva:'EVA (dolor)', orientacion:'Orientación', interfazO2:'Interfaz O₂', flujoO2:'Flujo O₂',
+  auscultacion:'Auscultación', fac:'FAC', hemi:'Hemicuerpo afectado', controlTronco:'Control de tronco',
+  diaPOP:'Día POP', carga:'Carga', herida:'Herida', nivelAmp:'Nivel de amputación', munon:'Estado del muñón', vendaje:'Vendaje',
+  blueTest:'Blue test', tosTQT:'Tos (TQT)', secTQTCant:'Secreciones TQT (cant.)', secTQTCal:'Secreciones TQT (cal.)',
+};
+// Campos que NO se listan en "Otros datos" porque ya se muestran en secciones
+// dedicadas de la tarjeta, o son internos/de control.
+const EVO_SKIP_CAMPOS = new Set([
+  'id','patientId','date','hora','turno','kine','kineUser','tipo','tipo_evo','editedAt','editedBy',
+  'armDia','tecnicas','logros','obs','frecuencia','tolerancia','noAtencion','conciencia','deglusion',
+  // mecánica (ya en sección Mecánica ventilatoria)
+  'modo','vt','vtkg','fr','frReal','peep','fio2','ppico','pplat','dp','crs',
+  // EAB (ya en su sección)
+  'ph','pco2','po2','spo2','pafi','eabExtra',
+  // neuro/sedación mostrado
+  'rass','cpot','camicu','akm1',
+  // PVE (sección propia)
+  'pve','pveTipo','pveMin','pveResult','pveNoExtubTipo','pveNoInterfaz','pveNoReIOT','pveNoReIOTMotivo',
+  'pveExitExtub','pveExtubTipo','pveExitReIOT','pveExitReIOTMotivo','pveFallidaExtub','extubacion',
+  'pveTQTColocado','pveTQTDuracion','pveTQTNocheReconexion','pveTQTMotivo',
+  // decanulación (sección propia via fmtDecanulacionResumen)
+  'decTolDesinf','decMotivoDesinf','decTolOclusion','decTolValvula','decPlanAccion','decDiametroActual',
+  'decDiametroNuevo','decTolerancia','decDecanulado','decNocheObjetivo','decBlueTest','decMotivoNoTolerancia',
+  'decMotivoNoche','decMotivoOclusion','decMotivoValvula','decMotivoNoDecanulacion',
+  // MRC granular (se resume en mrcTotal) y flags
+  'mrcCompleto','musResp','modSetting','tos',
+  'tct1','tct2','tct3','tct4',
+  'mrcAbdHombD','mrcFlexCodoD','mrcExtMunD','mrcAbdHombI','mrcFlexCodoI','mrcExtMunI',
+  'mrcFlexCadD','mrcExtRodD','mrcDorsiTobD','mrcFlexCadI','mrcExtRodI','mrcDorsiTobI',
+  // parámetros post-modificación (poco frecuentes, se omiten del resumen)
+  'modo2','vt2','vtkg2','fr2','peep2','fio22','ti2','pc2','ppico2','pplat2','peept2','dp2','crs2',
+  'rinsp2','flujo2','mp2','er2','ct2','p012','deltaPocc2',
+  // sin uso o duplicados
+  'vr','aaGrad','aaRatio','er','ct','tas','tad',
+]);
+
+function fmtValorEvo(v){
+  if(Array.isArray(v)) return v.join(', ');
+  if(v==='Si') return 'Sí';
+  if(v==='No') return 'No';
+  return String(v);
+}
+
+function otrosDatosEvoHTML(e){
+  const items = [];
+  Object.keys(e).forEach(k=>{
+    if(EVO_SKIP_CAMPOS.has(k)) return;
+    if(!(k in EVO_LABELS)) return; // solo campos con etiqueta conocida
+    let v = e[k];
+    if(v===null || v===undefined || v==='') return;
+    if(Array.isArray(v) && v.length===0) return;
+    // TA combinada (si ambas presentes) se arma aparte más abajo
+    items.push(`<div class="evo-item"><div class="k">${EVO_LABELS[k]}</div><div class="v">${escapeHTML(fmtValorEvo(v))}</div></div>`);
+  });
+  // TA sistólica/diastólica combinada
+  if((e.tas!==''&&e.tas!=null) && (e.tad!==''&&e.tad!=null)){
+    items.push(`<div class="evo-item"><div class="k">TA (mmHg)</div><div class="v">${escapeHTML(e.tas)}/${escapeHTML(e.tad)}</div></div>`);
+  }
+  if(!items.length) return '';
+  return `<div class="evo-section-subtitle">Otros datos registrados</div><div class="evo-grid">${items.join('')}</div>`;
+}
+
 function evoCardHTML(e, i){
   // Eventos especiales (traslado, alta, óbito)
   if(e.tipo==='traslado'||e.tipo==='alta'||e.tipo==='obito'){
@@ -7754,6 +7855,7 @@ function evoCardHTML(e, i){
       ${(e.pve==='Sí'||e.pve==='Si') ? `<div class="evo-section-subtitle">PVE</div><div class="evo-grid"><div class="evo-item"><div class="k">Tipo</div><div class="v">${e.pveTipo||'—'}</div></div><div class="evo-item"><div class="k">Duración</div><div class="v">${e.pveMin||'—'} min</div></div><div class="evo-item"><div class="k">Resultado</div><div class="v">${e.pveResult||'—'}</div></div></div>` : ''}
       ${e.pveTQTColocado==='Si' ? `<div class="evo-section-subtitle">TQT/T</div><div class="evo-grid"><div class="evo-item"><div class="k">Duración/plan</div><div class="v">${PVE_TQT_DURACION_LABEL[e.pveTQTDuracion]||'—'}</div></div>${e.pveTQTNocheReconexion ? `<div class="evo-item"><div class="k">Reconexión</div><div class="v">${e.pveTQTNocheReconexion==='Si'?'Sí':'No'}</div></div>` : ''}${e.pveTQTMotivo && e.pveTQTMotivo.length ? `<div class="evo-item"><div class="k">Motivo reconexión</div><div class="v">${e.pveTQTMotivo.join(', ')}</div></div>` : ''}</div>` : (e.pveTQTColocado==='No' ? `<div class="evo-section-subtitle">TQT/T</div><div class="evo-grid"><div class="evo-item"><div class="k">Colocación</div><div class="v">No</div></div></div>` : '')}
       ${fmtDecanulacionResumen(e)}
+      ${otrosDatosEvoHTML(e)}
       ${tags ? `<div style="margin-top:6px">${tags}</div>` : ''}
       ${logros ? `<div style="margin-top:4px">${logros}</div>` : ''}
       ${e.obs ? `<div class="evo-obs">${escapeHTML(e.obs)}</div>` : ''}
@@ -9291,16 +9393,30 @@ function diasARMenMes(p, mesStr){
   return (daysBetween(desde, hasta)||0) + 1;
 }
 
+// v3_109: cuenta días únicos (paciente + fecha) entre las evoluciones que
+// cumplen el filtro. Evita que varias evoluciones del mismo paciente el mismo
+// día cuenten como varios días (bug detectado en días de ARM/TQT).
+function contarDiasUnicos(filtro){
+  const set = new Set();
+  evoluciones.forEach(e=>{
+    if(e.tipo) return; // excluir traslado/alta/óbito
+    if(!e.date) return;
+    if(!filtro(e)) return;
+    set.add(e.patientId + '|' + e.date);
+  });
+  return set.size;
+}
+
 function diasTETenMes(mesStr){
-  return evoluciones.filter(e=>e.date?.startsWith(mesStr) && e.interfaz==='TET').length;
+  return contarDiasUnicos(e=>e.date.startsWith(mesStr) && e.interfaz==='TET');
 }
 
 function diasTQTarmEnMes(mesStr){
-  return evoluciones.filter(e=>e.date?.startsWith(mesStr) && e.interfaz==='TQT').length;
+  return contarDiasUnicos(e=>e.date.startsWith(mesStr) && e.interfaz==='TQT');
 }
 
 function diasTQTespEnMes(mesStr){
-  return evoluciones.filter(e=>e.date?.startsWith(mesStr) && (e.interfaz||'').includes('TQT espontáneo')).length;
+  return contarDiasUnicos(e=>e.date.startsWith(mesStr) && (e.interfaz||'').includes('TQT espontáneo'));
 }
 
 function pacientesEnARMenMes(sala, mesStr){
@@ -9313,8 +9429,10 @@ function pacientesEnARMenMes(sala, mesStr){
 
 function extubaciones(tipo, sala, mesStr){
   // tipo: 'exitosa','fallida','noprogramada','auto','accidental'
-  return evoluciones.filter(e=>{
-    if(mesStr && !e.date?.startsWith(mesStr)) return false;
+  // Se cuentan eventos únicos por paciente+día (la herencia de estado
+  // ventilatorio puede repetir el dato en varias evoluciones del mismo día)
+  return contarDiasUnicos(e=>{
+    if(mesStr && !e.date.startsWith(mesStr)) return false;
     if(sala){
       const p = patients.find(x=>x.id===e.patientId);
       if(!p || p.sala!==sala) return false;
@@ -9325,36 +9443,37 @@ function extubaciones(tipo, sala, mesStr){
     if(tipo==='auto') return e.extubacion==='Sí — no planificada' || e.extubacion==='autoextubacion' || e.extubacion==='accidental'; // autoextubación = no planificada
     if(tipo==='accidental') return false; // no tenemos campo específico aún
     return false;
-  }).length;
+  });
 }
 
 function decanulaciones(tipo, sala, mesStr){
-  return evoluciones.filter(e=>{
-    if(mesStr && !e.date?.startsWith(mesStr)) return false;
+  return contarDiasUnicos(e=>{
+    if(mesStr && !e.date.startsWith(mesStr)) return false;
     if(sala){
       const p = patients.find(x=>x.id===e.patientId);
       if(!p || p.sala!==sala) return false;
     }
     return e.decDecanulado === 'Si';
-  }).length;
+  });
 }
 
 function controlCuffEnMes(sala, mesStr){
-  return evoluciones.filter(e=>{
-    if(mesStr && !e.date?.startsWith(mesStr)) return false;
+  // Días únicos por paciente con al menos un control de cuff registrado
+  return contarDiasUnicos(e=>{
+    if(mesStr && !e.date.startsWith(mesStr)) return false;
     const p = patients.find(x=>x.id===e.patientId);
     if(sala && (!p || p.sala!==sala)) return false;
     return !!(e.cuffM || e.cuffT || e.cuffN);
-  }).length;
+  });
 }
 
 function deglucionEnMes(sala, mesStr){
-  return evoluciones.filter(e=>{
-    if(mesStr && !e.date?.startsWith(mesStr)) return false;
+  return contarDiasUnicos(e=>{
+    if(mesStr && !e.date.startsWith(mesStr)) return false;
     const p = patients.find(x=>x.id===e.patientId);
     if(sala && (!p || p.sala!==sala)) return false;
     return !!(e.deglusion && e.deglusion !== 'No realizada');
-  }).length;
+  });
 }
 
 // ── Prestaciones ─────────────────────────────────────────
@@ -9413,14 +9532,15 @@ function evolucionesEnMes(sala, mesStr){
 }
 
 function pveEnMes(sala, mesStr){
-  return evoluciones.filter(e=>{
-    if(mesStr && !e.date?.startsWith(mesStr)) return false;
+  // Días únicos por paciente con PVE registrada
+  return contarDiasUnicos(e=>{
+    if(mesStr && !e.date.startsWith(mesStr)) return false;
     if(sala){
       const p = patients.find(x=>x.id===e.patientId);
       if(!p || p.sala!==sala) return false;
     }
     return e.pve && e.pve !== 'No' && e.pve !== '';
-  }).length;
+  });
 }
 
 // ── Vista mensual ──────────────────────────────────────────
@@ -9489,17 +9609,17 @@ function renderIndMensual(mesStr){
         ${fila('Asistencia decúbito supino', s=>prestacionesEspEnMes(s,mesStr,'supino'))}
         <tr style="background:var(--gray-50)"><td colspan="${SECTORES.length+2}" style="padding:6px 12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--text-muted)">ARM / Ventilación mecánica</td></tr>
         ${filaARM('Días de ARMI totales', s=>patients.filter(p=>!s||p.sala===s).reduce((acc,p)=>acc+diasARMenMes(p,mesStr),0))}
-        ${filaARM('Días de TET', s=>evoluciones.filter(e=>e.date?.startsWith(mesStr)&&e.interfaz==='TET'&&(!s||patients.find(p=>p.id===e.patientId)?.sala===s)).length)}
-        ${filaARM('Días de TQT en ARM', s=>evoluciones.filter(e=>e.date?.startsWith(mesStr)&&e.interfaz==='TQT'&&(!s||patients.find(p=>p.id===e.patientId)?.sala===s)).length)}
-        ${filaARM('Días de TQT sin ARM (espontáneo)', s=>evoluciones.filter(e=>e.date?.startsWith(mesStr)&&(e.interfaz||'').includes('TQT espontáneo')&&(!s||patients.find(p=>p.id===e.patientId)?.sala===s)).length)}
+        ${filaARM('Días de TET', s=>contarDiasUnicos(e=>e.date.startsWith(mesStr)&&e.interfaz==='TET'&&(!s||patients.find(p=>p.id===e.patientId)?.sala===s)))}
+        ${filaARM('Días de TQT en ARM', s=>contarDiasUnicos(e=>e.date.startsWith(mesStr)&&e.interfaz==='TQT'&&(!s||patients.find(p=>p.id===e.patientId)?.sala===s)))}
+        ${filaARM('Días de TQT sin ARM (espontáneo)', s=>contarDiasUnicos(e=>e.date.startsWith(mesStr)&&(e.interfaz||'').includes('TQT espontáneo')&&(!s||patients.find(p=>p.id===e.patientId)?.sala===s)))}
         ${filaARM('Pacientes únicos en ARM', s=>pacientesEnARMenMes(s,mesStr))}
         <tr style="background:var(--gray-50)"><td colspan="${SECTORES.length+2}" style="padding:6px 12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--text-muted)">Extubaciones</td></tr>
-        ${filaARM('Extubaciones exitosas', s=>evoluciones.filter(e=>e.date?.startsWith(mesStr)&&e.extubacion==='Sí — planificada'&&e.pveResult==='Exitosa'&&(!s||patients.find(p=>p.id===e.patientId)?.sala===s)).length)}
-        ${filaARM('Extubaciones fallidas', s=>evoluciones.filter(e=>e.date?.startsWith(mesStr)&&e.extubacion?.startsWith('Sí')&&e.pveResult?.startsWith('Fallida')&&(!s||patients.find(p=>p.id===e.patientId)?.sala===s)).length)}
-        ${filaARM('Extubaciones no programadas', s=>evoluciones.filter(e=>e.date?.startsWith(mesStr)&&(e.extubacion==='Sí — no planificada'||e.extubacion==='autoextubacion'||e.extubacion==='accidental')&&(!s||patients.find(p=>p.id===e.patientId)?.sala===s)).length)}
+        ${filaARM('Extubaciones exitosas', s=>contarDiasUnicos(e=>e.date.startsWith(mesStr)&&e.extubacion==='Sí — planificada'&&e.pveResult==='Exitosa'&&(!s||patients.find(p=>p.id===e.patientId)?.sala===s)))}
+        ${filaARM('Extubaciones fallidas', s=>contarDiasUnicos(e=>e.date.startsWith(mesStr)&&e.extubacion?.startsWith('Sí')&&e.pveResult?.startsWith('Fallida')&&(!s||patients.find(p=>p.id===e.patientId)?.sala===s)))}
+        ${filaARM('Extubaciones no programadas', s=>contarDiasUnicos(e=>e.date.startsWith(mesStr)&&(e.extubacion==='Sí — no planificada'||e.extubacion==='autoextubacion'||e.extubacion==='accidental')&&(!s||patients.find(p=>p.id===e.patientId)?.sala===s)))}
         <tr style="background:var(--gray-50)"><td colspan="${SECTORES.length+2}" style="padding:6px 12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--text-muted)">PVE / Ventilación espontánea</td></tr>
         ${filaARM('PVE realizadas', s=>pveEnMes(s,mesStr))}
-        ${filaARM('PVE exitosas', s=>evoluciones.filter(e=>e.date?.startsWith(mesStr)&&e.pveResult==='Exitosa'&&(!s||patients.find(p=>p.id===e.patientId)?.sala===s)).length)}
+        ${filaARM('PVE exitosas', s=>contarDiasUnicos(e=>e.date.startsWith(mesStr)&&e.pveResult==='Exitosa'&&(!s||patients.find(p=>p.id===e.patientId)?.sala===s)))}
         <tr style="background:var(--gray-50)"><td colspan="${SECTORES.length+2}" style="padding:6px 12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--text-muted)">Vía aérea artificial</td></tr>
         ${filaARM('Controles de cuff', s=>controlCuffEnMes(s,mesStr))}
         ${filaARM('Evaluaciones de deglución', s=>deglucionEnMes(s,mesStr))}
@@ -9516,15 +9636,17 @@ function renderIndPacientes(){
 
   const filas = patients.map(p=>{
     const evos = evoluciones.filter(e=>e.patientId===p.id && !e.tipo);
+    // v3_109: días/eventos únicos por fecha (varias evoluciones el mismo día = 1 día)
+    const diasU = filtro => new Set(evos.filter(e=>e.date && filtro(e)).map(e=>e.date)).size;
     const diasArm = p.inicioARM ? (daysBetween(p.inicioARM, p.finARM||today())||0)+1 : 0;
-    const diasTET = evos.filter(e=>e.interfaz==='TET').length;
-    const diasTQTarm = evos.filter(e=>e.interfaz==='TQT').length;
-    const diasTQTesp = evos.filter(e=>(e.interfaz||'').includes('TQT espontáneo')).length;
-    const pves = evos.filter(e=>e.pve && e.pve!=='No' && e.pve!=='').length;
-    const pvesEx = evos.filter(e=>e.pveResult==='Exitosa').length;
-    const extub = evos.filter(e=>e.extubacion?.startsWith('Sí')).length;
-    const deg = evos.filter(e=>e.deglusion && e.deglusion!=='No realizada').length;
-    const cuff = evos.filter(e=>e.cuffM||e.cuffT||e.cuffN).length;
+    const diasTET = diasU(e=>e.interfaz==='TET');
+    const diasTQTarm = diasU(e=>e.interfaz==='TQT');
+    const diasTQTesp = diasU(e=>(e.interfaz||'').includes('TQT espontáneo'));
+    const pves = diasU(e=>e.pve && e.pve!=='No' && e.pve!=='');
+    const pvesEx = diasU(e=>e.pveResult==='Exitosa');
+    const extub = diasU(e=>e.extubacion?.startsWith('Sí'));
+    const deg = diasU(e=>e.deglusion && e.deglusion!=='No realizada');
+    const cuff = diasU(e=>e.cuffM||e.cuffT||e.cuffN);
     const diasHosp = p.fIHosp ? (daysBetween(p.fIHosp,p.fEUTI||today())||0)+1 : '—';
     return `<tr>
       <td style="font-weight:600;white-space:nowrap">${p.apellido}, ${p.nombre}</td>
@@ -9601,14 +9723,14 @@ async function exportarIndicadores(vista, mesStr){
     rows.push(calcFila('Asistencia decúbito supino', s=>prestacionesEspEnMes(s,mesStr,'supino')));
     rows.push(['ARM / VENTILACIÓN']);
     rows.push(calcFila('Días de ARMI totales', s=>patients.filter(p=>!s||p.sala===s).reduce((acc,p)=>acc+diasARMenMes(p,mesStr),0)));
-    rows.push(calcFila('Días de TET', s=>evoluciones.filter(e=>e.date?.startsWith(mesStr)&&e.interfaz==='TET'&&(!s||patients.find(p=>p.id===e.patientId)?.sala===s)).length));
-    rows.push(calcFila('Días de TQT en ARM', s=>evoluciones.filter(e=>e.date?.startsWith(mesStr)&&e.interfaz==='TQT'&&(!s||patients.find(p=>p.id===e.patientId)?.sala===s)).length));
-    rows.push(calcFila('Días de TQT sin ARM', s=>evoluciones.filter(e=>e.date?.startsWith(mesStr)&&(e.interfaz||'').includes('TQT espontáneo')&&(!s||patients.find(p=>p.id===e.patientId)?.sala===s)).length));
+    rows.push(calcFila('Días de TET', s=>contarDiasUnicos(e=>e.date.startsWith(mesStr)&&e.interfaz==='TET'&&(!s||patients.find(p=>p.id===e.patientId)?.sala===s))));
+    rows.push(calcFila('Días de TQT en ARM', s=>contarDiasUnicos(e=>e.date.startsWith(mesStr)&&e.interfaz==='TQT'&&(!s||patients.find(p=>p.id===e.patientId)?.sala===s))));
+    rows.push(calcFila('Días de TQT sin ARM', s=>contarDiasUnicos(e=>e.date.startsWith(mesStr)&&(e.interfaz||'').includes('TQT espontáneo')&&(!s||patients.find(p=>p.id===e.patientId)?.sala===s))));
     rows.push(calcFila('Pacientes únicos en ARM', s=>pacientesEnARMenMes(s,mesStr)));
     rows.push(['EXTUBACIONES']);
-    rows.push(calcFila('Exitosas', s=>evoluciones.filter(e=>e.date?.startsWith(mesStr)&&e.extubacion==='Sí — planificada'&&e.pveResult==='Exitosa'&&(!s||patients.find(p=>p.id===e.patientId)?.sala===s)).length));
-    rows.push(calcFila('Fallidas', s=>evoluciones.filter(e=>e.date?.startsWith(mesStr)&&e.extubacion?.startsWith('Sí')&&e.pveResult?.startsWith('Fallida')&&(!s||patients.find(p=>p.id===e.patientId)?.sala===s)).length));
-    rows.push(calcFila('No programadas', s=>evoluciones.filter(e=>e.date?.startsWith(mesStr)&&(e.extubacion==='Sí — no planificada'||e.extubacion==='autoextubacion'||e.extubacion==='accidental')&&(!s||patients.find(p=>p.id===e.patientId)?.sala===s)).length));
+    rows.push(calcFila('Exitosas', s=>contarDiasUnicos(e=>e.date.startsWith(mesStr)&&e.extubacion==='Sí — planificada'&&e.pveResult==='Exitosa'&&(!s||patients.find(p=>p.id===e.patientId)?.sala===s))));
+    rows.push(calcFila('Fallidas', s=>contarDiasUnicos(e=>e.date.startsWith(mesStr)&&e.extubacion?.startsWith('Sí')&&e.pveResult?.startsWith('Fallida')&&(!s||patients.find(p=>p.id===e.patientId)?.sala===s))));
+    rows.push(calcFila('No programadas', s=>contarDiasUnicos(e=>e.date.startsWith(mesStr)&&(e.extubacion==='Sí — no planificada'||e.extubacion==='autoextubacion'||e.extubacion==='accidental')&&(!s||patients.find(p=>p.id===e.patientId)?.sala===s))));
     rows.push(['VÍA AÉREA / CUFF']);
     rows.push(calcFila('Controles de cuff', s=>controlCuffEnMes(s,mesStr)));
     rows.push(calcFila('Evaluaciones de deglución', s=>deglucionEnMes(s,mesStr)));
@@ -9616,18 +9738,19 @@ async function exportarIndicadores(vista, mesStr){
     rows.push(['Paciente','DNI','Sala','Cama','Estado','Días hosp.','Días ARM','Días TET','Días TQT ARM','Días TQT esp.','PVE','PVE exitosas','Extubaciones','Eval. deglución','Ctrl. cuff','Evoluciones']);
     patients.forEach(p=>{
       const evos = evoluciones.filter(e=>e.patientId===p.id&&!e.tipo);
+      const diasU = filtro => new Set(evos.filter(e=>e.date && filtro(e)).map(e=>e.date)).size;
       const diasArm = p.inicioARM ? (daysBetween(p.inicioARM,p.finARM||today())||0)+1 : 0;
       rows.push([
         `${p.apellido}, ${p.nombre}`, p.dni||'', SALA_LABEL[p.sala]||p.sala||'', p.cama||'', p.estado||'',
         p.fIHosp ? (daysBetween(p.fIHosp,p.fEUTI||today())||0)+1 : '',
-        diasArm||'', evos.filter(e=>e.interfaz==='TET').length||'',
-        evos.filter(e=>e.interfaz==='TQT').length||'',
-        evos.filter(e=>(e.interfaz||'').includes('TQT espontáneo')).length||'',
-        evos.filter(e=>e.pve&&e.pve!=='No'&&e.pve!=='').length||'',
-        evos.filter(e=>e.pveResult==='Exitosa').length||'',
-        evos.filter(e=>e.extubacion?.startsWith('Sí')).length||'',
-        evos.filter(e=>e.deglusion&&e.deglusion!=='No realizada').length||'',
-        evos.filter(e=>e.cuffM||e.cuffT||e.cuffN).length||'',
+        diasArm||'', diasU(e=>e.interfaz==='TET')||'',
+        diasU(e=>e.interfaz==='TQT')||'',
+        diasU(e=>(e.interfaz||'').includes('TQT espontáneo'))||'',
+        diasU(e=>e.pve&&e.pve!=='No'&&e.pve!=='')||'',
+        diasU(e=>e.pveResult==='Exitosa')||'',
+        diasU(e=>e.extubacion?.startsWith('Sí'))||'',
+        diasU(e=>e.deglusion&&e.deglusion!=='No realizada')||'',
+        diasU(e=>e.cuffM||e.cuffT||e.cuffN)||'',
         evos.length
       ]);
     });
