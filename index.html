@@ -764,8 +764,8 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
         <div class="table-toolbar">
           <input type="text" placeholder="Buscar por nombre, DNI, sala..." oninput="filterPacientes(this.value)">
           <select id="filtroEstado" onchange="filterPacientes(document.querySelector('.table-toolbar input').value)" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;font-family:var(--font)">
+            <option value="Activo" selected>Activos</option>
             <option value="">Todos los estados</option>
-            <option value="Activo">Activos</option>
             <option value="Alta K">Alta kinesiológica</option>
             <option value="Piso">Derivado a piso</option>
             <option value="Óbito">Óbito</option>
@@ -888,6 +888,10 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
         <div class="form-group"><label>Fecha de ingreso al sector</label><input type="date" id="fFIUTI"></div>
       </div>
       <div class="form-group"><label>Diagnóstico principal</label><input type="text" id="fDiag"></div>
+      <div class="form-group">
+        <label style="color:var(--red-600);font-weight:800"><i class="ti ti-alert-triangle"></i> ALERTA IMPORTANTE (la ve todo el equipo)</label>
+        <textarea id="fAlertaImportante" rows="2" placeholder="Texto libre. Ej: NO cargar peso en MID / NO movilizar: cardiopatía inestable" style="border:1.5px solid var(--red-200);background:var(--red-50);border-radius:8px;width:100%;padding:8px 10px;font-family:var(--font);font-size:13px;resize:vertical"></textarea>
+      </div>
       <div class="form-group" id="fTipoKineRow">
         <label>Grupo</label>
         <select id="fTipoKine" onchange="onGrupoChange(this.value)">
@@ -1438,6 +1442,7 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
       </div>
       <input type="hidden" id="eTurno">
       <!-- Banner de traslado reciente -->
+      <div id="evoBannerAlerta" style="display:none;align-items:flex-start;gap:10px;background:var(--red-50);border:2px solid var(--red-400);border-radius:10px;padding:10px 14px;margin-bottom:10px"></div>
       <div id="evoBannerTraslado" style="display:none"></div>
       <!-- Banner última evaluación de deglución -->
       <div id="evoBannerDeglusion" style="display:none"></div>
@@ -4438,7 +4443,7 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
       <div class="form-section">
         <div class="form-section-title"><i class="ti ti-map-pin"></i> Sector destino</div>
         <div class="form-group">
-          <select id="egresoSectorDestino">
+          <select id="egresoSectorDestino" onchange="poblarCamasDestino()">
             <option value="">Seleccioná el sector destino...</option>
             <option value="UTI-A">UTI A (camas 1–8)</option>
             <option value="UTI-B">UTI B (camas 9–20)</option>
@@ -4450,7 +4455,9 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
         </div>
         <div class="form-group">
           <label>Cama destino (opcional)</label>
-          <input type="text" id="egresoNuevaCama" placeholder="Nro de cama">
+          <select id="egresoNuevaCama">
+            <option value="">Elegí primero el sector...</option>
+          </select>
         </div>
       </div>
     </div>
@@ -7649,6 +7656,37 @@ async function exportarFichaNeuro(){
 let egresoTipo = null;
 let egresoPacId = null;
 
+// ── Camas válidas por sector (v3_111) ────────────────────
+function camasDeSector(sala){
+  const rango = (a,b)=>{ const r=[]; for(let i=a;i<=b;i++) r.push(String(i)); return r; };
+  const rangoAB = (a,b)=>{ const r=[]; for(let i=a;i<=b;i++){ r.push(i+'A'); r.push(i+'B'); } return r; };
+  switch(sala){
+    case 'UTI-A': return rango(1,8);
+    case 'UTI-B': return rango(9,20);
+    case 'UTI-C': return rango(21,27);
+    case 'EMERG': return rango(1,12);
+    case 'MIN-B': return rangoAB(100,131);
+    case 'MIN-C': return rangoAB(132,163);
+    default: return [];
+  }
+}
+// Puebla el select de cama destino solo con camas del sector elegido,
+// marcando las que ya están ocupadas por un paciente activo.
+function poblarCamasDestino(){
+  const sala = document.getElementById('egresoSectorDestino')?.value || '';
+  const sel = document.getElementById('egresoNuevaCama');
+  if(!sel) return;
+  const camas = camasDeSector(sala);
+  if(!camas.length){ sel.innerHTML = '<option value="">Elegí primero el sector...</option>'; return; }
+  const ocupadas = {};
+  patients.forEach(pp=>{
+    if(pp.estado==='Activo' && pp.sala===sala && pp.cama && pp.id!==egresoPacId) ocupadas[String(pp.cama)] = pp.apellido;
+  });
+  sel.innerHTML = '<option value="">Sin asignar</option>' + camas.map(c=>
+    `<option value="${c}">Cama ${c}${ocupadas[c] ? ' — ocupada ('+escapeHTML(ocupadas[c])+')' : ''}</option>`
+  ).join('');
+}
+
 function openEgreso(patientId){
   const p = patients.find(x=>x.id===patientId);
   if(!p) return;
@@ -7659,7 +7697,7 @@ function openEgreso(patientId){
   document.getElementById('egresoFecha').value = today();
   document.getElementById('egresoObs').value = '';
   document.getElementById('egresoSectorDestino').value = '';
-  document.getElementById('egresoNuevaCama').value = '';
+  poblarCamasDestino();
   document.getElementById('egresoDestinoAlta').value = '';
   document.getElementById('egresoTraslado').style.display = 'none';
   document.getElementById('egresoAlta').style.display = 'none';
@@ -7774,7 +7812,7 @@ const EVO_LABELS = {
   fc:'FC (lpm)', tam:'TAM (mmHg)', pic:'PIC (mmHg)', etco2:'EtCO₂ (mmHg)', spo2Mon:'SpO₂ monitor (%)', frMon:'FR monitor',
   ventSed:'Relación pac.-ventilador', dolorAuto:'Dolor (autorreporte)', dolorEscala:'Escala de dolor',
   sedacion:'Sedación', analgesia:'Analgesia', bnm:'BNM', vasoact:'Vasoactivos', otrosFarmacos:'Otros fármacos',
-  mrc:'MRC', mrcTotal:'MRC-Sum (score)',
+  mrc:'MRC', mrcTotal:'MRC-Sum (score)', tos:'Tos', deglusion:'Deglución',
   interfazPE:'Interfaz post-extubación', nPVE:'PVEs acumuladas',
   cuffM:'Cuff mañana', cuffT:'Cuff tarde', cuffN:'Cuff noche',
   oclusionCanula:'Oclusión de cánula', tipoCan:'Tipo de cánula', canDI:'Cánula DI', canDE:'Cánula DE', estadoBajon:'Estado del balón',
@@ -7797,7 +7835,7 @@ const EVO_LABELS = {
 // dedicadas de la tarjeta, o son internos/de control.
 const EVO_SKIP_CAMPOS = new Set([
   'id','patientId','date','hora','turno','kine','kineUser','tipo','tipo_evo','editedAt','editedBy',
-  'armDia','tecnicas','logros','obs','frecuencia','tolerancia','noAtencion','conciencia','deglusion',
+  'armDia','tecnicas','logros','obs','frecuencia','tolerancia','noAtencion','conciencia',
   // mecánica (ya en sección Mecánica ventilatoria)
   'modo','vt','vtkg','fr','frReal','peep','fio2','ppico','pplat','dp','crs',
   // EAB (ya en su sección)
@@ -7808,12 +7846,13 @@ const EVO_SKIP_CAMPOS = new Set([
   'pve','pveTipo','pveMin','pveResult','pveNoExtubTipo','pveNoInterfaz','pveNoReIOT','pveNoReIOTMotivo',
   'pveExitExtub','pveExtubTipo','pveExitReIOT','pveExitReIOTMotivo','pveFallidaExtub','extubacion',
   'pveTQTColocado','pveTQTDuracion','pveTQTNocheReconexion','pveTQTMotivo',
+  'interfazPE','nPVE',
   // decanulación (sección propia via fmtDecanulacionResumen)
   'decTolDesinf','decMotivoDesinf','decTolOclusion','decTolValvula','decPlanAccion','decDiametroActual',
   'decDiametroNuevo','decTolerancia','decDecanulado','decNocheObjetivo','decBlueTest','decMotivoNoTolerancia',
   'decMotivoNoche','decMotivoOclusion','decMotivoValvula','decMotivoNoDecanulacion',
-  // MRC granular (se resume en mrcTotal) y flags
-  'mrcCompleto','musResp','modSetting','tos',
+  // MRC granular (se resume en la sección Fuerza muscular) y flags
+  'mrcCompleto','musResp','modSetting','mrc','mrcTotal',
   'tct1','tct2','tct3','tct4',
   'mrcAbdHombD','mrcFlexCodoD','mrcExtMunD','mrcAbdHombI','mrcFlexCodoI','mrcExtMunI',
   'mrcFlexCadD','mrcExtRodD','mrcDorsiTobD','mrcFlexCadI','mrcExtRodI','mrcDorsiTobI',
@@ -7831,8 +7870,57 @@ function fmtValorEvo(v){
   return String(v);
 }
 
-function otrosDatosEvoHTML(e){
+// ── PVE / Extubación: resumen completo del árbol (v3_111) ──
+function fmtPVEResumen(e){
   const items = [];
+  const it = (k,v)=> items.push(`<div class="evo-item"><div class="k">${k}</div><div class="v">${escapeHTML(fmtValorEvo(v))}</div></div>`);
+  if(e.pve==='Si' || e.pve==='Sí'){
+    if(e.pveTipo) it('Tipo', e.pveTipo);
+    if(e.pveMin!=null && e.pveMin!=='') it('Duración', e.pveMin+' min');
+    if(e.pveResult) it('Resultado', e.pveResult);
+    if(e.pveResult==='Exitosa'){
+      if(e.pveExitExtub) it('¿Se extubó?', e.pveExitExtub);
+      if(e.pveExtubTipo) it('Tipo de extubación', e.pveExtubTipo);
+      if(e.pveExitReIOT) it('¿ReIOT?', e.pveExitReIOT);
+      if(e.pveExitReIOTMotivo) it('Motivo reIOT', e.pveExitReIOTMotivo);
+    }
+    if(e.pveResult && String(e.pveResult).startsWith('Fallida')){
+      const m = { si_vni:'Sí — con VNI', si_cafo:'Sí — con CAFO', si_convencional:'Sí — con O₂ convencional', no:'No' };
+      if(e.pveFallidaExtub) it('¿Se extubó igual?', m[e.pveFallidaExtub]||e.pveFallidaExtub);
+    }
+  } else if(e.pve==='No' && e.pveNoExtubTipo){
+    const t = { autoextubacion:'Autoextubación', accidental:'Extubación accidental', sin_pve:'Extubación sin PVE' };
+    it('Situación', t[e.pveNoExtubTipo]||e.pveNoExtubTipo);
+    if(e.pveNoInterfaz) it('Interfaz posterior', e.pveNoInterfaz);
+    if(e.pveNoReIOT) it('¿ReIOT?', e.pveNoReIOT);
+    if(e.pveNoReIOTMotivo) it('Motivo reIOT', e.pveNoReIOTMotivo);
+  }
+  if(e.extubacion && e.extubacion!=='No') it('Extubación', e.extubacion);
+  if(e.interfazPE) it('Interfaz post-extubación', e.interfazPE);
+  if(e.nPVE!=null && e.nPVE!=='') it('PVEs acumuladas', e.nPVE);
+  if(!items.length) return '';
+  return `<div class="evo-section-subtitle">PVE / Extubación</div><div class="evo-grid">${items.join('')}</div>`;
+}
+
+// ── Fuerza muscular / músculos respiratorios (v3_111) ──
+function fmtFuerzaResumen(e){
+  const items = [];
+  const it = (k,v)=> items.push(`<div class="evo-item"><div class="k">${k}</div><div class="v">${escapeHTML(fmtValorEvo(v))}</div></div>`);
+  if(e.mrcTotal!=null && e.mrcTotal!=='') it('MRC-Sumy', `${e.mrcTotal}${e.mrcCompleto?' / 60':' (incompleto)'}`);
+  else if(e.mrc!=null && e.mrc!=='') it('MRC', e.mrc);
+  if(e.musResp && typeof e.musResp==='object'){
+    const m = e.musResp;
+    if(m.pimax) it('Pimáx (cmH₂O)', m.pimax);
+    if(m.pemax) it('Pemáx (cmH₂O)', m.pemax);
+    if(m.cv) it('CV (ml)', m.cv + (m.cvPCP ? ' — '+m.cvPCP+' ml/kg PCP' : ''));
+    if(m.pft) it('PFT (L/min)', m.pft);
+    if(m.pfe) it('PFE (L/min)', m.pfe);
+  }
+  if(!items.length) return '';
+  return `<div class="evo-section-subtitle">Fuerza muscular / Músculos respiratorios</div><div class="evo-grid">${items.join('')}</div>`;
+}
+
+function otrosDatosEvoHTML(e){  const items = [];
   Object.keys(e).forEach(k=>{
     if(EVO_SKIP_CAMPOS.has(k)) return;
     if(!(k in EVO_LABELS)) return; // solo campos con etiqueta conocida
@@ -7894,7 +7982,8 @@ function evoCardHTML(e, i){
         return items.length ? `<div class="evo-section-subtitle">EAB${x.hora?' · '+x.hora:''}</div><div class="evo-grid">${items.map(([v,k])=>`<div class="evo-item"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('')}</div>` : '';
       }).join('') : ''}
       ${NEURO.length ? `<div class="evo-section-subtitle">Neurológico / Sedación</div><div class="evo-grid">${NEURO.map(([v,k])=>`<div class="evo-item"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('')}</div>` : ''}
-      ${(e.pve==='Sí'||e.pve==='Si') ? `<div class="evo-section-subtitle">PVE</div><div class="evo-grid"><div class="evo-item"><div class="k">Tipo</div><div class="v">${e.pveTipo||'—'}</div></div><div class="evo-item"><div class="k">Duración</div><div class="v">${e.pveMin||'—'} min</div></div><div class="evo-item"><div class="k">Resultado</div><div class="v">${e.pveResult||'—'}</div></div></div>` : ''}
+      ${fmtPVEResumen(e)}
+      ${fmtFuerzaResumen(e)}
       ${e.pveTQTColocado==='Si' ? `<div class="evo-section-subtitle">TQT/T</div><div class="evo-grid"><div class="evo-item"><div class="k">Duración/plan</div><div class="v">${PVE_TQT_DURACION_LABEL[e.pveTQTDuracion]||'—'}</div></div>${e.pveTQTNocheReconexion ? `<div class="evo-item"><div class="k">Reconexión</div><div class="v">${e.pveTQTNocheReconexion==='Si'?'Sí':'No'}</div></div>` : ''}${e.pveTQTMotivo && e.pveTQTMotivo.length ? `<div class="evo-item"><div class="k">Motivo reconexión</div><div class="v">${e.pveTQTMotivo.join(', ')}</div></div>` : ''}</div>` : (e.pveTQTColocado==='No' ? `<div class="evo-section-subtitle">TQT/T</div><div class="evo-grid"><div class="evo-item"><div class="k">Colocación</div><div class="v">No</div></div></div>` : '')}
       ${fmtDecanulacionResumen(e)}
       ${otrosDatosEvoHTML(e)}
@@ -8128,6 +8217,7 @@ function renderPatientRow(p, todayStr){
       </div>
       <div class="p-name" style="margin-top:4px">${p.apellido}, ${p.nombre}</div>
       <div class="p-meta">${p.tipoKine?`<span class="tipo-kine-badge">${TIPO_KINE_LABEL[p.tipoKine]||p.tipoKine}</span> · `:''}${p.diagnostico||'—'} · ${p.edad||'?'} años · ${diasUTI!=null?diasUTI+' días '+(''+diasUTI).replace(/\d+/,'')+' sector':'—'}</div>
+      ${p.alertaImportante && p.alertaImportante.trim() ? `<div style="margin-top:4px;font-size:11px;font-weight:800;color:var(--red-600);background:var(--red-50);border:1px solid var(--red-200);border-radius:6px;padding:3px 8px;display:inline-flex;align-items:center;gap:5px"><i class="ti ti-alert-triangle"></i> ${escapeHTML(p.alertaImportante)}</div>` : ''}
     </div>
     <div class="p-actions">
       <button class="btn-evolve" onclick="openEvolucionAdaptado(${p.id})">
@@ -8204,6 +8294,7 @@ function filterDash(q){
         </div>
         <div class="p-name" style="margin-top:4px">${p.apellido}, ${p.nombre}</div>
         <div class="p-meta">${p.tipoKine?`<span class="tipo-kine-badge">${TIPO_KINE_LABEL[p.tipoKine]||p.tipoKine}</span> · `:''}${p.diagnostico||'—'} · ${p.edad||'?'} años · ${diasUTI!=null?diasUTI+' días '+(''+diasUTI).replace(/\d+/,'')+' sector':'—'}</div>
+      ${p.alertaImportante && p.alertaImportante.trim() ? `<div style="margin-top:4px;font-size:11px;font-weight:800;color:var(--red-600);background:var(--red-50);border:1px solid var(--red-200);border-radius:6px;padding:3px 8px;display:inline-flex;align-items:center;gap:5px"><i class="ti ti-alert-triangle"></i> ${escapeHTML(p.alertaImportante)}</div>` : ''}
       </div>
       <div class="p-actions">
         <button class="btn-evolve" onclick="openEvolucion(${p.id})"><i class="ti ti-stethoscope"></i> Evolucionar <span class="evo-count">${nEvo}</span></button>
@@ -8252,7 +8343,7 @@ function openNuevoPaciente(){
   document.querySelectorAll('#modalPaciente .field-error').forEach(el=>el.classList.remove('field-error'));
   document.querySelectorAll('#modalPaciente .field-error-label').forEach(el=>el.classList.remove('field-error-label'));
   const campos = ['fApellido','fNombre','fDNI','fEdad','fGenero','fPeso','fTalla','fIMC','fPCP',
-    'fFIHosp','fFIUTI','fDiag','fOtrosAnt','fObesidadCalc',
+    'fFIHosp','fFIUTI','fDiag','fAlertaImportante','fOtrosAnt','fObesidadCalc',
     'fCausaVM','fFIOT','fInicioARM','fVMNI','fProno','fTQT','fFinARM','fReintubado'];
   campos.forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   document.getElementById('fTipoKine').value = '';
@@ -8293,6 +8384,7 @@ function openEditPaciente(id){
   populateCama(p.sala, p.cama);
   M('fFIHosp',p.fIHosp); M('fFIUTI',p.fIUTI);
   M('fDiag',p.diagnostico);
+  M('fAlertaImportante',p.alertaImportante);
   M('fTipoKine',p.tipoKine); M('fEstFx',p.estFx);
   // Campos específicos por grupo
   resetGrupoFields();
@@ -8465,6 +8557,7 @@ async function guardarPaciente(){
     tqtMin:G('fTQTMin'), tqtMinTipo:G('fTQTMinTipo'), tqtMinID:G('fTQTMinID'), tqtMinED:G('fTQTMinED'),
     fIHosp:G('fFIHosp'), fIUTI:G('fFIUTI'),
     diagnostico:G('fDiag'),
+    alertaImportante:G('fAlertaImportante'),
     antecedentes, otrosAnt:G('fOtrosAnt'),
     causaVM:G('fCausaVM'), fIOT:G('fFIOT'), inicioARM:G('fInicioARM'), vmni:G('fVMNI'),
     prono:parseInt(G('fProno'))||0, tqt:G('fTQT'), finARM:G('fFinARM'), reintubado:G('fReintubado'),
@@ -8862,6 +8955,18 @@ function openEvolucion(patientId){
 
   // ── Banner evaluación de deglución ──
   renderBannerDeglusion(patientId);
+
+  // ── Banner ALERTA IMPORTANTE (v3_111) ─────────────────────
+  { const ba = document.getElementById('evoBannerAlerta');
+    if(ba){
+      if(p.alertaImportante && p.alertaImportante.trim()){
+        ba.style.display = 'flex';
+        ba.innerHTML = `<i class="ti ti-alert-triangle" style="font-size:24px;color:var(--red-600);flex-shrink:0"></i>
+          <div><div style="font-size:12px;font-weight:800;color:var(--red-600);letter-spacing:.5px">⚠ IMPORTANTE — TODO EL EQUIPO</div>
+          <div style="font-size:13px;color:var(--red-800);font-weight:700">${escapeHTML(p.alertaImportante)}</div></div>`;
+      } else { ba.style.display = 'none'; ba.innerHTML = ''; }
+    }
+  }
 
   // ── Banner paciente POST UCI + evaluación MRC ──
   const postUCI = esPacientePostUCI(p);
