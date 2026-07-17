@@ -4612,6 +4612,7 @@ async function supaFetch(path, options={}, _retried){
 
 async function loadFromSupabase(){
   setSyncStatus('syncing');
+  cargarConfigCompartida(); // v3_110: baja la API key de Gemini compartida (no bloquea la carga)
   try {
     const [pacs, evos] = await Promise.all([
       supaFetch('/rest/v1/pacientes?select=id,data&order=created_at.desc'),
@@ -4727,6 +4728,37 @@ function saveGeminiKey(){
   LS.set('hbee_gemini_key', key);
   skipSetup();
   showToast('API key de Gemini guardada ✓','success');
+  // v3_110: además de guardarla en este dispositivo, se comparte con todo el
+  // equipo vía Supabase (tabla app_config). Cada usuario la recibe al iniciar sesión.
+  guardarKeyCompartida(key);
+}
+
+// ── Config compartida en Supabase (v3_110) ───────────────
+// La API key de Gemini se guarda una sola vez (tabla app_config) y todos los
+// dispositivos la descargan automáticamente al cargar los datos.
+async function guardarKeyCompartida(key){
+  try {
+    await supaFetch('/rest/v1/app_config', {
+      method:'POST',
+      headers:{ 'Prefer':'resolution=merge-duplicates' },
+      body: JSON.stringify([{ key:'gemini_api_key', value:key }])
+    });
+    showToast('Key compartida con todo el equipo ✓','success');
+  } catch(e){
+    console.warn('No se pudo compartir la key:', e.message);
+    showToast('Key guardada solo en este dispositivo. Iniciá sesión y volvé a guardarla para compartirla.','error');
+  }
+}
+async function cargarConfigCompartida(){
+  try {
+    const rows = await supaFetch('/rest/v1/app_config?key=eq.gemini_api_key&select=value');
+    if(rows && rows[0] && rows[0].value){
+      LS.set('hbee_gemini_key', String(rows[0].value).trim());
+    }
+  } catch(e){
+    // Tabla inexistente o sin sesión: se sigue usando la key local si la hay
+    console.warn('Config compartida no disponible:', e.message);
+  }
 }
 
 // ── Llamada centralizada a Gemini con fallback de modelos ──
@@ -5159,9 +5191,14 @@ async function generarResumenIA(){
   </div>`;
   btnRegen.disabled = true;
 
-  const GEMINI_KEY = LS.get('hbee_gemini_key') || '';
+  let GEMINI_KEY = LS.get('hbee_gemini_key') || '';
   if(!GEMINI_KEY){
-    cont.innerHTML = '<div class="empty"><i class="ti ti-key-off"></i><p>Configurá tu API key de Gemini en Ajustes para usar esta función.</p></div>';
+    // v3_110: intentar bajar la key compartida del equipo antes de fallar
+    await cargarConfigCompartida();
+    GEMINI_KEY = LS.get('hbee_gemini_key') || '';
+  }
+  if(!GEMINI_KEY){
+    cont.innerHTML = '<div class="empty"><i class="ti ti-key-off"></i><p>Todavía no hay una API key de Gemini configurada para el equipo. Pedile al administrador que la cargue una vez en Ajustes: se comparte automáticamente con todos.</p></div>';
     btnRegen.disabled = false;
     return;
   }
@@ -5280,9 +5317,14 @@ async function generarInformeAlta(patientId){
     <div style="font-size:13px;color:var(--text-muted);text-align:center">Generando informe completo con IA…<br><span style="font-size:11px;color:var(--text-light)">Puede demorar unos segundos</span></div>`;
   openModal('modalInformeAlta');
 
-  const GEMINI_KEY = LS.get('hbee_gemini_key') || '';
+  let GEMINI_KEY = LS.get('hbee_gemini_key') || '';
   if(!GEMINI_KEY){
-    document.getElementById('informeAltaContent').innerHTML = '<div class="empty"><i class="ti ti-key-off"></i><p>Configurá tu API key de Gemini en Ajustes para usar esta función.</p></div>';
+    // v3_110: intentar bajar la key compartida del equipo antes de fallar
+    await cargarConfigCompartida();
+    GEMINI_KEY = LS.get('hbee_gemini_key') || '';
+  }
+  if(!GEMINI_KEY){
+    document.getElementById('informeAltaContent').innerHTML = '<div class="empty"><i class="ti ti-key-off"></i><p>Todavía no hay una API key de Gemini configurada para el equipo. Pedile al administrador que la cargue una vez en Ajustes: se comparte automáticamente con todos.</p></div>';
     return;
   }
 
@@ -7981,7 +8023,8 @@ function renderDashboard(){
 
   const todayStr = today();
   const evosHoy = evoluciones.filter(e=>e.date===todayStr && activos.some(p=>p.id===e.patientId));
-  const conARM = activos.filter(p=>p.inicioARM && !p.finARM);
+  // v3_110: el conteo de ARM sale del estado ventilatorio real (última evolución)
+  const conARM = activos.filter(p=>{ const c = estadoVentPaciente(p).cod; return c==='ARM_TET' || c==='ARM_TQT'; });
   const conTQT = activos.filter(p=> (p.tqt && p.tqt !== 'No') || p.tqtMin === 'Sí');
   const sinEvo = activos.filter(p=>!evoluciones.some(e=>e.patientId===p.id && e.date===todayStr));
   const esMin = ES_MINIMOS(currentSector);
@@ -8017,18 +8060,64 @@ function renderDashboard(){
   cont.innerHTML = html;
 }
 
+// ── Estado ventilatorio actual (v3_110) ──────────────────
+// Determina ARM TET / ARM TQT / TQT VE / VAN a partir de la ÚLTIMA evolución
+// con datos ventilatorios. Si en esa misma evolución se registró extubación o
+// decanulación, el paciente pasa a VAN. Si no hay evoluciones, usa la ficha.
+function esEvoConExtubacion(e){
+  return !!(e && (e.extubacion?.startsWith('Sí') || ['autoextubacion','accidental','sin_pve'].includes(e.extubacion)));
+}
+function ultimaEvoVentilatoria(patientId){
+  return evoluciones
+    .filter(e => e.patientId === patientId && !e.tipo && (e.interfaz || e.interfazEsp))
+    .sort((a,b) => String(b.date + (b.hora||'')).localeCompare(String(a.date + (a.hora||''))))[0] || null;
+}
+function estadoVentPaciente(p){
+  const ult = ultimaEvoVentilatoria(p.id);
+  if(ult){
+    const esp = ult.interfazEsp || '';
+    if(!esp && (ult.interfaz === 'TET' || ult.interfaz === 'TQT')){
+      // Estaba en ARM: chequear si en esa misma evolución se extubó
+      if(ult.interfaz === 'TET' && esEvoConExtubacion(ult)){
+        const ex = ult.extubacion || '';
+        const dest = ex.includes('VNI') ? 'VNI' : ex.includes('CAFO') ? 'CAFO' : 'O₂ / aire ambiente';
+        return { cod:'VAN', label:'VAN', cls:'badge-teal', icon:'ti-wind', title:'Extubado en la última evolución → '+dest };
+      }
+      return ult.interfaz === 'TET'
+        ? { cod:'ARM_TET', label:'ARM TET', cls:'badge-red',    icon:'ti-lungs', title:'ARM con tubo endotraqueal' }
+        : { cod:'ARM_TQT', label:'ARM TQT', cls:'badge-purple', icon:'ti-lungs', title:'ARM con traqueostomía' };
+    }
+    if(esp === 'TQT_O2' || esp === 'TQT_AA'){
+      if(ult.decDecanulado === 'Si')
+        return { cod:'VAN', label:'VAN', cls:'badge-teal', icon:'ti-wind', title:'Decanulado en la última evolución' };
+      return { cod:'TQT_VE', label:'TQT VE', cls:'badge-amber', icon:'ti-circle-dot',
+        title: esp==='TQT_O2' ? 'TQT en ventilación espontánea con O₂' : 'TQT en ventilación espontánea (aire ambiente)' };
+    }
+    if(esp){
+      const det = { VAN_AA:'aire ambiente', VAN_O2:'con O₂', CNAF:'con CNAF', VNI:'con VNI' }[esp] || '';
+      return { cod:'VAN', label:'VAN', cls:'badge-teal', icon:'ti-wind', title:('Vía aérea natural '+det).trim() };
+    }
+  }
+  // Sin evoluciones ventilatorias: usar la ficha del paciente
+  const esTQT = (p.tqt && p.tqt !== 'No' && p.tqt !== '') || p.tqtMin === 'Sí';
+  const enARM = !!(p.inicioARM && !p.finARM);
+  if(enARM) return esTQT
+    ? { cod:'ARM_TQT', label:'ARM TQT', cls:'badge-purple', icon:'ti-lungs', title:'ARM con traqueostomía (según ficha)' }
+    : { cod:'ARM_TET', label:'ARM TET', cls:'badge-red',    icon:'ti-lungs', title:'ARM con tubo endotraqueal (según ficha)' };
+  if(esTQT) return { cod:'TQT_VE', label:'TQT VE', cls:'badge-amber', icon:'ti-circle-dot', title:'TQT en ventilación espontánea (según ficha)' };
+  return { cod:'VAN', label:'VAN', cls:'badge-teal', icon:'ti-wind', title:'Vía aérea natural' };
+}
+function ventBadgeHTML(ev){
+  return `<span class="badge ${ev.cls}" style="font-size:9px" title="${ev.title}"><i class="ti ${ev.icon}"></i> ${ev.label}</span>`;
+}
+
 function renderPatientRow(p, todayStr){
   const nEvo = evoluciones.filter(e=>e.patientId===p.id).length;
   const tieneHoy = evoluciones.some(e=>e.patientId===p.id && e.date===todayStr);
   const diasUTI = daysBetween(p.fIUTI, todayStr);
-  const esTQT = (p.tqt && p.tqt !== 'No' && p.tqt !== '') || p.tqtMin === 'Sí';
-  const enARM = p.inicioARM && !p.finARM;
-  const tqtBadge = esTQT
-    ? (enARM
-        ? '<span class="badge badge-red" style="font-size:9px" title="Traqueostomizado + ARM"><i class="ti ti-lungs"></i> TQT+ARM</span>'
-        : '<span class="badge badge-blue" style="font-size:9px" title="Traqueostomizado, ventilación espontánea"><i class="ti ti-circle-dot"></i> TQT espontáneo</span>')
-    : '';
-  const rowClass = enARM ? 'row-arm' : (esTQT ? 'row-decan' : 'row-libre');
+  const estVent = estadoVentPaciente(p);
+  const tqtBadge = ventBadgeHTML(estVent);
+  const rowClass = (estVent.cod==='ARM_TET'||estVent.cod==='ARM_TQT') ? 'row-arm' : (estVent.cod==='TQT_VE' ? 'row-decan' : 'row-libre');
   return `<div class="patient-row ${rowClass}" data-id="${p.id}">
     <div style="flex:1;min-width:0">
       <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">
@@ -8071,19 +8160,13 @@ function renderTabla(){
   const todayStr = today();
   tbody.innerHTML = lista.map(p=>{
     const nEvo = evoluciones.filter(e=>e.patientId===p.id).length;
-    const conARM = p.inicioARM && !p.finARM;
-    const esTQT = (p.tqt && p.tqt !== 'No' && p.tqt !== '') || p.tqtMin === 'Sí';
-    const tqtBadge = esTQT
-      ? (conARM
-          ? '<span class="badge badge-red" style="font-size:9px" title="Traqueostomizado + ARM">TQT+ARM</span>'
-          : '<span class="badge badge-blue" style="font-size:9px" title="Traqueostomizado, ventilación espontánea">TQT esp.</span>')
-      : '';
+    const estVent = estadoVentPaciente(p);
     return `<tr>
       <td>${salaChip(p.sala)} <small style="color:var(--text-muted);font-size:10px">C.${p.cama||'?'}</small></td>
-      <td><div style="font-weight:600;color:var(--blue-900)">${p.apellido}, ${p.nombre} ${tqtBadge}</div><div style="font-size:10px;color:var(--text-muted)">DNI ${p.dni||'—'} · ${p.edad||'?'} años</div></td>
+      <td><div style="font-weight:600;color:var(--blue-900)">${p.apellido}, ${p.nombre}</div><div style="font-size:10px;color:var(--text-muted)">DNI ${p.dni||'—'} · ${p.edad||'?'} años</div></td>
       <td style="max-width:180px;white-space:normal">${p.diagnostico||'—'}</td>
       <td class="hide-mobile">${fmtDate(p.fIUTI)||'—'}</td>
-      <td>${conARM?'<span class="badge badge-red">ARM</span>':'<span class="badge badge-gray">No</span>'}</td>
+      <td>${p.estado==='Activo' ? ventBadgeHTML(estVent) : '<span class="badge badge-gray">—</span>'}</td>
       <td>${estadoBadge(p.estado)}</td>
       <td>
         <div style="display:flex;gap:5px">
@@ -8108,14 +8191,10 @@ function filterDash(q){
     const nEvo = evoluciones.filter(e=>e.patientId===p.id).length;
     const tieneHoy = evoluciones.some(e=>e.patientId===p.id && e.date===todayStr);
     const diasUTI = daysBetween(p.fIUTI, todayStr);
-    const esTQT = (p.tqt && p.tqt !== 'No' && p.tqt !== '') || p.tqtMin === 'Sí';
-    const enARM = p.inicioARM && !p.finARM;
-    const tqtBadge = esTQT
-      ? (enARM
-          ? '<span class="badge badge-red" style="font-size:9px" title="Traqueostomizado + ARM"><i class="ti ti-lungs"></i> TQT+ARM</span>'
-          : '<span class="badge badge-blue" style="font-size:9px" title="Traqueostomizado, ventilación espontánea"><i class="ti ti-circle-dot"></i> TQT espontáneo</span>')
-      : '';
-    return `<div class="patient-row">
+    const estVent = estadoVentPaciente(p);
+    const tqtBadge = ventBadgeHTML(estVent);
+    const rowClass = (estVent.cod==='ARM_TET'||estVent.cod==='ARM_TQT') ? 'row-arm' : (estVent.cod==='TQT_VE' ? 'row-decan' : 'row-libre');
+    return `<div class="patient-row ${rowClass}">
       <div style="flex:1;min-width:0">
         <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">
           ${salaChip(p.sala)}
@@ -8145,13 +8224,13 @@ function filterPacientes(q){
   const tbody = document.getElementById('tbodyPacientes');
   tbody.innerHTML = lista.map(p=>{
     const nEvo = evoluciones.filter(e=>e.patientId===p.id).length;
-    const conARM = p.inicioARM && !p.finARM;
+    const estVent = estadoVentPaciente(p);
     return `<tr>
       <td>${salaChip(p.sala)} <small style="color:var(--text-muted);font-size:10px">C.${p.cama||'?'}</small></td>
       <td><div style="font-weight:600;color:var(--blue-900)">${p.apellido}, ${p.nombre}</div><div style="font-size:10px;color:var(--text-muted)">DNI ${p.dni||'—'} · ${p.edad||'?'} años</div></td>
       <td style="max-width:180px;white-space:normal">${p.diagnostico||'—'}</td>
       <td class="hide-mobile">${fmtDate(p.fIUTI)||'—'}</td>
-      <td>${conARM?'<span class="badge badge-red">ARM</span>':'<span class="badge badge-gray">No</span>'}</td>
+      <td>${p.estado==='Activo' ? ventBadgeHTML(estVent) : '<span class="badge badge-gray">—</span>'}</td>
       <td>${estadoBadge(p.estado)}</td>
       <td>
         <div style="display:flex;gap:5px">
@@ -8706,7 +8785,16 @@ function openEvolucion(patientId){
   document.getElementById('eUTI').value = diasSector !== null ? diasSector + 1 : '';
 
   let diasARM = 0;
-  const yaExtubado = p.finARM || evoluciones.some(e => e.patientId === patientId && (e.extubacion?.startsWith('Sí') || ['autoextubacion','accidental','sin_pve'].includes(e.extubacion)));
+  // v3_110: "extubado" ya no es permanente. Si la ÚLTIMA evolución ventilatoria
+  // muestra al paciente nuevamente en ARM (reintubado o TQT+ARM) sin registrar
+  // extubación en esa misma evolución, el estado extubado deja de valer y
+  // vuelve a contarse el día de ARM.
+  const ultVentEvo = ultimaEvoVentilatoria(patientId);
+  const enARMEvoActual = !!(ultVentEvo && !ultVentEvo.interfazEsp
+    && (ultVentEvo.interfaz === 'TET' || ultVentEvo.interfaz === 'TQT')
+    && !esEvoConExtubacion(ultVentEvo));
+  const huboExtubacion = !!(p.finARM || evoluciones.some(e => e.patientId === patientId && esEvoConExtubacion(e)));
+  const yaExtubado = huboExtubacion && !enARMEvoActual;
   if(p.inicioARM && !yaExtubado){
     diasARM = daysBetween(p.inicioARM, todayStr);
     diasARM = diasARM !== null ? diasARM + 1 : 0;
