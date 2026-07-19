@@ -5466,106 +5466,146 @@ ${evosTexto}`;
   }
 }
 
+// ════════════════════════════════════════════════════════
+//  GENERADOR DE .DOCX REAL (Word moderno) — sin librerías externas.
+//  Arma un ZIP "store" (sin compresión) con las partes mínimas de un
+//  Office Open XML. Abre bien en PC y en celular (Word, Google Docs, WPS).
+// ════════════════════════════════════════════════════════
+function _crc32(bytes){
+  let c, crc = 0xFFFFFFFF;
+  if(!_crc32.table){
+    const t=[];
+    for(let n=0;n<256;n++){ c=n; for(let k=0;k<8;k++){ c = (c&1)?(0xEDB88320^(c>>>1)):(c>>>1); } t[n]=c>>>0; }
+    _crc32.table=t;
+  }
+  const t=_crc32.table;
+  for(let i=0;i<bytes.length;i++){ crc = (crc>>>8) ^ t[(crc ^ bytes[i]) & 0xFF]; }
+  return (crc ^ 0xFFFFFFFF) >>> 0;
+}
+
+function _zipStore(files){
+  const enc = new TextEncoder();
+  const u16 = v => [v&0xFF,(v>>>8)&0xFF];
+  const u32 = v => [v&0xFF,(v>>>8)&0xFF,(v>>>16)&0xFF,(v>>>24)&0xFF];
+  const locals=[], central=[]; let offset=0;
+  files.forEach(f=>{
+    const nameBytes = enc.encode(f.name);
+    const data = enc.encode(f.str);
+    const crc = _crc32(data);
+    const size = data.length;
+    const lh = [].concat(u32(0x04034b50),u16(20),u16(0),u16(0),u16(0),u16(0),u32(crc),u32(size),u32(size),u16(nameBytes.length),u16(0));
+    const local = new Uint8Array(lh.length+nameBytes.length+data.length);
+    local.set(lh,0); local.set(nameBytes,lh.length); local.set(data,lh.length+nameBytes.length);
+    locals.push(local);
+    const ch = [].concat(u32(0x02014b50),u16(20),u16(20),u16(0),u16(0),u16(0),u16(0),u32(crc),u32(size),u32(size),u16(nameBytes.length),u16(0),u16(0),u16(0),u16(0),u32(0),u32(offset));
+    const cen = new Uint8Array(ch.length+nameBytes.length);
+    cen.set(ch,0); cen.set(nameBytes,ch.length);
+    central.push(cen);
+    offset += local.length;
+  });
+  const centralSize = central.reduce((a,c)=>a+c.length,0);
+  const eocd = new Uint8Array([].concat(u32(0x06054b50),u16(0),u16(0),u16(files.length),u16(files.length),u32(centralSize),u32(offset),u16(0)));
+  return new Blob([...locals,...central,eocd],{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
+}
+
 function descargarInformeWord(p, textoInforme, diasARM, diasTQT){
-  // Evita que símbolos clínicos (<, >, &) en el texto generado por la IA
-  // rompan la estructura del HTML que Word interpreta como .doc
-  const escHtml = s => String(s==null?'':s)
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  // Quita tildes/diacríticos para comparar títulos sin depender de coincidencia exacta
+  const escXml = s => String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   const sinTildes = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g,'');
 
-  // Convertir el texto plano del informe (con títulos en mayúsculas) a HTML con párrafos
-  const lineas = textoInforme.split('\n').filter(l => l.trim());
+  // run: fragmento de texto con formato. o = {b,i,color,sz}  (sz en medios-puntos: 24 = 12pt)
+  const run = (text, o={}) => {
+    let rPr='';
+    if(o.b) rPr+='<w:b/>';
+    if(o.i) rPr+='<w:i/>';
+    if(o.color) rPr+=`<w:color w:val="${o.color}"/>`;
+    if(o.sz) rPr+=`<w:sz w:val="${o.sz}"/><w:szCs w:val="${o.sz}"/>`;
+    return `<w:r>${rPr?`<w:rPr>${rPr}</w:rPr>`:''}<w:t xml:space="preserve">${escXml(text)}</w:t></w:r>`;
+  };
+  // para: párrafo. o = {before,after,align}  (before/after en twips: 120 = 6pt)
+  const para = (runs, o={}) => {
+    let pPr='', sp='';
+    if(o.before!=null) sp+=` w:before="${o.before}"`;
+    if(o.after!=null) sp+=` w:after="${o.after}"`;
+    if(sp) pPr+=`<w:spacing${sp}/>`;
+    if(o.align) pPr+=`<w:jc w:val="${o.align}"/>`;
+    const body = Array.isArray(runs)?runs.join(''):runs;
+    return `<w:p>${pPr?`<w:pPr>${pPr}</w:pPr>`:''}${body}</w:p>`;
+  };
+
+  const tipoLabel = TIPO_KINE_LABEL[p.tipoKine] || '';
+  const fechaHoy = fmtDate(today());
+  const parrafos = [];
+
+  // ---- Encabezado ----
+  parrafos.push(para(run('HOSPITAL DE ALTA COMPLEJIDAD DEL BICENTENARIO ESTEBAN ECHEVERRÍA',{b:true,color:'0C447C',sz:25}),{after:0}));
+  parrafos.push(para(run('Servicio de Kinesiología',{b:true,color:'0F6E56',sz:21}),{after:0}));
+  parrafos.push(para(run('INFORME KINÉSICO',{b:true,color:'185FA5',sz:30}),{before:120,after:0}));
+  parrafos.push(para(run('Fecha de emisión: '+fechaHoy,{color:'666666',sz:18}),{after:160}));
+
+  // ---- Datos del paciente ----
+  const campo = (lbl, val) => [run(lbl+': ',{b:true,color:'185FA5',sz:20}), run((val==null||val==='')?'—':String(val),{sz:20})];
+  const sepMini = () => [run('        ',{sz:20})];
+  parrafos.push(para([].concat(campo('Paciente',`${p.apellido||''}, ${p.nombre||''}`), sepMini(), campo('DNI',p.dni), sepMini(), campo('Edad', p.edad!=null?p.edad+' años':'—')),{after:20}));
+  parrafos.push(para([].concat(campo('Sala',`${SALA_LABEL[p.sala]||p.sala} — Cama ${p.cama||'—'}`), (p.tipoKine?sepMini().concat(campo('Tipo',tipoLabel)):[])),{after:20}));
+  parrafos.push(para(campo('Diagnóstico', p.diagnostico),{after:20}));
+  parrafos.push(para(campo('FI Hospital', fmtDate(p.fIHosp)),{after:160}));
+
+  // ---- Destacados (días ARM / TQT) ----
+  if(diasARM!=null || diasTQT!=null){
+    const dest=[];
+    if(diasARM!=null) dest.push(run(`Días de ARM: ${diasARM}`,{b:true,color:'BA7517',sz:22}));
+    if(diasARM!=null && diasTQT!=null) dest.push(run('          ',{sz:22}));
+    if(diasTQT!=null) dest.push(run(`Días con TQT: ${diasTQT}`,{b:true,color:'BA7517',sz:22}));
+    parrafos.push(para(dest,{after:160}));
+  }
+
+  // ---- Cuerpo del informe (títulos + texto) ----
   const TITULOS = ['MOTIVO DE INGRESO Y DIAGNÓSTICO','RESUMEN EVOLUTIVO RESPIRATORIO','RESUMEN EVOLUTIVO NEUROMUSCULAR Y FUNCIONAL','ESTADO ACTUAL / AL ALTA','TÉCNICAS KINÉSICAS REALIZADAS','RECOMENDACIONES DE SEGUIMIENTO'].map(sinTildes);
-  const cuerpoHtml = lineas.map(linea => {
-    const limpia = linea.replace(/^[*#]+\s*/, '').trim();
+  textoInforme.split('\n').filter(l=>l.trim()).forEach(linea=>{
+    const limpia = linea.replace(/^[*#]+\s*/,'').trim();
     const limpiaComp = sinTildes(limpia.toUpperCase());
-    const esTitulo = TITULOS.some(t => limpiaComp.startsWith(t));
+    const esTitulo = TITULOS.some(t=>limpiaComp.startsWith(t));
     if(esTitulo){
       const idx = limpia.indexOf(':');
       const titulo = idx>-1 ? limpia.slice(0,idx) : limpia;
       const resto = idx>-1 ? limpia.slice(idx+1).trim() : '';
-      return `<p style="margin-top:14px;margin-bottom:4px"><strong style="color:#185FA5;font-size:12.5px;letter-spacing:.3px">${escHtml(titulo)}</strong></p><p style="margin:0 0 8px;font-size:11.5px;line-height:1.6">${escHtml(resto)}</p>`;
+      parrafos.push(para(run(titulo,{b:true,color:'185FA5',sz:25}),{before:220,after:40}));
+      if(resto) parrafos.push(para(run(resto,{sz:23}),{after:120}));
+    } else {
+      parrafos.push(para(run(limpia,{sz:23}),{after:120}));
     }
-    return `<p style="margin:0 0 8px;font-size:11.5px;line-height:1.6">${escHtml(limpia)}</p>`;
-  }).join('');
+  });
 
-  const tipoLabel = TIPO_KINE_LABEL[p.tipoKine] || '';
-  const fechaHoy = fmtDate(today());
+  // ---- Firma ----
+  parrafos.push(para(run('____________________________'),{before:700,align:'center',after:0}));
+  parrafos.push(para(run(currentUser?.name || '—',{b:true,sz:22}),{align:'center',after:0}));
+  parrafos.push(para(run('Kinesióloga/o · Servicio de Kinesiología HBEE',{color:'666666',sz:20}),{align:'center'}));
 
-  const html = `<!DOCTYPE html>
-<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
-<head><meta charset="UTF-8">
-<title>Informe Kinésico — ${escHtml(p.apellido)}, ${escHtml(p.nombre)}</title>
-<!--[if gte mso 9]>
-<xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom></w:WordDocument></xml>
-<![endif]-->
-<style>
-  body { font-family: Calibri, Arial, sans-serif; color:#222; }
-  .header { border-bottom:3px solid #185FA5; padding-bottom:10px; margin-bottom:16px; }
-  .brand-bar { height:8px; background:linear-gradient(90deg,#042C53,#185FA5,#0F6E56); margin-bottom:10px; }
-  .brand-name { font-size:12.5px; font-weight:700; color:#0C447C; letter-spacing:.3px; line-height:1.3; }
-  .brand-sub { font-size:10.5px; color:#0F6E56; font-weight:600; margin-top:2px; }
-  .header h2 { font-size:14px; color:#185FA5; font-weight:700; margin-top:10px; }
-  .header p { font-size:10px; color:#666; margin:2px 0; }
-  .patient-bar { background:#E6F1FB; padding:10px 14px; margin-bottom:16px; }
-  .patient-bar span { font-size:11px; margin-right:18px; }
-  .patient-bar strong { color:#185FA5; }
-  .destacados { display:block; margin:10px 0 16px; }
-  .destacado-box { display:inline-block; background:#FFF3E0; border:1px solid #FFE0B2; padding:6px 14px; margin-right:10px; border-radius:4px; }
-  .destacado-box .val { font-size:18px; font-weight:700; color:#BA7517; }
-  .destacado-box .lbl { font-size:9px; color:#666; text-transform:uppercase; }
-  .firma { text-align:center; margin-top:50px; }
-  .firma-line { border-top:1px solid #333; width:220px; margin:0 auto 4px; }
-  .footer-doc { margin-top:30px; border-top:1px solid #ccc; padding-top:10px; font-size:9px; color:#888; }
-</style>
-</head>
-<body>
+  // ---- Pie ----
+  parrafos.push(para(run('Hospital de Alta Complejidad del Bicentenario Esteban Echeverría — Servicio de Kinesiología. Informe generado con asistencia de IA en base a las evoluciones kinésicas registradas. Revisar y completar según criterio profesional antes de su uso clínico formal.',{color:'888888',sz:16,i:true}),{before:400}));
 
-<div class="header">
-  <div class="brand-bar"></div>
-  <div class="brand-name">HOSPITAL DE ALTA COMPLEJIDAD DEL BICENTENARIO ESTEBAN ECHEVERRÍA</div>
-  <div class="brand-sub">Servicio de Kinesiología</div>
-  <h2>INFORME KINÉSICO</h2>
-  <p>Fecha de emisión: ${fechaHoy}</p>
-</div>
+  const documentXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${parrafos.join('')}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134" w:header="720" w:footer="720" w:gutter="0"/></w:sectPr></w:body></w:document>`;
 
-<div class="patient-bar">
-  <span><strong>Paciente:</strong> ${escHtml(p.apellido)}, ${escHtml(p.nombre)}</span>
-  <span><strong>DNI:</strong> ${escHtml(p.dni)||'—'}</span>
-  <span><strong>Edad:</strong> ${p.edad||'—'} años</span>
-  <span><strong>Sala:</strong> ${SALA_LABEL[p.sala]||p.sala} — Cama ${escHtml(p.cama)||'—'}</span>
-  ${p.tipoKine ? `<span><strong>Tipo:</strong> ${tipoLabel}</span>` : ''}
-  <br><span><strong>Diagnóstico:</strong> ${escHtml(p.diagnostico)||'—'}</span>
-  <span><strong>FI Hospital:</strong> ${fmtDate(p.fIHosp)||'—'}</span>
-</div>
+  const contentTypes = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>`;
 
-${(diasARM!=null || diasTQT!=null) ? `<div class="destacados">
-  ${diasARM!=null ? `<span class="destacado-box"><div class="val">${diasARM}</div><div class="lbl">Días de ARM</div></span>` : ''}
-  ${diasTQT!=null ? `<span class="destacado-box"><div class="val">${diasTQT}</div><div class="lbl">Días con TQT</div></span>` : ''}
-</div>` : ''}
+  const dotRels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>`;
 
-${cuerpoHtml}
+  const blob = _zipStore([
+    {name:'[Content_Types].xml', str:contentTypes},
+    {name:'_rels/.rels', str:dotRels},
+    {name:'word/document.xml', str:documentXml}
+  ]);
 
-<div class="firma">
-  <div class="firma-line"></div>
-  <div style="font-size:11px;font-weight:700">${currentUser?.name || '—'}</div>
-  <div style="font-size:10px;color:#666">Kinesióloga/o · Servicio de Kinesiología HBEE</div>
-</div>
-
-<div class="footer-doc">
-  Hospital de Alta Complejidad del Bicentenario Esteban Echeverría — Servicio de Kinesiología<br>
-  Informe generado con asistencia de IA en base a las evoluciones kinésicas registradas. Revisar y completar según criterio profesional antes de su uso clínico formal.
-</div>
-
-</body></html>`;
-
-  const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `Informe_Kinesico_${(p.apellido||'paciente').replace(/\s+/g,'_')}_${today()}.doc`;
+  a.download = `Informe_Kinesico_${(p.apellido||'paciente').replace(/\s+/g,'_')}_${today()}.docx`;
+  document.body.appendChild(a);
   a.click();
-  addLog('export', `Informe kinésico Word generado: ${p.apellido}, ${p.nombre}`);
+  setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+  addLog('export', `Informe kinésico Word (.docx) generado: ${p.apellido}, ${p.nombre}`);
 }
 
 
