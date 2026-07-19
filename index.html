@@ -1455,6 +1455,8 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
       <!-- Evaluación MRC-Sumy (pacientes POST UCI) -->
       <div id="eMRCBox" style="display:none;background:var(--purple-50);border:1px solid var(--purple-400);border-radius:10px;padding:12px 14px;margin-bottom:12px">
         <div class="form-section-title" style="margin-bottom:10px;border-left-color:var(--purple-400);color:var(--purple-800)"><i class="ti ti-activity"></i> MRC-Sumy — evaluación de fuerza muscular</div>
+        <div id="eMRCResumen" style="display:none;margin-bottom:10px"></div>
+        <div id="eMRCForm">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
           <div>
             <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--text-muted);margin-bottom:8px;border-bottom:1px solid var(--border);padding-bottom:4px">Miembro superior</div>
@@ -1478,6 +1480,7 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
         <div id="eMRCResultBox" style="display:none;margin-top:8px;background:#fff;border-radius:8px;padding:8px 12px">
           <div style="display:flex;align-items:baseline;gap:8px"><span style="font-size:20px;font-weight:800" id="eMRCTotal">—</span><span style="font-size:11px;color:var(--text-muted)">/ 60</span><span style="font-size:12px;font-weight:700" id="eMRCCategoria"></span></div>
           <div style="font-size:11px;color:var(--text-muted)" id="eMRCDesc"></div>
+        </div>
         </div>
       </div>
       <!-- Botón acceso rápido a evaluación de deglución -->
@@ -6793,6 +6796,59 @@ function calcMRCEvo(){
   box.style.display = 'block';
 }
 
+// ── v3_112: MRC-Sumy en pacientes POST UCI ────────────────────────
+// Si ya hay un MRC previo, muestra "Último MRC: X/60" + botón para hacer uno
+// nuevo; el formulario completo solo se despliega al tocar el botón.
+function ultimoMRCEvo(patientId, excluirEvoId){
+  const evos = evoluciones
+    .filter(e => e.patientId === patientId && e.id !== excluirEvoId && e.mrcTotal != null)
+    .sort((a,b) => String(b.date + (b.hora||'')).localeCompare(String(a.date + (a.hora||''))));
+  return evos[0] || null;
+}
+function mrcCategoriaCorta(total, completo){
+  if(!completo)     return { txt:'incompleto',                 color:'var(--amber-600)' };
+  if(total < 36)    return { txt:'ICU-AW (debilidad severa)',  color:'var(--red-600)'   };
+  if(total < 48)    return { txt:'debilidad leve-moderada',    color:'var(--amber-600)' };
+  return                   { txt:'sin debilidad clínica',      color:'var(--teal-600)'  };
+}
+function prepararMRCEvo(p, postUCI){
+  const box = document.getElementById('eMRCBox');
+  const resumen = document.getElementById('eMRCResumen');
+  const form = document.getElementById('eMRCForm');
+  if(!box) return;
+  if(!postUCI){ box.style.display = 'none'; return; }
+  box.style.display = 'block';
+  const ult = ultimoMRCEvo(p.id, editingEvoId);
+  if(ult){
+    const cat = mrcCategoriaCorta(ult.mrcTotal, ult.mrcCompleto);
+    const valTxt = ult.mrcCompleto ? `${ult.mrcTotal}/60` : `${ult.mrcTotal}/60*`;
+    if(resumen){
+      resumen.style.display = 'block';
+      resumen.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;background:#fff;border-radius:8px;padding:9px 12px">
+        <div style="font-size:12px;line-height:1.5">
+          <span style="color:var(--text-muted)">Último MRC-Sumy:</span>
+          <strong style="font-size:16px;color:var(--purple-800)">${valTxt}</strong>
+          <span style="font-weight:700;color:${cat.color}"> · ${cat.txt}</span>
+          <span style="color:var(--text-muted)"> · ${fmtDate(ult.date)}</span>
+        </div>
+        <button type="button" class="btn btn-sm" onclick="mostrarNuevoMRC()" style="background:var(--purple-50);color:var(--purple-800);border:1px solid var(--purple-400);white-space:nowrap"><i class="ti ti-plus"></i> Hacer nuevo MRC</button>
+      </div>`;
+    }
+    if(form) form.style.display = 'none';   // colapsado hasta tocar el botón
+  } else {
+    if(resumen){ resumen.style.display = 'none'; resumen.innerHTML = ''; }
+    if(form) form.style.display = 'block';  // primera vez: formulario directo
+  }
+}
+function mostrarNuevoMRC(){
+  const form = document.getElementById('eMRCForm');
+  if(form) form.style.display = 'block';
+  // Dejamos el resumen del último a la vista como referencia, pero ocultamos el botón.
+  const resumen = document.getElementById('eMRCResumen');
+  const btn = resumen ? resumen.querySelector('button') : null;
+  if(btn) btn.style.display = 'none';
+}
+
 // ── Precarga del estado ventilatorio desde la última evolución ──
 function precargarVentilacionUltimaEvo(patientId){
   const evos = evoluciones
@@ -9065,7 +9121,7 @@ function openEvolucion(patientId){
       <div><div style="font-size:13px;font-weight:800;color:var(--purple-800);letter-spacing:.3px">PACIENTE POST UCI</div>
       <div style="font-size:12px;color:var(--text-muted)">Estuvo internado en UTI y ahora está en ${SALA_LABEL[p.sala]||p.sala}. Evaluá la fuerza muscular con el MRC-Sumy de abajo.</div></div>` : '';
   }
-  { const mb = document.getElementById('eMRCBox'); if(mb) mb.style.display = postUCI ? 'block' : 'none'; }
+  prepararMRCEvo(p, postUCI);
   { const rb = document.getElementById('eMRCResultBox'); if(rb) rb.style.display = 'none'; }
 
   // ── Banner de traslado reciente ──────────────────────────
@@ -9344,6 +9400,13 @@ function editarEvolucion(evoId){
   openEvolucion(evo.patientId); // arma el formulario según el tipo de paciente
   editingEvoId = evo.id;
   precargarCamposEvolucion(evo);
+  // v3_112: si la evolución que se edita tiene un MRC cargado, mostrar el formulario
+  // abierto (no colapsado) para poder verlo y modificarlo.
+  if(evo.mrcTotal != null){
+    const form = document.getElementById('eMRCForm'); if(form) form.style.display = 'block';
+    const resumen = document.getElementById('eMRCResumen'); if(resumen){ resumen.style.display = 'none'; }
+    calcMRCEvo();
+  }
   document.getElementById('evoModalTitle').textContent = `Editar evolución — ${document.getElementById('evoModalTitle').textContent}`;
   const btnGuardarEvo = document.getElementById('btnGuardarEvo');
   if(btnGuardarEvo) btnGuardarEvo.innerHTML = '<i class="ti ti-device-floppy"></i>Guardar cambios';
