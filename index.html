@@ -5991,7 +5991,7 @@ function showSection(id){
   const bt = document.getElementById('btab-'+id);
   if(bt) bt.classList.add('active');
   if(id==='indicadores') renderIndicadores();
-  if(id==='actividad') renderLogs();
+  if(id==='actividad') cargarActividadEquipo();
   if(id==='pacientes') renderTabla();
 }
 
@@ -8058,17 +8058,61 @@ function openHistorialRapido(patientId, desdeEvolucion){
 //  LOGS
 // ════════════════════════════════════════════════════════
 function addLog(type, msg){
-  logs.unshift({ type, msg, user: currentUser?.name||'?', ts: new Date().toISOString() });
+  const entry = { type, msg, user: currentUser?.name||'?', ts: new Date().toISOString() };
+  logs.unshift(entry);
   if(logs.length > 500) logs = logs.slice(0,500);
   saveLogs();
+  // v3_112: además del registro local, subir a la tabla compartida 'logs' de Supabase
+  // para que la jefatura (admin) vea la actividad de TODO el equipo, no solo la de su dispositivo.
+  // Fire-and-forget: si no hay sesión/conexión o la tabla no existe, no rompe nada (queda el local).
+  try {
+    if(typeof supaSession !== 'undefined' && supaSession){
+      supaFetch('/rest/v1/logs', {
+        method:'POST',
+        body: JSON.stringify({ tipo: entry.type, msg: entry.msg, usuario: entry.user, ts: entry.ts })
+      }).catch(()=>{});
+    }
+  } catch(_){}
 }
-function clearLogs(){ logs=[]; saveLogs(); renderLogs(); }
-function renderLogs(){
+
+// v3_112: carga la actividad de TODO el equipo desde Supabase (solo la ve el admin).
+// Si falla (sin conexión o falta la tabla), muestra el registro local con un aviso.
+async function cargarActividadEquipo(){
   const el = document.getElementById('logsList');
-  if(!logs.length){ el.innerHTML='<div class="empty"><i class="ti ti-list-search"></i><p>Sin actividad registrada</p></div>'; return; }
+  if(el) el.innerHTML = '<div class="empty"><i class="ti ti-loader-2"></i><p>Cargando actividad del equipo…</p></div>';
+  try {
+    const rows = await supaFetch('/rest/v1/logs?select=tipo,msg,usuario,ts&order=ts.desc&limit=300');
+    const teamLogs = (rows||[]).map(r=>({ type:r.tipo, msg:r.msg, user:r.usuario, ts:r.ts }));
+    renderLogs(teamLogs, false);
+  } catch(e){
+    console.error('Actividad Supabase error:', e);
+    renderLogs(logs, true);
+  }
+}
+
+async function clearLogs(){
+  // Borra el registro compartido de todo el equipo (acción de jefatura) y también el local.
+  try {
+    if(typeof supaSession !== 'undefined' && supaSession){
+      await supaFetch('/rest/v1/logs?id=gte.0', { method:'DELETE' });
+    }
+  } catch(e){
+    console.error('No se pudo borrar la actividad compartida:', e);
+    showToast('No se pudo borrar la actividad compartida (ver consola)', 'error');
+  }
+  logs=[]; saveLogs();
+  cargarActividadEquipo();
+}
+
+function renderLogs(lista, soloLocal){
+  const data = Array.isArray(lista) ? lista : logs;
+  const el = document.getElementById('logsList');
+  if(!el) return;
+  const aviso = soloLocal ? `<div style="padding:8px 14px;font-size:11px;color:var(--amber-800);background:var(--amber-50);border-bottom:1px solid var(--amber-100);"><i class="ti ti-alert-triangle"></i> No se pudo cargar la actividad compartida. Mostrando solo la de este dispositivo.</div>` : '';
+  if(!data.length){ el.innerHTML = aviso + '<div class="empty"><i class="ti ti-list-search"></i><p>Sin actividad registrada</p></div>'; return; }
   const icons = { login:'ti-login', logout:'ti-logout', create:'ti-plus', edit:'ti-pencil', delete:'ti-trash', evolve:'ti-stethoscope', traslado:'ti-arrows-transfer-up', alta:'ti-home-check', obito:'ti-heart-off' };
   const colors = { login:'badge-amber', logout:'badge-gray', create:'badge-teal', edit:'badge-blue', delete:'badge-red', evolve:'badge-purple', traslado:'badge-blue', alta:'badge-teal', obito:'badge-red' };
-  el.innerHTML = logs.slice(0,200).map(l=>`
+  el.innerHTML = aviso + data.slice(0,300).map(l=>`
     <div style="display:flex;align-items:flex-start;gap:10px;padding:9px 14px;border-bottom:1px solid rgba(0,0,0,.04);">
       <span class="badge ${colors[l.type]||'badge-gray'}" style="flex-shrink:0;margin-top:1px;"><i class="ti ${icons[l.type]||'ti-point'}"></i></span>
       <div style="flex:1;min-width:0">
