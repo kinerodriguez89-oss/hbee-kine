@@ -2917,6 +2917,10 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
 
       <!-- SECCIÓN A: GUSS-ICU -->
       <div id="degSecA" style="display:none">
+        <div style="font-size:11.5px;color:var(--text-muted);background:var(--gray-50);border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin-bottom:12px;line-height:1.5">
+          <i class="ti ti-info-circle" style="color:var(--blue-600)"></i>
+          Indicado en pacientes intubados &gt; 24 h. Realizar no antes de 1 h post-extubación. Si es necesario, higiene oral previa.
+        </div>
         <div class="deg-section-title">Investigación preliminar / Deglución indirecta</div>
 
         <div class="guss-item">
@@ -2963,40 +2967,42 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
         </div>
 
         <div id="gussPreScore" style="margin:10px 0;padding:8px 12px;border-radius:6px;background:var(--blue-50);font-size:12px;display:none">
-          Puntaje preliminar: <strong id="gussPreVal">-</strong>/5
+          Puntaje preliminar: <strong id="gussPreVal">-</strong>/6
+          <div id="gussPreNota" style="margin-top:4px;font-size:11px;color:var(--text-muted)"></div>
         </div>
 
-        <!-- Prueba directa: solo si pasa el preliminar -->
+        <!-- Prueba directa: solo si pasa el preliminar (6/6) -->
         <div id="degSecADirecta" style="display:none">
           <div class="deg-section-title">Prueba directa de deglución</div>
-          <div class="guss-item">
-            <label>Semisólido — 3-5 cuch. de agua espesada (IDDSI 3)</label>
+          <div style="font-size:11px;color:var(--text-muted);margin:-2px 0 10px;line-height:1.5">
+            Observar al paciente después de cada trago. Suspender el subtest y el screening si aparece: dificultad deglutoria (fase oral prolongada: &gt;10 s con líquidos y semisólidos, &gt;23 s con pan), tos, babeo o cambio de voz. Si no hay problemas, avanzar al siguiente subtest.
+          </div>
+          <div class="guss-item" id="degSubSemi">
+            <label>1. Semisólido — 3-5 cuch. de agua espesada (IDDSI 3)</label>
             <div class="guss-opts">
-              <button class="guss-opt" id="g_semi_si" onclick="setGuss('semi',1)">Pasa +2</button>
+              <button class="guss-opt" id="g_semi_si" onclick="setGuss('semi',1)">Pasa +1</button>
               <button class="guss-opt" id="g_semi_no" onclick="setGuss('semi',0)">Falla 0</button>
             </div>
           </div>
-          <div id="degALiqSol" style="display:none">
-            <div class="guss-item">
-              <label>Líquidos — 3, 5, 10, 20, 50 ml de agua (IDDSI 0)</label>
-              <div class="guss-opts">
-                <button class="guss-opt" id="g_liq_si" onclick="setGuss('liq',1)">Pasa +1</button>
-                <button class="guss-opt" id="g_liq_no" onclick="setGuss('liq',0)">Falla 0</button>
-              </div>
+          <div class="guss-item" id="degSubLiq" style="display:none">
+            <label>2. Líquidos — 3, 5, 10, 20, 50 ml de agua (IDDSI 0)</label>
+            <div class="guss-opts">
+              <button class="guss-opt" id="g_liq_si" onclick="setGuss('liq',1)">Pasa +1</button>
+              <button class="guss-opt" id="g_liq_no" onclick="setGuss('liq',0)">Falla 0</button>
             </div>
-            <div class="guss-item">
-              <label>Sólidos — trozo de pan (1.5 x 1.5 cm)</label>
-              <div class="guss-opts">
-                <button class="guss-opt" id="g_sol_si" onclick="setGuss('sol',1)">Pasa +1</button>
-                <button class="guss-opt" id="g_sol_no" onclick="setGuss('sol',0)">Falla 0</button>
-              </div>
+          </div>
+          <div class="guss-item" id="degSubSol" style="display:none">
+            <label>3. Sólidos — trozo de pan (1.5 x 1.5 cm)</label>
+            <div class="guss-opts">
+              <button class="guss-opt" id="g_sol_si" onclick="setGuss('sol',1)">Pasa +1</button>
+              <button class="guss-opt" id="g_sol_no" onclick="setGuss('sol',0)">Falla 0</button>
             </div>
-            <div class="guss-item">
-              <label>Líquidos + sólidos combinados</label>
-              <div class="guss-opts">
-                <button class="guss-opt" id="g_liqsol_si" onclick="setGuss('liqsol',1)">Pasa +1</button>
-                <button class="guss-opt" id="g_liqsol_no" onclick="setGuss('liqsol',0)">Falla 0</button>
-              </div>
+          </div>
+          <div class="guss-item" id="degSubMixta" style="display:none">
+            <label>4. Texturas mixtas — pan (1.5 x 1.5 cm) + sorbo de agua a mitad de la masticación</label>
+            <div class="guss-opts">
+              <button class="guss-opt" id="g_liqsol_si" onclick="setGuss('liqsol',1)">Pasa +1</button>
+              <button class="guss-opt" id="g_liqsol_no" onclick="setGuss('liqsol',0)">Falla 0</button>
             </div>
           </div>
         </div>
@@ -3013,6 +3019,7 @@ input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; }
               <div style="font-size:12px;margin-top:4px" id="gussConducataTxt">-</div>
             </div>
           </div>
+          <div id="gussDieta" style="margin-top:12px;padding-top:12px;border-top:1px dashed var(--border);font-size:12px;line-height:1.55"></div>
         </div>
 
         <div class="form-group" style="margin-top:10px">
@@ -10136,7 +10143,7 @@ function abrirEvalDeglusion(){
   document.querySelectorAll('.guss-opt').forEach(b=>b.className='guss-opt');
   document.getElementById('gussPreScore').style.display='none';
   document.getElementById('degSecADirecta').style.display='none';
-  document.getElementById('degALiqSol').style.display='none';
+  ['degSubLiq','degSubSol','degSubMixta'].forEach(id=>{ const el=document.getElementById(id); if(el) el.style.display='none'; });
   document.getElementById('gussResultado').style.display='none';
   document.getElementById('degGussObs').value='';
   // Reset formal
@@ -10174,77 +10181,163 @@ function setGuss(campo, val){
   calcGUSS();
 }
 
-function calcGUSS(){
+// ── Tabla de evaluación GUSS-ICU (dietas según marco IDDSI) ──
+const GUSS_ICU_NIVELES = {
+  severa: {
+    puntos:'0-6', cat:'severa', color:'red',
+    nombre:'Disfagia severa · alto riesgo de aspiración',
+    desc:'Falló la investigación preliminar o el semisólido.',
+    dieta:[
+      'NPO (nada por boca).',
+      'Derivar a Fonoaudiología / ORL / Foniatra / especialista en disfagia.',
+      'Repetir el test a las 4 h como mínimo.'
+    ]
+  },
+  moderada: {
+    puntos:'7', cat:'moderada', color:'amber',
+    nombre:'Disfagia moderada · riesgo de aspiración',
+    desc:'Pasó semisólidos, falló líquidos.',
+    dieta:[
+      'Texturas en puré o licuadas (IDDSI 3-4).',
+      'Todos los líquidos espesados (IDDSI 2-3).',
+      'Comprimidos triturados y mezclados con puré (IDDSI 3-4). ¡Sin medicación líquida!',
+      'Opcional: evaluación funcional (FEES / videodeglución).',
+      'Opcional: derivar a Fonoaudiología.',
+      'Suplementación por PEG, SNG o parenteral + alimentación complementaria.'
+    ]
+  },
+  leve_liq: {
+    puntos:'8', cat:'leve_liq', color:'blue',
+    nombre:'Disfagia leve · bajo riesgo de aspiración',
+    desc:'Pasó semisólidos y líquidos, falló sólidos.',
+    dieta:[
+      'Dieta para disfagia: picada y húmeda o blanda en trozos pequeños (IDDSI 5 o 6).',
+      'Líquidos IDDSI 0.',
+      'Opcional: evaluación funcional (FEES / videodeglución).',
+      'Opcional: derivar a Fonoaudiología.',
+      'Suplementación por PEG, SNG o parenteral + alimentación complementaria.'
+    ]
+  },
+  leve_mixta: {
+    puntos:'9', cat:'leve_mixta', color:'purple',
+    nombre:'Disfagia leve · bajo riesgo de aspiración',
+    desc:'Pasó semisólidos, líquidos y sólidos, falló texturas mixtas.',
+    dieta:[
+      'Dieta para disfagia: blanda en trozos pequeños o fácil de masticar (IDDSI 6 o 7 EC).',
+      'Evitar texturas mixtas o difíciles de masticar.',
+      'Líquidos IDDSI 0.',
+      'Opcional: evaluación funcional (FEES / videodeglución).',
+      'Opcional: derivar a Fonoaudiología.',
+      'Suplementación por PEG, SNG o parenteral + alimentación complementaria.'
+    ]
+  },
+  normal: {
+    puntos:'10', cat:'normal', color:'teal',
+    nombre:'Disfagia mínima o ausente · riesgo de aspiración mínimo o nulo',
+    desc:'Pasó todas las texturas.',
+    dieta:[
+      'Dieta normal (IDDSI 7, 7 EC).',
+      'Líquidos regulares (IDDSI 0).',
+      'Primera comida normal bajo supervisión de Fonoaudiología o enfermería entrenada en disfagia, para evaluar consistencias mixtas.'
+    ]
+  }
+};
+
+// Motor de puntaje GUSS-ICU (fuente única de verdad).
+// Preliminar: 6 ítems /6 → se necesitan 6/6 para pasar a la prueba directa.
+// Directa: 4 subtests secuenciales, cada uno vale 1 pto. Total /10.
+function evaluarGUSSICU(s){
   const pre = ['rass','estridor','tos','saliva','babeo','voz'];
-  const preScore = pre.reduce((s,k)=> gussState[k]!==null ? s+gussState[k] : s, 0);
-  const preLlenos = pre.filter(k=>gussState[k]!==null).length;
+  const preLlenos = pre.filter(k=>s[k]!==null).length;
+  const preScore = pre.reduce((a,k)=> s[k]!==null ? a+s[k] : a, 0);
+  const preCompleto = preLlenos===6;
+  const pasoPre = preCompleto && preScore===6;
+  const fin = (nivelKey,total) => ({ preScore, total, completo:true, nivel:GUSS_ICU_NIVELES[nivelKey] });
+  const parcial = total => ({ preScore, total, completo:false, nivel:null });
 
-  const preBox = document.getElementById('gussPreScore');
-  const preVal = document.getElementById('gussPreVal');
-  if(preLlenos>0){
-    preBox.style.display='block';
-    preVal.textContent = preScore + (preLlenos<6?' (incompleto)':'');
-  }
-
-  // Desbloquear directa si pasa el preliminar
-  const pasoPre = preLlenos===6 && preScore===5;
-  const noPasoPre = preLlenos===6 && preScore<5;
-  document.getElementById('degSecADirecta').style.display = (pasoPre||noPasoPre) ? 'block' : 'none';
-
-  if(noPasoPre){
-    // Muestra resultado directamente: no apto
-    mostrarResultadoGUSS(preScore);
-    document.getElementById('degALiqSol').style.display='none';
-    return;
-  }
-
-  if(!pasoPre) return;
-
-  // Directa: mostrar liq/sol si pasó semisólido
-  const semiPaso = gussState.semi===1;
-  document.getElementById('degALiqSol').style.display = (gussState.semi!==null && semiPaso) ? 'block' : 'none';
-  if(gussState.semi===0){ mostrarResultadoGUSS(preScore + 0); return; }
-  if(gussState.semi===null) return;
-
-  // Calcular total
-  const total = preScore +
-    (gussState.semi||0)*2 +
-    (gussState.liq||0) +
-    (gussState.sol||0) +
-    (gussState.liqsol||0);
-
-  if(gussState.semi!==null) mostrarResultadoGUSS(total);
+  if(!preCompleto)      return parcial(preScore);
+  if(!pasoPre)          return fin('severa', preScore);   // <6 en preliminar → severa
+  if(s.semi===null)     return parcial(6);
+  if(s.semi===0)        return fin('severa', 6);
+  if(s.liq===null)      return parcial(7);
+  if(s.liq===0)         return fin('moderada', 7);
+  if(s.sol===null)      return parcial(8);
+  if(s.sol===0)         return fin('leve_liq', 8);
+  if(s.liqsol===null)   return parcial(9);
+  if(s.liqsol===0)      return fin('leve_mixta', 9);
+  return fin('normal', 10);
 }
 
-function mostrarResultadoGUSS(total){
+function calcGUSS(){
+  const pre = ['rass','estridor','tos','saliva','babeo','voz'];
+  const preLlenos = pre.filter(k=>gussState[k]!==null).length;
+  const ev = evaluarGUSSICU(gussState);
+  const pasoPre = preLlenos===6 && ev.preScore===6;
+
+  // Caja del preliminar
+  const preBox = document.getElementById('gussPreScore');
+  const preVal = document.getElementById('gussPreVal');
+  const preNota = document.getElementById('gussPreNota');
+  if(preLlenos>0){
+    preBox.style.display='block';
+    preVal.textContent = ev.preScore + (preLlenos<6 ? ' (incompleto)' : '');
+    if(preLlenos===6){
+      preNota.textContent = ev.preScore===6
+        ? '6/6 → continuar con la prueba directa de deglución.'
+        : '<6 → detener el screening. Derivar a Fonoaudiología y/o FEES.';
+    } else { preNota.textContent = ''; }
+  } else { preBox.style.display='none'; }
+
+  // Cascada: si un subtest previo falla o falta, limpiar los siguientes
+  const dir = ['semi','liq','sol','liqsol'];
+  for(let i=1;i<dir.length;i++){
+    const prevOK = dir.slice(0,i).every(k=>gussState[k]===1);
+    if(!prevOK && gussState[dir[i]]!==null){
+      gussState[dir[i]] = null;
+      const si=document.getElementById(`g_${dir[i]}_si`); if(si) si.className='guss-opt';
+      const no=document.getElementById(`g_${dir[i]}_no`); if(no) no.className='guss-opt';
+    }
+  }
+
+  // Mostrar/ocultar sección directa y revelar subtests de a uno
+  document.getElementById('degSecADirecta').style.display = pasoPre ? 'block' : 'none';
+  document.getElementById('degSubLiq').style.display   = (pasoPre && gussState.semi===1) ? 'flex' : 'none';
+  document.getElementById('degSubSol').style.display   = (pasoPre && gussState.semi===1 && gussState.liq===1) ? 'flex' : 'none';
+  document.getElementById('degSubMixta').style.display = (pasoPre && gussState.semi===1 && gussState.liq===1 && gussState.sol===1) ? 'flex' : 'none';
+
+  // Resultado
+  if(ev.completo) mostrarResultadoGUSS(ev);
+  else document.getElementById('gussResultado').style.display='none';
+}
+
+function mostrarResultadoGUSS(ev){
+  const n = ev.nivel;
+  const bg = `var(--${n.color}-50)`;
+  const color = `var(--${n.color}-700)`;
   const resBox = document.getElementById('gussResultado');
-  const totalDisp = document.getElementById('gussTotalDisp');
-  const catEl = document.getElementById('gussCategoria');
-  const condEl = document.getElementById('gussConducataTxt');
   resBox.style.display='block';
-  totalDisp.textContent = total;
-
-  let cat, cond, bg, color;
-  if(total<=6){ cat='No supera criterio mínimo'; cond='No apto para alimentación vía oral. Reeducación + enteral estricta por SNG. Reevaluar en 48hs.'; bg='var(--red-50)'; color='var(--red-700)'; }
-  else if(total===7){ cat='Apto semisólidos (puntaje 7)'; cond='Colaciones con semisólidos supervisadas + enteral por SNG + pautas + reeducación. Reevaluar líquidos/sólidos en 48hs.'; bg='var(--amber-50)'; color='var(--amber-700)'; }
-  else if(total===8){ cat='Apto semisólidos y líquidos (puntaje 8)'; cond='Alimentación oral con consistencias toleradas. Reevaluación en 48hs.'; bg='var(--blue-50)'; color='var(--blue-700)'; }
-  else{ cat='Apto para todas las consistencias (puntaje 9-10)'; cond='Sin disfagia significativa. Alimentación vía oral todas las consistencias.'; bg='var(--teal-50)'; color='var(--teal-700)'; }
-
   resBox.style.background = bg;
+  document.getElementById('gussTotalDisp').textContent = ev.total;
+  const catEl = document.getElementById('gussCategoria');
   catEl.style.color = color;
-  catEl.textContent = cat;
-  condEl.textContent = cond;
+  catEl.textContent = `Puntaje ${ev.total}/10 — ${n.nombre}`;
+  document.getElementById('gussConducataTxt').textContent = n.desc;
+  document.getElementById('gussDieta').innerHTML =
+    '<div style="font-weight:700;margin-bottom:5px">Recomendaciones (marco IDDSI):</div>' +
+    n.dieta.map(d=>`<div style="display:flex;gap:6px;margin-bottom:3px"><span style="color:${color};flex-shrink:0">•</span><span>${d}</span></div>`).join('');
 }
 
 function clasificarGUSS(){
-  const pre=['rass','estridor','tos','saliva','babeo','voz'];
-  const preScore = pre.reduce((s,k)=>s+(gussState[k]||0),0);
-  if(preScore<5) return { score:preScore, cat:'no_apto', txt:'No apto para alimentación vía oral' };
-  const total = preScore+(gussState.semi||0)*2+(gussState.liq||0)+(gussState.sol||0)+(gussState.liqsol||0);
-  if(total<=6) return { score:total, cat:'no_apto', txt:'No apto para alimentación vía oral' };
-  if(total===7) return { score:total, cat:'semi', txt:'Apto semisólidos' };
-  if(total===8) return { score:total, cat:'semi_liq', txt:'Apto semisólidos y líquidos' };
-  return { score:total, cat:'todo', txt:'Apto todas las consistencias' };
+  const ev = evaluarGUSSICU(gussState);
+  if(!ev.completo || !ev.nivel){
+    return { score:ev.preScore, cat:'incompleto', txt:'GUSS-ICU incompleto', conducta:'' };
+  }
+  return {
+    score: ev.total,
+    cat: ev.nivel.cat,
+    txt: `${ev.nivel.nombre} (${ev.total}/10)`,
+    conducta: ev.nivel.dieta.join(' · ')
+  };
 }
 
 async function guardarEvalDeglusion(){
@@ -10253,10 +10346,10 @@ async function guardarEvalDeglusion(){
   const p = patients.find(x=>x.id===degPacId);
   if(!p) return;
 
-  let resultado, resultadoTxt, score;
+  let resultado, resultadoTxt, score, conductaGuss='';
   if(degTipo==='A'){
     const r = clasificarGUSS();
-    resultado = r.cat; resultadoTxt = r.txt; score = r.score;
+    resultado = r.cat; resultadoTxt = r.txt; score = r.score; conductaGuss = r.conducta||'';
   } else {
     resultado = G('degResultadoFormal');
     const labelMap = {
@@ -10275,7 +10368,7 @@ async function guardarEvalDeglusion(){
     fecha: today(), kine: G('degKine'), tipo: degTipo,
     resultado, resultadoTxt, score,
     // GUSS
-    guss: degTipo==='A' ? { ...gussState, obs:G('degGussObs') } : null,
+    guss: degTipo==='A' ? { ...gussState, obs:G('degGussObs'), conducta:conductaGuss } : null,
     // Formal
     formal: degTipo==='B' ? {
       fc:G('degFC'),fr:G('degFR'),spo2:G('degSpO2'),ta:G('degTA'),temp:G('degTemp'),gcs:G('degGCS'),rass:G('degRASS'),
@@ -10308,8 +10401,10 @@ function renderBannerDeglusion(patientId){
   if(!el) return;
   const ultima = evalDeglusion.find(e=>e.patientId===patientId);
   if(!ultima){ el.style.display='none'; el.innerHTML=''; return; }
-  const colorMap = { no_apto:'var(--red-200)', semi:'var(--amber-200)', semi_liq:'var(--blue-200)', todo:'var(--teal-200)', derivar_fees:'var(--purple-200)' };
-  const bgMap = { no_apto:'var(--red-50)', semi:'var(--amber-50)', semi_liq:'var(--blue-50)', todo:'var(--teal-50)', derivar_fees:'var(--purple-50)' };
+  const colorMap = { severa:'var(--red-200)', moderada:'var(--amber-200)', leve_liq:'var(--blue-200)', leve_mixta:'var(--purple-200)', normal:'var(--teal-200)', incompleto:'var(--gray-200)',
+    no_apto:'var(--red-200)', semi:'var(--amber-200)', semi_liq:'var(--blue-200)', todo:'var(--teal-200)', derivar_fees:'var(--purple-200)' };
+  const bgMap = { severa:'var(--red-50)', moderada:'var(--amber-50)', leve_liq:'var(--blue-50)', leve_mixta:'var(--purple-50)', normal:'var(--teal-50)', incompleto:'var(--gray-50)',
+    no_apto:'var(--red-50)', semi:'var(--amber-50)', semi_liq:'var(--blue-50)', todo:'var(--teal-50)', derivar_fees:'var(--purple-50)' };
   const colorTxt = colorMap[ultima.resultado]||'var(--border)';
   const bgTxt = bgMap[ultima.resultado]||'var(--gray-50)';
   el.innerHTML = `
